@@ -46,7 +46,7 @@ class File(FileBase):
         ''' Init file object, set the mimetype '''
         super(File, self).__init__(src_path, dst_path)
 
-        mimetype = magic.from_file(src_path, mime=True)
+        mimetype = magic.from_file(src_path, mime=True).decode("utf-8")
         self.main_type, self.sub_type = mimetype.split('/')
         a, self.extension = os.path.splitext(src_path)
 
@@ -119,7 +119,8 @@ class KittenGroomer(KittenGroomerBase):
         }
 
         # Dirty trick to run libreoffice at least once and avoid unoconv to crash...
-        self._run_process(LIBREOFFICE, 5)
+        lo = LIBREOFFICE + ' --headless'
+        self._run_process(lo, 5)
 
     # ##### Helpers #####
     def _init_subtypes_application(self, subtypes_application):
