@@ -26,48 +26,58 @@ mimes_compressed = ['zip', 'x-rar', 'x-bzip2', 'x-lzip', 'x-lzma', 'x-lzop',
                     'x-xz', 'x-compress', 'x-gzip', 'x-tar', 'compressed']
 mimes_data = ['octet-stream']
 
+# Aliases
+aliases = {
+    # Win executables
+    'application/x-msdos-program': 'application/x-dosexec',
+    'application/x-dosexec': 'application/x-msdos-program'
+}
+
+# Sometimes, mimetypes.guess_type is giving unexpected results, such as for the .tar.gz files:
+# In [12]: mimetypes.guess_type('toot.tar.gz', strict=False)
+# Out[12]: ('application/x-tar', 'gzip')
+# It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
+propertype = {'.gz': 'application/gzip'}
+
 
 class File(FileBase):
 
     def __init__(self, src_path, dst_path):
         ''' Init file object, set the mimetype '''
         super(File, self).__init__(src_path, dst_path)
+
         mimetype = magic.from_file(src_path, mime=True)
         self.main_type, self.sub_type = mimetype.split('/')
-        self.log_details.update({'maintype': self.main_type, 'subtype': self.sub_type})
-        self.expected_mimetype, self.expected_extensions = self.crosscheck_mime()
-        self.is_recursive = False
+        a, self.extension = os.path.splitext(src_path)
 
-    def crosscheck_mime(self):
-        '''
-            Set the expected mime and extension variables based on mime type.
-        '''
-        # /usr/share/mime has interesting stuff
+        self.log_details.update({'maintype': self.main_type, 'subtype': self.sub_type, 'extension': self.extension})
 
-        # guess_type uses the extension to get a mime type
-        expected_mimetype, encoding = mimetypes.guess_type(self.src_path, strict=False)
-        if expected_mimetype is not None:
-            expected_extensions = mimetypes.guess_all_extensions(expected_mimetype,
-                                                                 strict=False)
+        # Check correlation known extension => actual mime type
+        if propertype.get(self.extension) is not None:
+            expected_mimetype = propertype.get(self.extension)
         else:
-            # the extension is unknown...
-            expected_extensions = None
+            expected_mimetype, encoding = mimetypes.guess_type(self.src_path, strict=False)
+            if aliases.get(expected_mimetype) is not None:
+                expected_mimetype = aliases.get(expected_mimetype)
 
-        return expected_mimetype, expected_extensions
+        is_known_extension = self.extension in mimetypes.types_map.keys()
+        if is_known_extension and expected_mimetype != mimetype:
+            self.log_details.update({'expected_mimetype': expected_mimetype})
+            self.make_dangerous()
 
-    def verify_extension(self):
-        '''Check if the extension is the one we expect'''
-        if self.expected_extensions is None:
-            return None
-        path, actual_extension = os.path.splitext(self.src_path)
-        return actual_extension in self.expected_extensions
+        # check correlation actual mime type => known extensions
+        if aliases.get(mimetype) is not None:
+            mimetype = aliases.get(mimetype)
+        expected_extensions = mimetypes.guess_all_extensions(mimetype, strict=False)
+        if expected_extensions is not None:
+            if len(self.extension) > 0 and self.extension not in expected_extensions:
+                self.log_details.update({'expected_mimetype': expected_extensions})
+                self.make_dangerous()
+        else:
+            # there are no known extensions associated to this mimetype.
+            pass
 
-    def verify_mime(self):
-        '''Check if the mime is the one we expect'''
-        if self.expected_mimetype is None:
-            return None
-        actual_mimetype = '{}/{}'.format(self.main_type, self.sub_type)
-        return actual_mimetype == self.expected_mimetype
+        self.is_recursive = False
 
 
 class KittenGroomer(KittenGroomerBase):
@@ -290,10 +300,6 @@ class KittenGroomer(KittenGroomerBase):
     def _media_processing(self):
         '''Generic way to process all the media files'''
         self.cur_log.fields(processing_type='media')
-        if not self.cur_file.verify_mime() or not self.cur_file.verify_extension():
-            # The extension is unknown or doesn't match the mime type => suspicious
-            # TODO: write details in the logfile
-            self.cur_file.make_dangerous()
         self._safe_copy()
 
     #######################

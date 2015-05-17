@@ -46,6 +46,9 @@ class FileBase(object):
             Prepending and appending DANGEROUS to the destination
             file name avoid double-click of death
         '''
+        if self.log_details.get('dangerous'):
+            # Already marked as dangerous, do nothing
+            return
         self.log_details['dangerous'] = True
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, 'DANGEROUS_{}_DANGEROUS'.format(filename))
@@ -56,6 +59,9 @@ class FileBase(object):
             a decision. Theuser will have to decide what to do.
             Prepending UNKNOWN
         '''
+        if self.log_details.get('dangerous') or self.log_details.get('binary'):
+            # Already marked as dangerous or binary, do nothing
+            return
         self.log_details['unknown'] = True
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, 'UNKNOWN_{}'.format(filename))
@@ -66,6 +72,9 @@ class FileBase(object):
             Appending .bin avoir double click of death but the user
             will have to decide by itself.
         '''
+        if self.log_details.get('dangerous'):
+            # Already marked as dangerous, do nothing
+            return
         self.log_details['binary'] = True
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, '{}.bin'.format(filename))
