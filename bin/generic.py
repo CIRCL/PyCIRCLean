@@ -334,7 +334,10 @@ class KittenGroomer(KittenGroomerBase):
 
             self.log_name.info('Processing {} ({}/{})', srcpath.replace(src_dir + '/', ''),
                                self.cur_file.main_type, self.cur_file.sub_type)
-            self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
+            if self.cur_file.log_details.get('dangerous') is None:
+                self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
+            else:
+                self._safe_copy()
             if not self.cur_file.is_recursive:
                 self._print_log()
 
