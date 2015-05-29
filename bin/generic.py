@@ -303,7 +303,7 @@ class KittenGroomer(KittenGroomerBase):
 
     def _media_processing(self):
         '''Generic way to process all the media files'''
-        self.cur_log.fields(processing_type='media')
+        self.cur_file.add_log_details('processing_type', 'media')
         self._safe_copy()
 
     #######################
