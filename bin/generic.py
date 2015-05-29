@@ -71,7 +71,7 @@ class File(FileBase):
         expected_extensions = mimetypes.guess_all_extensions(mimetype, strict=False)
         if expected_extensions is not None:
             if len(self.extension) > 0 and self.extension not in expected_extensions:
-                self.log_details.update({'expected_mimetype': expected_extensions})
+                self.log_details.update({'expected_extensions': expected_extensions})
                 self.make_dangerous()
         else:
             # there are no known extensions associated to this mimetype.
@@ -263,7 +263,7 @@ class KittenGroomer(KittenGroomerBase):
         self.cur_file.log_string += 'Archive extracted, processing content.'
         tmpdir = self.cur_file.dst_path + '_temp'
         self._safe_mkdir(tmpdir)
-        extract_command = '{} -p1 x {} -o{} -bd'.format(SEVENZ, self.cur_file.src_path, tmpdir)
+        extract_command = '{} -p1 x {} -o{} -bd -aoa'.format(SEVENZ, self.cur_file.src_path, tmpdir)
         self._run_process(extract_command)
         self.recursive += 1
         self.processdir(tmpdir, self.cur_file.dst_path)
