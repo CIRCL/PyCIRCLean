@@ -118,9 +118,8 @@ class KittenGroomer(KittenGroomerBase):
             'inode': self.inode,
         }
 
-        # Dirty trick to run libreoffice at least once and avoid unoconv to crash...
-        lo = LIBREOFFICE + ' --headless'
-        self._run_process(lo, 5)
+        unoconv_listener = UNOCONV + ' --listener'
+        self._run_process(unoconv_listener, background=True)
 
     # ##### Helpers #####
     def _init_subtypes_application(self, subtypes_application):
@@ -145,7 +144,7 @@ class KittenGroomer(KittenGroomerBase):
         else:
             tmp_log.debug(self.cur_file.log_string)
 
-    def _run_process(self, command_line, timeout=0):
+    def _run_process(self, command_line, timeout=0, background=False):
         '''Run subprocess, wait until it finishes'''
         if timeout != 0:
             deadline = time.time() + timeout
@@ -153,6 +152,10 @@ class KittenGroomer(KittenGroomerBase):
             deadline = None
         args = shlex.split(command_line)
         p = subprocess.Popen(args)
+        if background:
+            # FIXME: This timer is here to make sure the unoconv listener is properly started.
+            time.sleep(10)
+            return True
         while True:
             code = p.poll()
             if code is not None:
@@ -331,7 +334,10 @@ class KittenGroomer(KittenGroomerBase):
 
             self.log_name.info('Processing {} ({}/{})', srcpath.replace(src_dir + '/', ''),
                                self.cur_file.main_type, self.cur_file.sub_type)
-            self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
+            if self.cur_file.log_details.get('dangerous') is None:
+                self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
+            else:
+                self._safe_copy()
             if not self.cur_file.is_recursive:
                 self._print_log()
 

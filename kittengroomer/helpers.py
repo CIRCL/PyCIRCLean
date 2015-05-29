@@ -89,10 +89,10 @@ class KittenGroomerBase(object):
         self.src_root_dir = root_src
         self.dst_root_dir = root_dst
         self.log_root_dir = os.path.join(self.dst_root_dir, 'logs')
+        self._safe_mkdir(self.log_root_dir)
         self.log_processing = os.path.join(self.log_root_dir, 'processing.log')
 
-        # quickSetup(file=self.log_processing)
-        quickSetup()
+        quickSetup(file=self.log_processing)
         self.log_name = log.name('files')
 
         self.cur_file = None
