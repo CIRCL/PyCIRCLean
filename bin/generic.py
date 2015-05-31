@@ -19,7 +19,7 @@ SEVENZ = '/usr/bin/7z'
 # Prepare application/<subtype>
 mimes_office = ['msword', 'vnd.openxmlformats-officedocument.', 'vnd.ms-',
                 'vnd.oasis.opendocument']
-mimes_pdf = ['pdf']
+mimes_pdf = ['pdf', 'postscript']
 mimes_xml = ['xml']
 mimes_ms = ['x-dosexec']
 mimes_compressed = ['zip', 'x-rar', 'x-bzip2', 'x-lzip', 'x-lzma', 'x-lzop',
@@ -49,8 +49,12 @@ class File(FileBase):
         mimetype = magic.from_file(src_path, mime=True).decode("utf-8")
         self.main_type, self.sub_type = mimetype.split('/')
         a, self.extension = os.path.splitext(src_path)
+        self.is_recursive = False
 
         self.log_details.update({'maintype': self.main_type, 'subtype': self.sub_type, 'extension': self.extension})
+        # If the mimetype matches as text/*, it will be sent to LibreOffice, no need to cross check the mime/ext
+        if self.main_type == 'text':
+            return
 
         # Check correlation known extension => actual mime type
         if propertype.get(self.extension) is not None:
@@ -76,8 +80,6 @@ class File(FileBase):
         else:
             # there are no known extensions associated to this mimetype.
             pass
-
-        self.is_recursive = False
 
 
 class KittenGroomer(KittenGroomerBase):
@@ -253,9 +255,13 @@ class KittenGroomer(KittenGroomerBase):
         tmpdir = os.path.join(dst_dir, 'temp')
         tmppath = os.path.join(tmpdir, filename)
         self._safe_mkdir(tmpdir)
-        gs_command = '{} -dPDFA -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile={} {}'.format(
-            GS, tmppath, self.cur_file.src_path)
+        # The magic comes from here: http://svn.ghostscript.com/ghostscript/trunk/gs/doc/Ps2pdf.htm#PDFA
+        curdir = os.getcwd()
+        os.chdir(self.ressources_path)
+        gs_command = '{} -dPDFA -dBATCH -dNOPAUSE -dNOOUTERSAVE -sProcessColorModel=DeviceCMYK -sDEVICE=pdfwrite -sPDFACompatibilityPolicy=1 -sOutputFile={} PDFA_def.ps {}'.format(
+            GS, os.path.join(curdir, tmppath), os.path.join(curdir, self.cur_file.src_path))
         self._run_process(gs_command)
+        os.chdir(curdir)
         self._pdfa(tmppath)
         self._safe_rmtree(tmpdir)
 

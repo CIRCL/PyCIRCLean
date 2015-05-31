@@ -12,6 +12,8 @@ setup(
     description='Standalone CIRCLean/KittenGroomer code.',
     packages=['kittengroomer'],
     scripts=['bin/generic.py', 'bin/pier9.py'],
+    include_package_data = True,
+    package_data = {'data': ['PDFA_def.ps','srgb.icc']},
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Development Status :: 5 - Production/Stable',

@@ -94,6 +94,8 @@ class KittenGroomerBase(object):
 
         quickSetup(file=self.log_processing)
         self.log_name = log.name('files')
+        self.ressources_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
+        os.environ["PATH"] += os.pathsep + self.ressources_path
 
         self.cur_file = None
 
@@ -113,12 +115,16 @@ class KittenGroomerBase(object):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    def _safe_copy(self):
+    def _safe_copy(self, src=None, dst=None):
         ''' Copy a file and create directory if needed '''
+        if src is None:
+            src = self.cur_file.src_path
+        if dst is None:
+            dst = self.cur_file.dst_path
         try:
-            dst_path, filename = os.path.split(self.cur_file.dst_path)
+            dst_path, filename = os.path.split(dst)
             self._safe_mkdir(dst_path)
-            shutil.copy(self.cur_file.src_path, self.cur_file.dst_path)
+            shutil.copy(src, dst)
             return True
         except Exception as e:
             # TODO: Logfile
