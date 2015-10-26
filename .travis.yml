@@ -8,9 +8,9 @@ python:
     - "nightly"
 
 install:
-    - pip install --user python-magic
-    - pip install --user coveralls
-    - pip install --user codecov
+    - pip install python-magic
+    - pip install coveralls
+    - pip install codecov
     - python setup.py -q install
 
 script:
