@@ -56,6 +56,8 @@ class KittenGroomerSpec(KittenGroomerBase):
             self.log_name.info('Processing {}', srcpath.replace(self.src_root_dir + '/', ''))
             self.cur_file = FileSpec(srcpath, srcpath.replace(self.src_root_dir, self.dst_root_dir))
             expected_mime = self.valid_files.get(self.cur_file.extension)
+            compare_ext = None
+            compare_mime = None
             if expected_mime is None:
                 # Unexpected extension => disallowed
                 valid = False
