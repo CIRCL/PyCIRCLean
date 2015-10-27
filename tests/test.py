@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+import os
 
 from bin.specific import KittenGroomerSpec
 from bin.pier9 import KittenGroomerPier9
@@ -14,17 +15,24 @@ class TestBasic(unittest.TestCase):
 
     def setUp(self):
         self.maxDiff = None
+        self.curpath = os.getcwd()
 
     def test_specific(self):
-        spec = KittenGroomerSpec('tests/src', 'tests/dst')
+        src = os.path.join(self.curpath, 'tests/src')
+        dst = os.path.join(self.curpath, 'tests/dst')
+        spec = KittenGroomerSpec(src, dst)
         spec.processdir()
 
     def test_pier9(self):
-        spec = KittenGroomerPier9('tests/src', 'tests/dst')
+        src = os.path.join(self.curpath, 'tests/src')
+        dst = os.path.join(self.curpath, 'tests/dst')
+        spec = KittenGroomerPier9(src, dst)
         spec.processdir()
 
     def test_generic(self):
-        spec = KittenGroomer('tests/src', 'tests/dst')
+        src = os.path.join(self.curpath, 'tests/src')
+        dst = os.path.join(self.curpath, 'tests/dst')
+        spec = KittenGroomer(src, dst)
         spec.processdir()
 
     def test_help_file(self):
