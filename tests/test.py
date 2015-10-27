@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import subprocess
-import time
+
+from bin.specific import KittenGroomerSpec
 
 
 class TestBasic(unittest.TestCase):
@@ -12,11 +12,5 @@ class TestBasic(unittest.TestCase):
         self.maxDiff = None
 
     def test_specific(self):
-        p = subprocess.Popen(['specific.py', '-s', 'tests/src', '-d', 'tests/dst'])
-        while True:
-            p.poll()
-            print(p.returncode)
-            if p.returncode is None:
-                time.sleep(1)
-            else:
-                return
+        spec = KittenGroomerSpec('tests/src', 'tests/dst')
+        spec.processdir()
