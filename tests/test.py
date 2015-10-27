@@ -7,6 +7,8 @@ from bin.specific import KittenGroomerSpec
 from bin.pier9 import KittenGroomerPier9
 from bin.generic import KittenGroomer
 
+from kittengroomer import FileBase
+
 
 class TestBasic(unittest.TestCase):
 
@@ -24,3 +26,12 @@ class TestBasic(unittest.TestCase):
     def test_generic(self):
         spec = KittenGroomer('tests/src', 'tests/dst')
         spec.processdir()
+
+    def test_help_file(self):
+        f = FileBase('tests/src/blah.conf', 'tests/dst/blah.conf')
+        f.make_unknown()
+        f.make_binary()
+        f.make_unknown()
+        f.make_dangerous()
+        f.make_binary()
+        f.make_dangerous()
