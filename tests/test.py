@@ -17,7 +17,13 @@ class TestBasic(unittest.TestCase):
         self.maxDiff = None
         self.curpath = os.getcwd()
 
-    def test_specific(self):
+    def test_specific_valid(self):
+        src = os.path.join(self.curpath, 'tests/src2')
+        dst = os.path.join(self.curpath, 'tests/dst')
+        spec = KittenGroomerSpec(src, dst)
+        spec.processdir()
+
+    def test_specific_invalid(self):
         src = os.path.join(self.curpath, 'tests/src')
         dst = os.path.join(self.curpath, 'tests/dst')
         spec = KittenGroomerSpec(src, dst)
