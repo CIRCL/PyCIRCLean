@@ -14,9 +14,9 @@ python build.py install
 # How to use PyCIRCLean
 
 PyCIRCLean is a simple Python library to handle file checking and sanitization. PyCIRCLean purpose is to have a simple library that can be
-overloaded to cover specific checking and sanitization workflows in different organizations like industrial environment or restricted or classified ICT environment. A series of practical example are in the [./bin](./bin) directory.
+overloaded to cover specific checking and sanitization workflows in different organizations like industrial environment or restricted/classified ICT environment. A series of practical example are in the [./bin](./bin) directory.
 
-The following simple example using PyCIRCLean will only copy files with .conf extension matching the 'text/plain' MIME type. If any other file is found on the original keys, the files won't be copied.
+The following simple example using PyCIRCLean will only copy files with .conf extension matching the 'text/plain' MIME type. If any other file is found on the original USB key (source directory), the files won't be copied to the destination directory.
 
 ~~~python
 #!/usr/bin/env python
@@ -114,6 +114,7 @@ if __name__ == '__main__':
 
 # License
 
+~~~
 Copyright (C) 2013-2015 Raphaël Vinot
 Copyright (C) 2013-2015 CIRCL - Computer Incident Response Center Luxembourg (℅ smile gie)
 All rights reserved.
@@ -139,3 +140,4 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+~~~
