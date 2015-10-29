@@ -111,6 +111,12 @@ if __name__ == '__main__':
     exit(0)
 ~~~
 
+# How to contribute
+
+We welcome contributions (including bug fixes, new code workflows) via pull requests. We are interested in any new workflows
+that can be used to improve security in different organizations. If you see any potential enhancement required to support
+your sanitization workflow, feel free to open an issue.
+
 
 # License
 
