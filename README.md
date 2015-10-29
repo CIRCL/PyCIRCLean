@@ -7,8 +7,8 @@ from hostile environments to trusted environments.
 # Installation
 
 ~~~
-python build.py build
-python build.py install
+python setup.py build
+python setup.py install
 ~~~
 
 # How to use PyCIRCLean
