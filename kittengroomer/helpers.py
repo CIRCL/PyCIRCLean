@@ -79,6 +79,11 @@ class FileBase(object):
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, '{}.bin'.format(filename))
 
+    def force_ext(self, ext):
+        if not self.dst_path.endswith(ext):
+            self.log_details['force_ext'] = True
+            self.dst_path += ext
+
 
 class KittenGroomerBase(object):
 
