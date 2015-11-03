@@ -308,7 +308,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         '''Way to process PDF file'''
         self.cur_file.add_log_details('processing_type', 'pdf')
         xmlDoc = PDFiD(self.cur_file.src_path)
-        oPDFiD = cPDFiD(xmlDoc)
+        oPDFiD = cPDFiD(xmlDoc, True)
         # TODO: other keywords?
         if oPDFiD.encrypt > 0:
             self.cur_file.add_log_details('encrypted', True)
