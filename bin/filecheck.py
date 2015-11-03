@@ -52,14 +52,16 @@ class File(FileBase):
         super(File, self).__init__(src_path, dst_path)
 
         mimetype = magic.from_file(src_path, mime=True).decode("utf-8")
-        self.main_type, self.sub_type = mimetype.split('/')
+        try:
+            self.main_type, self.sub_type = mimetype.split('/')
+        except Exception as e:
+            # FIXME/TEMP: checking what happen, probably bad.
+            print(e, src_path, mimetype)
+            return
         a, self.extension = os.path.splitext(src_path)
         self.is_recursive = False
 
         self.log_details.update({'maintype': self.main_type, 'subtype': self.sub_type, 'extension': self.extension})
-        # If the mimetype matches as text/*, it will be sent to LibreOffice, no need to cross check the mime/ext
-        if self.main_type == 'text':
-            return
 
         # Check correlation known extension => actual mime type
         if propertype.get(self.extension) is not None:

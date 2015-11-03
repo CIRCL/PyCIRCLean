@@ -37,9 +37,11 @@ install:
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
     - python setup.py -q install
-    - pushd tests/src
-    - git clone https://github.com/ytisf/theZoo.git
+    - git clone https://github.com/Rafiot/theZoo.git
+    - pushd theZoo/malwares/Binaries
+    - python unpackall.py
     - popd
+    - mv theZoo/malwares/Binaries/out tests/src/
 
 script:
     - coverage run setup.py test
