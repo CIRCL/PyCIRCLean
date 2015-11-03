@@ -86,7 +86,7 @@ class File(FileBase):
             pass
 
 
-class KittenGroomer(KittenGroomerBase):
+class KittenGroomerFileCheck(KittenGroomerBase):
 
     def __init__(self, root_src=None, root_dst=None, max_recursive=5):
         '''
@@ -96,7 +96,7 @@ class KittenGroomer(KittenGroomerBase):
             root_src = os.path.join(os.sep, 'media', 'src')
         if root_dst is None:
             root_dst = os.path.join(os.sep, 'media', 'dst')
-        super(KittenGroomer, self).__init__(root_src, root_dst)
+        super(KittenGroomerFileCheck, self).__init__(root_src, root_dst)
 
         self.recursive = 0
         self.max_recursive = max_recursive
@@ -409,4 +409,4 @@ class KittenGroomer(KittenGroomerBase):
                 self._print_log()
 
 if __name__ == '__main__':
-    main(KittenGroomer, 'Generic version of the KittenGroomer. Convert and rename files.')
+    main(KittenGroomerFileCheck, 'Generic version of the KittenGroomer. Convert and rename files.')

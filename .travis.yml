@@ -31,6 +31,8 @@ install:
     - pip install python-magic
     - pip install coveralls
     - pip install codecov
+    - pip install officedissector
+    - if [ $(python -c 'import sys; print(sys.version_info.major)') == '2' ]; then pip install oletools olefile ; fi
     - python setup.py -q install
 
 script:
