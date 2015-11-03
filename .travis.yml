@@ -37,6 +37,9 @@ install:
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
     - python setup.py -q install
+    - pushd tests/src
+    - git clone https://github.com/ytisf/theZoo.git
+    - popd
 
 script:
     - coverage run setup.py test
