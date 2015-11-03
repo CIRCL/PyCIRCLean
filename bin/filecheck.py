@@ -6,6 +6,7 @@ import mimetypes
 import shlex
 import subprocess
 import time
+import zipfile
 
 import oletools.oleid
 import olefile
@@ -301,7 +302,17 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     def _libreoffice(self):
         self.cur_file.add_log_details('processing_type', 'libreoffice')
         # As long as there ar no way to do a sanity check on the files => dangerous
-        self.cur_file.make_dangerous()
+        try:
+            lodoc = zipfile.ZipFile(self.cur_file.src_path, 'r')
+        except:
+            self.cur_file.add_log_details('invalid', True)
+            self.cur_file.make_dangerous()
+        for f in lodoc.infolist():
+            fname = f.filename.lower()
+            if fname.startswith('script') or fname.startswith('basic') or \
+                    fname.startswith('object') or fname.endswith('.bin'):
+                self.cur_file.add_log_details('macro', True)
+                self.cur_file.make_dangerous()
         self._safe_copy()
 
     def _pdf(self):
