@@ -21,29 +21,37 @@ class TestBasic(unittest.TestCase):
         self.maxDiff = None
         self.curpath = os.getcwd()
 
+    def dump_logs(self):
+        logfile = os.path.join(self.curpath, 'tests/dst/logs/processing.log')
+        print(open(logfile, 'rb').read())
+
     def test_specific_valid(self):
         src = os.path.join(self.curpath, 'tests/src2')
         dst = os.path.join(self.curpath, 'tests/dst')
         spec = KittenGroomerSpec(src, dst)
         spec.processdir()
+        self.dump_logs()
 
     def test_specific_invalid(self):
         src = os.path.join(self.curpath, 'tests/src')
         dst = os.path.join(self.curpath, 'tests/dst')
         spec = KittenGroomerSpec(src, dst)
         spec.processdir()
+        self.dump_logs()
 
     def test_pier9(self):
         src = os.path.join(self.curpath, 'tests/src')
         dst = os.path.join(self.curpath, 'tests/dst')
         spec = KittenGroomerPier9(src, dst)
         spec.processdir()
+        self.dump_logs()
 
     def test_generic(self):
         src = os.path.join(self.curpath, 'tests/src')
         dst = os.path.join(self.curpath, 'tests/dst')
         spec = KittenGroomer(src, dst)
         spec.processdir()
+        self.dump_logs()
 
     def test_filecheck(self):
         if sys.version_info.major >= 3:
@@ -52,6 +60,7 @@ class TestBasic(unittest.TestCase):
         dst = os.path.join(self.curpath, 'tests/dst')
         spec = KittenGroomerFileCheck(src, dst)
         spec.processdir()
+        self.dump_logs()
 
     def test_help_file(self):
         f = FileBase('tests/src/blah.conf', 'tests/dst/blah.conf')
