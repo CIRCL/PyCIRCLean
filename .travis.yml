@@ -29,10 +29,13 @@ install:
     - sudo make install
     - popd
     - pip install python-magic
-    - pip install coveralls
-    - pip install codecov
+    - pip install lxml
     - pip install officedissector
     - if [ $(python -c 'import sys; print(sys.version_info.major)') == '2' ]; then pip install oletools olefile ; fi
+    - pip install coveralls
+    - pip install codecov
+    - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
+    - unzip pdfid_v0_2_1.zip
     - python setup.py -q install
 
 script:

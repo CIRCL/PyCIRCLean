@@ -8,7 +8,9 @@ import sys
 from bin.specific import KittenGroomerSpec
 from bin.pier9 import KittenGroomerPier9
 from bin.generic import KittenGroomer
-from bin.filecheck import KittenGroomerFileCheck
+
+if sys.version_info.major == 2:
+    from bin.filecheck import KittenGroomerFileCheck
 
 from kittengroomer import FileBase
 
