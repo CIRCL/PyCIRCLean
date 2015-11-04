@@ -87,7 +87,7 @@ class FileBase(object):
 
 class KittenGroomerBase(object):
 
-    def __init__(self, root_src, root_dst):
+    def __init__(self, root_src, root_dst, debug=False):
         '''
             Setup the base options of the copy/convert setup
         '''
@@ -104,6 +104,14 @@ class KittenGroomerBase(object):
         os.environ["PATH"] += os.pathsep + self.ressources_path
 
         self.cur_file = None
+
+        self.debug = debug
+        if self.debug:
+            self.log_debug_err = os.path.join(self.log_root_dir, 'debug_stderr.log')
+            self.log_debug_out = os.path.join(self.log_root_dir, 'debug_stdout.log')
+        else:
+            self.log_debug_err = os.devnull
+            self.log_debug_out = os.devnull
 
     # ##### Helpers #####
     def _safe_rmtree(self, directory):

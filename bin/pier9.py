@@ -25,7 +25,7 @@ class FilePier9(FileBase):
 
 class KittenGroomerPier9(KittenGroomerBase):
 
-    def __init__(self, root_src=None, root_dst=None):
+    def __init__(self, root_src=None, root_dst=None, debug=False):
         '''
             Initialize the basics of the copy
         '''
@@ -33,7 +33,7 @@ class KittenGroomerPier9(KittenGroomerBase):
             root_src = os.path.join(os.sep, 'media', 'src')
         if root_dst is None:
             root_dst = os.path.join(os.sep, 'media', 'dst')
-        super(KittenGroomerPier9, self).__init__(root_src, root_dst)
+        super(KittenGroomerPier9, self).__init__(root_src, root_dst, debug)
 
         # The initial version will accept all the file extension for all the machines.
         self.authorized_extensions = printers + cnc + shopbot + omax + epilog_laser + metabeam + up

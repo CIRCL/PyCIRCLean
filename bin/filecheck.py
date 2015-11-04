@@ -44,6 +44,24 @@ aliases = {
 # It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
 propertype = {'.gz': 'application/gzip'}
 
+# Commonly used malicious extensions
+# Sources: http://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
+mal_ext = (
+    # Applications
+    ".exe", ".pif", ".application", ".gadget", ".msi", ".msp", ".com", ".scr",
+    ".hta", ".cpl", ".msc", ".jar",
+    # Scripts
+    ".bat", ".cmd", ".vb", ".vbs", ".vbe", ".js", ".jse", ".ws", ".wsf",
+    ".wsc", ".wsh", ".ps1", ".ps1xml", ".ps2", ".ps2xml", ".psc1", ".psc2",
+    ".msh", ".msh1", ".msh2", ".mshxml", ".msh1xml", ".msh2xml",
+    # Shortcuts
+    ".scf", ".lnk", ".inf",
+    # Other
+    ".reg", "dll",
+    # Office macro (OOXML with macro enabled)
+    ".docm", ".dotm", ".xlsm", ".xltm", ".xlam", ".pptm", ".potm", ".ppam",
+    ".ppsm", ".sldm",)
+
 
 class File(FileBase):
 
@@ -51,15 +69,26 @@ class File(FileBase):
         ''' Init file object, set the mimetype '''
         super(File, self).__init__(src_path, dst_path)
 
-        mimetype = magic.from_file(src_path, mime=True).decode("utf-8")
-        try:
-            self.main_type, self.sub_type = mimetype.split('/')
-        except Exception as e:
-            # FIXME/TEMP: checking what happen, probably bad.
-            print(e, src_path, mimetype)
-            return
-        a, self.extension = os.path.splitext(src_path)
         self.is_recursive = False
+        try:
+            mimetype = magic.from_file(src_path, mime=True).decode("utf-8")
+            self.main_type, self.sub_type = mimetype.split('/')
+        except:
+            # FIXME/TEMP: checking what happen, probably bad.
+            print(src_path, mimetype)
+            self.log_details.update({'broken_mime': self.extension})
+            self.make_dangerous()
+            return
+
+        a, self.extension = os.path.splitext(src_path)
+        if self.extension in mal_ext:
+            self.log_details.update({'malicious_extension': self.extension})
+            self.make_dangerous()
+            return
+        elif self.extension == '':
+            self.log_details.update({'no_extension': self.extension})
+            self.make_dangerous()
+            return
 
         self.log_details.update({'maintype': self.main_type, 'subtype': self.sub_type, 'extension': self.extension})
 
@@ -91,7 +120,7 @@ class File(FileBase):
 
 class KittenGroomerFileCheck(KittenGroomerBase):
 
-    def __init__(self, root_src=None, root_dst=None, max_recursive=5):
+    def __init__(self, root_src=None, root_dst=None, max_recursive=5, debug=False):
         '''
             Initialize the basics of the conversion process
         '''
@@ -99,7 +128,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             root_src = os.path.join(os.sep, 'media', 'src')
         if root_dst is None:
             root_dst = os.path.join(os.sep, 'media', 'dst')
-        super(KittenGroomerFileCheck, self).__init__(root_src, root_dst)
+        super(KittenGroomerFileCheck, self).__init__(root_src, root_dst, debug)
 
         self.recursive = 0
         self.max_recursive = max_recursive
@@ -160,7 +189,8 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         else:
             deadline = None
         args = shlex.split(command_line)
-        p = subprocess.Popen(args)
+        with open(self.log_debug_err, 'wb') as stderr, open(self.log_debug_out, 'wb') as stdout:
+            p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
         if background:
             # This timer is here to make sure the unoconv listener is properly started.
             time.sleep(10)

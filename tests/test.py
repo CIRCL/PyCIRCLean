@@ -21,46 +21,50 @@ class TestBasic(unittest.TestCase):
         self.maxDiff = None
         self.curpath = os.getcwd()
 
-    def dump_logs(self):
-        logfile = os.path.join(self.curpath, 'tests/dst/logs/processing.log')
-        print(open(logfile, 'rb').read())
+    def dump_logs(self, kg):
+        print(open(kg.log_processing, 'rb').read().decode("utf-8"))
+        if kg.debug:
+            if os.path.exists(kg.log_debug_err):
+                print(open(kg.log_debug_err, 'rb').read().decode("utf-8"))
+            if os.path.exists(kg.log_debug_out):
+                print(open(kg.log_debug_out, 'rb').read().decode("utf-8"))
 
     def test_specific_valid(self):
         src = os.path.join(self.curpath, 'tests/src2')
         dst = os.path.join(self.curpath, 'tests/dst')
-        spec = KittenGroomerSpec(src, dst)
+        spec = KittenGroomerSpec(src, dst, debug=True)
         spec.processdir()
-        self.dump_logs()
+        self.dump_logs(spec)
 
     def test_specific_invalid(self):
         src = os.path.join(self.curpath, 'tests/src')
         dst = os.path.join(self.curpath, 'tests/dst')
-        spec = KittenGroomerSpec(src, dst)
+        spec = KittenGroomerSpec(src, dst, debug=True)
         spec.processdir()
-        self.dump_logs()
+        self.dump_logs(spec)
 
     def test_pier9(self):
         src = os.path.join(self.curpath, 'tests/src')
         dst = os.path.join(self.curpath, 'tests/dst')
-        spec = KittenGroomerPier9(src, dst)
+        spec = KittenGroomerPier9(src, dst, debug=True)
         spec.processdir()
-        self.dump_logs()
+        self.dump_logs(spec)
 
     def test_generic(self):
         src = os.path.join(self.curpath, 'tests/src')
         dst = os.path.join(self.curpath, 'tests/dst')
-        spec = KittenGroomer(src, dst)
+        spec = KittenGroomer(src, dst, debug=True)
         spec.processdir()
-        self.dump_logs()
+        self.dump_logs(spec)
 
     def test_filecheck(self):
         if sys.version_info.major >= 3:
             return
         src = os.path.join(self.curpath, 'tests/src')
         dst = os.path.join(self.curpath, 'tests/dst')
-        spec = KittenGroomerFileCheck(src, dst)
+        spec = KittenGroomerFileCheck(src, dst, debug=True)
         spec.processdir()
-        self.dump_logs()
+        self.dump_logs(spec)
 
     def test_help_file(self):
         f = FileBase('tests/src/blah.conf', 'tests/dst/blah.conf')

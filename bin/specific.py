@@ -16,12 +16,15 @@ class FileSpec(FileBase):
         ''' Init file object, set the extension '''
         super(FileSpec, self).__init__(src_path, dst_path)
         a, self.extension = os.path.splitext(self.src_path)
-        self.mimetype = magic.from_file(self.src_path, mime=True).decode("utf-8")
+        try:
+            self.mimetype = magic.from_file(self.src_path, mime=True).decode("utf-8")
+        except:
+            print('************************** BROKEN', self.src_path)
 
 
 class KittenGroomerSpec(KittenGroomerBase):
 
-    def __init__(self, root_src=None, root_dst=None):
+    def __init__(self, root_src=None, root_dst=None, debug=False):
         '''
             Initialize the basics of the copy
         '''
@@ -29,7 +32,7 @@ class KittenGroomerSpec(KittenGroomerBase):
             root_src = os.path.join(os.sep, 'media', 'src')
         if root_dst is None:
             root_dst = os.path.join(os.sep, 'media', 'dst')
-        super(KittenGroomerSpec, self).__init__(root_src, root_dst)
+        super(KittenGroomerSpec, self).__init__(root_src, root_dst, debug)
         self.valid_files = {}
 
         # The initial version will only accept the file extensions/mimetypes listed here.

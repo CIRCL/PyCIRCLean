@@ -46,10 +46,19 @@ class File(FileBase):
         ''' Init file object, set the mimetype '''
         super(File, self).__init__(src_path, dst_path)
 
-        mimetype = magic.from_file(src_path, mime=True).decode("utf-8")
+        self.is_recursive = False
+        self.main_type = ''
+        self.main_type = ''
+        try:
+            mimetype = magic.from_file(src_path, mime=True).decode("utf-8")
+        except Exception as e:
+            print('************************** BROKEN', self.src_path)
+            print('************************** BROKEN', self.src_path, e)
+            self.make_dangerous()
+            return
+
         self.main_type, self.sub_type = mimetype.split('/')
         a, self.extension = os.path.splitext(src_path)
-        self.is_recursive = False
 
         self.log_details.update({'maintype': self.main_type, 'subtype': self.sub_type, 'extension': self.extension})
         # If the mimetype matches as text/*, it will be sent to LibreOffice, no need to cross check the mime/ext
@@ -84,7 +93,7 @@ class File(FileBase):
 
 class KittenGroomer(KittenGroomerBase):
 
-    def __init__(self, root_src=None, root_dst=None, max_recursive=5):
+    def __init__(self, root_src=None, root_dst=None, max_recursive=5, debug=False):
         '''
             Initialize the basics of the conversion process
         '''
@@ -92,7 +101,7 @@ class KittenGroomer(KittenGroomerBase):
             root_src = os.path.join(os.sep, 'media', 'src')
         if root_dst is None:
             root_dst = os.path.join(os.sep, 'media', 'dst')
-        super(KittenGroomer, self).__init__(root_src, root_dst)
+        super(KittenGroomer, self).__init__(root_src, root_dst, debug)
 
         self.recursive = 0
         self.max_recursive = max_recursive
@@ -153,7 +162,8 @@ class KittenGroomer(KittenGroomerBase):
         else:
             deadline = None
         args = shlex.split(command_line)
-        p = subprocess.Popen(args)
+        with open(self.log_debug_err, 'wb') as stderr, open(self.log_debug_out, 'wb') as stdout:
+            p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
         if background:
             # FIXME: This timer is here to make sure the unoconv listener is properly started.
             time.sleep(10)
