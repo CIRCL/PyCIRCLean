@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import magic
 import os
 import mimetypes
 import shlex
@@ -47,23 +46,17 @@ class File(FileBase):
         super(File, self).__init__(src_path, dst_path)
 
         self.is_recursive = False
-        self.main_type = ''
-        self.main_type = ''
-        try:
-            mimetype = magic.from_file(src_path, mime=True)
-            try:
-                mimetype = mimetype.decode("utf-8")
-            except:
-                pass
-        except Exception as e:
-            print('************************** BROKEN', self.src_path, e)
+        if not self.has_mimetype():
+            # No mimetype, should not happen.
             self.make_dangerous()
+
+        if self.is_dangerous():
             return
 
-        self.main_type, self.sub_type = mimetype.split('/')
-        a, self.extension = os.path.splitext(src_path)
+        self.log_details.update({'maintype': self.main_type,
+                                 'subtype': self.sub_type,
+                                 'extension': self.extension})
 
-        self.log_details.update({'maintype': self.main_type, 'subtype': self.sub_type, 'extension': self.extension})
         # If the mimetype matches as text/*, it will be sent to LibreOffice, no need to cross check the mime/ext
         if self.main_type == 'text':
             return
@@ -77,13 +70,15 @@ class File(FileBase):
                 expected_mimetype = aliases.get(expected_mimetype)
 
         is_known_extension = self.extension in mimetypes.types_map.keys()
-        if is_known_extension and expected_mimetype != mimetype:
+        if is_known_extension and expected_mimetype != self.mimetype:
             self.log_details.update({'expected_mimetype': expected_mimetype})
             self.make_dangerous()
 
         # check correlation actual mime type => known extensions
-        if aliases.get(mimetype) is not None:
-            mimetype = aliases.get(mimetype)
+        if aliases.get(self.mimetype) is not None:
+            mimetype = aliases.get(self.mimetype)
+        else:
+            mimetype = self.mimetype
         expected_extensions = mimetypes.guess_all_extensions(mimetype, strict=False)
         if expected_extensions:
             if len(self.extension) > 0 and self.extension not in expected_extensions:
@@ -151,7 +146,7 @@ class KittenGroomer(KittenGroomerBase):
             Print the logs related to the current file being processed
         '''
         tmp_log = self.log_name.fields(**self.cur_file.log_details)
-        if self.cur_file.log_details.get('dangerous'):
+        if self.cur_file.is_dangerous():
             tmp_log.warning(self.cur_file.log_string)
         elif self.cur_file.log_details.get('unknown') or self.cur_file.log_details.get('binary'):
             tmp_log.info(self.cur_file.log_string)
@@ -165,7 +160,7 @@ class KittenGroomer(KittenGroomerBase):
         else:
             deadline = None
         args = shlex.split(command_line)
-        with open(self.log_debug_err, 'wb') as stderr, open(self.log_debug_out, 'wb') as stdout:
+        with open(self.log_debug_err, 'ab') as stderr, open(self.log_debug_out, 'ab') as stdout:
             p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
         if background:
             # FIXME: This timer is here to make sure the unoconv listener is properly started.
@@ -353,7 +348,7 @@ class KittenGroomer(KittenGroomerBase):
 
             self.log_name.info('Processing {} ({}/{})', srcpath.replace(src_dir + '/', ''),
                                self.cur_file.main_type, self.cur_file.sub_type)
-            if self.cur_file.log_details.get('dangerous') is None:
+            if not self.cur_file.is_dangerous():
                 self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
             else:
                 self._safe_copy()

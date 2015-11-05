@@ -20,7 +20,9 @@ class FilePier9(FileBase):
     def __init__(self, src_path, dst_path):
         ''' Init file object, set the extension '''
         super(FilePier9, self).__init__(src_path, dst_path)
-        a, self.extension = os.path.splitext(self.src_path)
+
+        if not self.has_extension():
+            self.make_dangerous()
 
 
 class KittenGroomerPier9(KittenGroomerBase):
@@ -55,12 +57,16 @@ class KittenGroomerPier9(KittenGroomerBase):
         for srcpath in self._list_all_files(self.src_root_dir):
             self.log_name.info('Processing {}', srcpath.replace(self.src_root_dir + '/', ''))
             self.cur_file = FilePier9(srcpath, srcpath.replace(self.src_root_dir, self.dst_root_dir))
-            if self.cur_file.extension in self.authorized_extensions:
+            if not self.cur_file.is_dangerous() and self.cur_file.extension in self.authorized_extensions:
                 self.cur_file.add_log_details('valid', True)
                 self.cur_file.log_string = 'Expected extension: ' + self.cur_file.extension
                 self._safe_copy()
             else:
-                self.cur_file.log_string = 'Bad extension: ' + self.cur_file.extension
+                self.cur_file.make_dangerous()
+                if self.cur_file.extension:
+                    self.cur_file.log_string = 'Bad extension: ' + self.cur_file.extension
+                else:
+                    self.cur_file.log_string = 'No Extension.'
             self._print_log()
 
 

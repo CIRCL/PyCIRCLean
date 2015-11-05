@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-import magic
 
 from kittengroomer import FileBase, KittenGroomerBase, main
 
@@ -15,15 +14,12 @@ class FileSpec(FileBase):
     def __init__(self, src_path, dst_path):
         ''' Init file object, set the extension '''
         super(FileSpec, self).__init__(src_path, dst_path)
-        a, self.extension = os.path.splitext(self.src_path)
-        try:
-            self.mimetype = magic.from_file(self.src_path, mime=True)
-            try:
-                self.imetype = self.mimetype.decode("utf-8")
-            except:
-                pass
-        except Exception as e:
-            print('************************** BROKEN', self.src_path, e)
+
+        if not self.has_mimetype():
+            self.make_dangerous()
+
+        if not self.has_extension():
+            self.make_dangerous()
 
 
 class KittenGroomerSpec(KittenGroomerBase):
@@ -62,27 +58,33 @@ class KittenGroomerSpec(KittenGroomerBase):
             valid = True
             self.log_name.info('Processing {}', srcpath.replace(self.src_root_dir + '/', ''))
             self.cur_file = FileSpec(srcpath, srcpath.replace(self.src_root_dir, self.dst_root_dir))
-            expected_mime = self.valid_files.get(self.cur_file.extension)
-            compare_ext = None
-            compare_mime = None
-            if expected_mime is None:
-                # Unexpected extension => disallowed
+            if self.cur_file.is_dangerous():
                 valid = False
-                compare_ext = 'Extension: {} - Expected: {}'.format(self.cur_file.extension, ', '.join(self.valid_files.keys()))
-            elif self.cur_file.mimetype != expected_mime:
-                # Unexpected mimetype => dissalowed
-                valid = False
-                compare_mime = 'Mime: {} - Expected: {}'.format(self.cur_file.mimetype, expected_mime)
-            self.cur_file.add_log_details('valid', valid)
-            if valid:
-                to_copy.append(self.cur_file)
-                self.cur_file.log_string = 'Extension: {} - MimeType: {}'.format(self.cur_file.extension, self.cur_file.mimetype)
-            else:
                 error.append(self.cur_file)
-                if compare_ext is not None:
-                    self.cur_file.log_string = compare_ext
+            else:
+                expected_mime = self.valid_files.get(self.cur_file.extension)
+                compare_ext = ''
+                compare_mime = ''
+                if expected_mime is None:
+                    # Unexpected extension => disallowed
+                    valid = False
+                    compare_ext = 'Extension: {} - Expected: {}'.format(self.cur_file.extension, ', '.join(self.valid_files.keys()))
+                elif self.cur_file.mimetype != expected_mime:
+                    # Unexpected mimetype => dissalowed
+                    valid = False
+                    compare_mime = 'Mime: {} - Expected: {}'.format(self.cur_file.mimetype, expected_mime)
+
+                if valid:
+                    to_copy.append(self.cur_file)
+                    self.cur_file.log_string = 'Extension: {} - MimeType: {}'.format(self.cur_file.extension, self.cur_file.mimetype)
                 else:
-                    self.cur_file.log_string = compare_mime
+                    error.append(self.cur_file)
+                    if compare_ext:
+                        self.cur_file.log_string = compare_ext
+                    else:
+                        self.cur_file.log_string = compare_mime
+            self.cur_file.add_log_details('valid', valid)
+
         if len(error) > 0:
             for f in error + to_copy:
                 self.cur_file = f

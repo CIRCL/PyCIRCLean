@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import magic
 import os
 import mimetypes
 import shlex
@@ -70,27 +69,23 @@ class File(FileBase):
         super(File, self).__init__(src_path, dst_path)
 
         self.is_recursive = False
-        try:
-            mimetype = magic.from_file(src_path, mime=True).decode("utf-8")
-            self.main_type, self.sub_type = mimetype.split('/')
-        except:
-            # FIXME/TEMP: checking what happen, probably bad.
-            print(src_path, mimetype)
-            self.log_details.update({'broken_mime': self.extension})
+        if not self.has_mimetype():
+            # No mimetype, should not happen.
             self.make_dangerous()
-            return
 
-        a, self.extension = os.path.splitext(src_path)
+        if not self.has_extension():
+            self.make_dangerous()
+
         if self.extension in mal_ext:
             self.log_details.update({'malicious_extension': self.extension})
             self.make_dangerous()
-            return
-        elif self.extension == '':
-            self.log_details.update({'no_extension': self.extension})
-            self.make_dangerous()
+
+        if self.is_dangerous():
             return
 
-        self.log_details.update({'maintype': self.main_type, 'subtype': self.sub_type, 'extension': self.extension})
+        self.log_details.update({'maintype': self.main_type,
+                                 'subtype': self.sub_type,
+                                 'extension': self.extension})
 
         # Check correlation known extension => actual mime type
         if propertype.get(self.extension) is not None:
@@ -101,13 +96,16 @@ class File(FileBase):
                 expected_mimetype = aliases.get(expected_mimetype)
 
         is_known_extension = self.extension in mimetypes.types_map.keys()
-        if is_known_extension and expected_mimetype != mimetype:
+        if is_known_extension and expected_mimetype != self.mimetype:
             self.log_details.update({'expected_mimetype': expected_mimetype})
             self.make_dangerous()
 
         # check correlation actual mime type => known extensions
-        if aliases.get(mimetype) is not None:
-            mimetype = aliases.get(mimetype)
+        if aliases.get(self.mimetype) is not None:
+            mimetype = aliases.get(self.mimetype)
+        else:
+            mimetype = self.mimetype
+
         expected_extensions = mimetypes.guess_all_extensions(mimetype, strict=False)
         if expected_extensions:
             if len(self.extension) > 0 and self.extension not in expected_extensions:
@@ -175,7 +173,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             Print the logs related to the current file being processed
         '''
         tmp_log = self.log_name.fields(**self.cur_file.log_details)
-        if self.cur_file.log_details.get('dangerous'):
+        if self.cur_file.is_dangerous():
             tmp_log.warning(self.cur_file.log_string)
         elif self.cur_file.log_details.get('unknown') or self.cur_file.log_details.get('binary'):
             tmp_log.info(self.cur_file.log_string)
@@ -189,7 +187,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         else:
             deadline = None
         args = shlex.split(command_line)
-        with open(self.log_debug_err, 'wb') as stderr, open(self.log_debug_out, 'wb') as stdout:
+        with open(self.log_debug_err, 'ab') as stderr, open(self.log_debug_out, 'ab') as stdout:
             p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
         if background:
             # This timer is here to make sure the unoconv listener is properly started.
@@ -444,7 +442,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
             self.log_name.info('Processing {} ({}/{})', srcpath.replace(src_dir + '/', ''),
                                self.cur_file.main_type, self.cur_file.sub_type)
-            if self.cur_file.log_details.get('dangerous') is None:
+            if not self.cur_file.is_dangerous():
                 self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
             else:
                 self._safe_copy()

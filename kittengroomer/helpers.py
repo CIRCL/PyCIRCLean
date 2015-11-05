@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import magic
 import shutil
-from twiggy import quickSetup, log
+from twiggy import quick_setup, log
 import argparse
 
 
@@ -33,6 +34,36 @@ class FileBase(object):
         self.dst_path = dst_path
         self.log_details = {'filepath': self.src_path}
         self.log_string = ''
+        a, self.extension = os.path.splitext(self.src_path)
+
+        mt = magic.from_file(self.src_path, mime=True)
+        try:
+            self.mimetype = mt.decode("utf-8")
+        except:
+            self.mimetype = mt
+
+        if self.mimetype and '/' in self.mimetype:
+            self.main_type, self.sub_type = self.mimetype.split('/')
+        else:
+            self.main_type = ''
+            self.sub_type = ''
+
+    def has_mimetype(self):
+        if not self.main_type or not self.sub_type:
+            self.log_details.update({'broken_mime': self.extension})
+            return False
+        return True
+
+    def has_extension(self):
+        if not self.extension:
+            self.log_details.update({'no_extension': self.extension})
+            return False
+        return True
+
+    def is_dangerous(self):
+        if self.log_details.get('dangerous'):
+            return True
+        return False
 
     def add_log_details(self, key, value):
         '''
@@ -46,7 +77,7 @@ class FileBase(object):
             Prepending and appending DANGEROUS to the destination
             file name avoid double-click of death
         '''
-        if self.log_details.get('dangerous'):
+        if self.is_dangerous():
             # Already marked as dangerous, do nothing
             return
         self.log_details['dangerous'] = True
@@ -59,7 +90,7 @@ class FileBase(object):
             a decision. Theuser will have to decide what to do.
             Prepending UNKNOWN
         '''
-        if self.log_details.get('dangerous') or self.log_details.get('binary'):
+        if self.is_dangerous() or self.log_details.get('binary'):
             # Already marked as dangerous or binary, do nothing
             return
         self.log_details['unknown'] = True
@@ -72,7 +103,7 @@ class FileBase(object):
             Appending .bin avoir double click of death but the user
             will have to decide by itself.
         '''
-        if self.log_details.get('dangerous'):
+        if self.is_dangerous():
             # Already marked as dangerous, do nothing
             return
         self.log_details['binary'] = True
@@ -98,7 +129,7 @@ class KittenGroomerBase(object):
         self._safe_mkdir(self.log_root_dir)
         self.log_processing = os.path.join(self.log_root_dir, 'processing.log')
 
-        quickSetup(file=self.log_processing)
+        quick_setup(file=self.log_processing)
         self.log_name = log.name('files')
         self.ressources_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
         os.environ["PATH"] += os.pathsep + self.ressources_path
