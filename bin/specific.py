@@ -17,9 +17,13 @@ class FileSpec(FileBase):
         super(FileSpec, self).__init__(src_path, dst_path)
         a, self.extension = os.path.splitext(self.src_path)
         try:
-            self.mimetype = magic.from_file(self.src_path, mime=True).decode("utf-8")
-        except:
-            print('************************** BROKEN', self.src_path)
+            self.mimetype = magic.from_file(self.src_path, mime=True)
+            try:
+                self.imetype = self.mimetype.decode("utf-8")
+            except:
+                pass
+        except Exception as e:
+            print('************************** BROKEN', self.src_path, e)
 
 
 class KittenGroomerSpec(KittenGroomerBase):

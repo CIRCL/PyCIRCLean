@@ -50,9 +50,12 @@ class File(FileBase):
         self.main_type = ''
         self.main_type = ''
         try:
-            mimetype = magic.from_file(src_path, mime=True).decode("utf-8")
+            mimetype = magic.from_file(src_path, mime=True)
+            try:
+                mimetype = mimetype.decode("utf-8")
+            except:
+                pass
         except Exception as e:
-            print('************************** BROKEN', self.src_path)
             print('************************** BROKEN', self.src_path, e)
             self.make_dangerous()
             return
