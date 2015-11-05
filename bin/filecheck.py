@@ -109,7 +109,7 @@ class File(FileBase):
         if aliases.get(mimetype) is not None:
             mimetype = aliases.get(mimetype)
         expected_extensions = mimetypes.guess_all_extensions(mimetype, strict=False)
-        if expected_extensions is not None:
+        if expected_extensions:
             if len(self.extension) > 0 and self.extension not in expected_extensions:
                 self.log_details.update({'expected_extensions': expected_extensions})
                 self.make_dangerous()
