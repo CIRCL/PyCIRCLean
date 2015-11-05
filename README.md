@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/CIRCL/PyCIRCLean.svg?branch=master)](https://travis-ci.org/CIRCL/PyCIRCLean)
+
 # PyCIRCLean
 
 PyCIRCLean is the Python code used by [CIRCLean](https://www.circl.lu/projects/CIRCLean/), the USB key and document sanitizer. The code
