@@ -51,7 +51,7 @@ class TestBasic(unittest.TestCase):
         self.dump_logs(spec)
 
     def test_generic(self):
-        src = os.path.join(self.curpath, 'tests/src')
+        src = os.path.join(self.curpath, 'tests/src2')
         dst = os.path.join(self.curpath, 'tests/dst')
         spec = KittenGroomer(src, dst, debug=True)
         spec.processdir()
