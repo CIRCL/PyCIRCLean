@@ -244,7 +244,7 @@ class KittenGroomer(KittenGroomerBase):
         name, ext = os.path.splitext(filename)
         tmppath = os.path.join(tmpdir, name + '.pdf')
         self._safe_mkdir(tmpdir)
-        lo_command = '{} --format pdf -eSelectPdfVersion=1 --output {} {}'.format(
+        lo_command = '{} --format pdf -eSelectPdfVersion=1 --output "{}" "{}"'.format(
             UNOCONV, tmppath, self.cur_file.src_path)
         self._run_process(lo_command)
         self._pdfa(tmppath)
@@ -252,7 +252,7 @@ class KittenGroomer(KittenGroomerBase):
 
     def _pdfa(self, tmpsrcpath):
         '''Way to process PDF/A file'''
-        pdf_command = '{} --dest-dir / {} {}'.format(PDF2HTMLEX, tmpsrcpath,
+        pdf_command = '{} --dest-dir / "{}" "{}"'.format(PDF2HTMLEX, tmpsrcpath,
                                                      self.cur_file.dst_path + '.html')
         self._run_process(pdf_command)
 
@@ -266,7 +266,7 @@ class KittenGroomer(KittenGroomerBase):
         # The magic comes from here: http://svn.ghostscript.com/ghostscript/trunk/gs/doc/Ps2pdf.htm#PDFA
         curdir = os.getcwd()
         os.chdir(self.ressources_path)
-        gs_command = '{} -dPDFA -dQUIET -dSAFER -dBATCH -dNOPAUSE -dNOOUTERSAVE -sProcessColorModel=DeviceCMYK -sDEVICE=pdfwrite -sPDFACompatibilityPolicy=1 -sOutputFile={} ./PDFA_def.ps {}'.format(
+        gs_command = '{} -dPDFA -dQUIET -dSAFER -dBATCH -dNOPAUSE -dNOOUTERSAVE -sProcessColorModel=DeviceCMYK -sDEVICE=pdfwrite -sPDFACompatibilityPolicy=1 -sOutputFile="{}" ./PDFA_def.ps "{}"'.format(
             GS, os.path.join(curdir, tmppath), os.path.join(curdir, self.cur_file.src_path))
         self._run_process(gs_command)
         os.chdir(curdir)
@@ -280,7 +280,7 @@ class KittenGroomer(KittenGroomerBase):
         self.cur_file.log_string += 'Archive extracted, processing content.'
         tmpdir = self.cur_file.dst_path + '_temp'
         self._safe_mkdir(tmpdir)
-        extract_command = '{} -p1 x {} -o{} -bd -aoa'.format(SEVENZ, self.cur_file.src_path, tmpdir)
+        extract_command = '{} -p1 x "{}" -o"{}" -bd -aoa'.format(SEVENZ, self.cur_file.src_path, tmpdir)
         self._run_process(extract_command)
         self.recursive += 1
         self.processdir(tmpdir, self.cur_file.dst_path)

@@ -374,7 +374,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.cur_file.log_string += 'Archive extracted, processing content.'
         tmpdir = self.cur_file.dst_path + '_temp'
         self._safe_mkdir(tmpdir)
-        extract_command = '{} -p1 x {} -o{} -bd -aoa'.format(SEVENZ, self.cur_file.src_path, tmpdir)
+        extract_command = '{} -p1 x "{}" -o"{}" -bd -aoa'.format(SEVENZ, self.cur_file.src_path, tmpdir)
         self._run_process(extract_command)
         self.recursive += 1
         self.processdir(tmpdir, self.cur_file.dst_path)
