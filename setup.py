@@ -11,7 +11,7 @@ setup(
     url='https://github.com/CIRCL/CIRCLean',
     description='Standalone CIRCLean/KittenGroomer code.',
     packages=['kittengroomer'],
-    scripts=['bin/generic.py', 'bin/pier9.py', 'bin/specific.py'],
+    scripts=['bin/generic.py', 'bin/pier9.py', 'bin/specific.py', 'bin/filecheck.py'],
     include_package_data = True,
     package_data = {'data': ['PDFA_def.ps','srgb.icc']},
     test_suite="tests",
