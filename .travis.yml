@@ -14,6 +14,7 @@ addons:
         packages:
             - ghostscript
             - p7zip-full
+            - mercurial
 
 install:
     - sudo add-apt-repository ppa:fontforge/fontforge --yes
@@ -42,6 +43,11 @@ install:
     - python unpackall.py
     - popd
     - mv theZoo/malwares/Binaries/out tests/src/
+    - hg clone https://bitbucket.org/jwilk/path-traversal-samples
+    - pushd path-traversal-samples/zip
+    - make
+    - popd
+    - mv path-traversal-samples/zip/*.zip tests/src/
 
 script:
     - coverage run setup.py test
