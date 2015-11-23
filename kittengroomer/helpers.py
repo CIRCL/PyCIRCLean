@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 import magic
+import hashlib
 import shutil
 from twiggy import quick_setup, log
 import argparse
@@ -128,6 +129,8 @@ class KittenGroomerBase(object):
         self._safe_rmtree(self.log_root_dir)
         self._safe_mkdir(self.log_root_dir)
         self.log_processing = os.path.join(self.log_root_dir, 'processing.log')
+        self.log_content = os.path.join(self.log_root_dir, 'content.log')
+        self.tree(self.src_root_dir)
 
         quick_setup(file=self.log_processing)
         self.log_name = log.name('files')
@@ -143,6 +146,29 @@ class KittenGroomerBase(object):
         else:
             self.log_debug_err = os.devnull
             self.log_debug_out = os.devnull
+
+    def _computehash(self, path):
+        s = hashlib.sha1()
+        with open(path, 'rb') as f:
+            while True:
+                buf = f.read(0x100000)
+                if not buf:
+                    break
+                s.update(buf)
+        return s.hexdigest()
+
+    def tree(self, base_dir, padding='   '):
+        with open(self.log_content, 'a') as lf:
+            lf.write('#' * 80 + '\n')
+            lf.write('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir))))
+            padding += '|  '
+            files = sorted(os.listdir(base_dir))
+            for f in files:
+                curpath = os.path.join(base_dir, f)
+                if os.path.isdir(curpath):
+                    self.tree(curpath, padding)
+                else:
+                    lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)))
 
     # ##### Helpers #####
     def _safe_rmtree(self, directory):
