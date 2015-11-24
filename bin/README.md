@@ -14,10 +14,10 @@ filecheck.py
 *WARNING*: Only works with Python 2.7 (oletools and olefile aren't ported to Python3 for now)
 
 Requirements by type of document:
-    * Microsoft office: oletools, olefile
-    * OOXML: officedissector
-    * PDF: pdfid
-    * Archives: p7zip-full, p7zip-rar
+* Microsoft office: oletools, olefile
+* OOXML: officedissector
+* PDF: pdfid
+* Archives: p7zip-full, p7zip-rar
 
 
 ```
@@ -33,8 +33,8 @@ generic.py
 ----------
 
 Requirements by type of document:
-    * Office and all text files: unoconv, libreoffice
-    * PDF: ghostscript, pdf2htmlEX
+* Office and all text files: unoconv, libreoffice
+* PDF: ghostscript, pdf2htmlEX
 
 ```
     # required for pdf2htmlEX
