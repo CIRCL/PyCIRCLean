@@ -45,6 +45,7 @@ propertype = {'.gz': 'application/gzip'}
 
 # Commonly used malicious extensions
 # Sources: http://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
+# https://github.com/wiregit/wirecode/blob/master/components/core-settings/src/main/java/org/limewire/core/settings/FilterSettings.java
 mal_ext = (
     # Applications
     ".exe", ".pif", ".application", ".gadget", ".msi", ".msp", ".com", ".scr",
@@ -59,7 +60,11 @@ mal_ext = (
     ".reg", "dll",
     # Office macro (OOXML with macro enabled)
     ".docm", ".dotm", ".xlsm", ".xltm", ".xlam", ".pptm", ".potm", ".ppam",
-    ".ppsm", ".sldm",)
+    ".ppsm", ".sldm",
+    # banned from wirecode
+    ".asf", ".asx", ".au", ".htm", ".html", ".mht", ".vbs",
+    ".wax", ".wm", ".wma", ".wmd", ".wmv", ".wmx", ".wmz", ".wvx",
+)
 
 
 class File(FileBase):
