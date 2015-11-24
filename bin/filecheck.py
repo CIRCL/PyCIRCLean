@@ -382,6 +382,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         extract_command = '{} -p1 x "{}" -o"{}" -bd -aoa'.format(SEVENZ, self.cur_file.src_path, tmpdir)
         self._run_process(extract_command)
         self.recursive += 1
+        self.tree(tmpdir)
         self.processdir(tmpdir, self.cur_file.dst_path)
         self.recursive -= 1
         self._safe_rmtree(tmpdir)
