@@ -37,11 +37,15 @@ class FileBase(object):
         self.log_string = ''
         a, self.extension = os.path.splitext(self.src_path)
 
-        mt = magic.from_file(self.src_path, mime=True)
-        try:
-            self.mimetype = mt.decode("utf-8")
-        except:
-            self.mimetype = mt
+        if os.path.islink(self.src_path):
+            # magic will throw an IOError on a broken symlink
+            self.mimetype = 'inode/symlink'
+        else:
+            mt = magic.from_file(self.src_path, mime=True)
+            try:
+                self.mimetype = mt.decode("utf-8")
+            except:
+                self.mimetype = mt
 
         if self.mimetype and '/' in self.mimetype:
             self.main_type, self.sub_type = self.mimetype.split('/')
