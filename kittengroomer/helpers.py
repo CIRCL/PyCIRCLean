@@ -51,13 +51,13 @@ class FileBase(object):
 
     def has_mimetype(self):
         if not self.main_type or not self.sub_type:
-            self.log_details.update({'broken_mime': self.extension})
+            self.log_details.update({'broken_mime': True})
             return False
         return True
 
     def has_extension(self):
         if not self.extension:
-            self.log_details.update({'no_extension': self.extension})
+            self.log_details.update({'no_extension': True})
             return False
         return True
 
