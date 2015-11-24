@@ -213,7 +213,10 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     # ##### Discarded mime types, reason in the comments ######
     def inode(self):
         ''' Usually empty file. No reason (?) to copy it on the dest key'''
-        self.cur_file.log_string += 'Inode file'
+        if self.cur_file.is_symlink():
+            self.cur_file.log_string += 'Symlink to {}'.format(self.log_details['symlink'])
+        else:
+            self.cur_file.log_string += 'Inode file'
 
     def unknown(self):
         ''' This main type is unknown, that should not happen '''

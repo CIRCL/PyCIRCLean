@@ -66,6 +66,12 @@ class FileBase(object):
             return True
         return False
 
+    def is_symlink(self):
+        if self.has_mimetype() and self.main_type == 'inode' and self.sub_type == 'symlink':
+            self.log_details.update({'symlink': os.readlink(self.src_path)})
+            return True
+        return False
+
     def add_log_details(self, key, value):
         '''
             Add an entry in the log dictionary
@@ -165,9 +171,11 @@ class KittenGroomerBase(object):
             files = sorted(os.listdir(base_dir))
             for f in files:
                 curpath = os.path.join(base_dir, f)
-                if os.path.isdir(curpath):
+                if os.path.islink(curpath):
+                    lf.write('{}+-- {}\t- Symbolic link to {}\n'.format(padding, f, os.readlink(curpath)))
+                elif os.path.isdir(curpath):
                     self.tree(curpath, padding)
-                else:
+                elif os.path.isfile(curpath):
                     lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)))
 
     # ##### Helpers #####
