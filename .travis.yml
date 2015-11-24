@@ -9,45 +9,64 @@ python:
 
 sudo: required
 
+dist: trusty
+
 addons:
     apt:
         packages:
-            - ghostscript
+            # General dependencies
             - p7zip-full
+            # generic.py dependencies
+            - ghostscript
+            # Testing dependencies
             - mercurial
 
 install:
+    # General dependencies
+    - sudo apt-get install p7zip-rar
+    - pip install git+https://github.com/ahupp/python-magic.git
+    # generic.py: pdf2htmlEX + dependencies
     - sudo add-apt-repository ppa:fontforge/fontforge --yes
     - sudo add-apt-repository ppa:coolwanglu/pdf2htmlex --yes
     - sudo apt-get update -qq
     - sudo apt-get install -qq libpoppler-dev libpoppler-private-dev libspiro-dev libcairo-dev libpango1.0-dev libfreetype6-dev libltdl-dev libfontforge-dev python-imaging python-pip firefox xvfb
-    - sudo apt-get install libreoffice
-    - sudo apt-get install unoconv
     - git clone https://github.com/coolwanglu/pdf2htmlEX.git
     - pushd pdf2htmlEX
     - cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_SVG=ON .
     - make
     - sudo make install
     - popd
+    # generic.py: Other dependencies
+    - sudo apt-get install libreoffice
+    - sudo apt-get install unoconv
+    # filecheck.py dependencies
     - pip install lxml
     - pip install officedissector
-    - pip install git+https://github.com/Rafiot/python-magic.git@travis
     - if [ $(python -c 'import sys; print(sys.version_info.major)') == '2' ]; then pip install oletools olefile ; fi
-    - pip install coveralls
-    - pip install codecov
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
     - python setup.py -q install
+    # Testing dependencies
+    - sudo apt-get install rar
+    - pip install coveralls
+    - pip install codecov
+    # Prepare testings
     - git clone https://github.com/Rafiot/theZoo.git
     - pushd theZoo/malwares/Binaries
     - python unpackall.py
     - popd
     - mv theZoo/malwares/Binaries/out tests/src/
     - hg clone https://bitbucket.org/jwilk/path-traversal-samples
-    - pushd path-traversal-samples/zip
+    - pushd path-traversal-samples
+    - pushd zip
     - make
     - popd
+    - pushd rar
+    - make
+    - popd
+    - popd
     - mv path-traversal-samples/zip/*.zip tests/src/
+    - mv path-traversal-samples/rar/*.rar tests/src/
 
 script:
     - coverage run setup.py test
