@@ -11,6 +11,10 @@ import oletools.oleid
 import olefile
 import officedissector
 
+import warnings
+import exifread
+from PIL import Image
+
 from pdfid import PDFiD, cPDFiD
 
 from kittengroomer import FileBase, KittenGroomerBase, main
@@ -29,6 +33,9 @@ mimes_ms = ['dosexec']
 mimes_compressed = ['zip', 'rar', 'bzip2', 'lzip', 'lzma', 'lzop',
                     'xz', 'compress', 'gzip', 'tar']
 mimes_data = ['octet-stream']
+
+# Prepare image/<subtype>
+mimes_metadata = ['jpeg', 'tiff']
 
 # Aliases
 aliases = {
@@ -119,6 +126,11 @@ class File(FileBase):
         else:
             # there are no known extensions associated to this mimetype.
             pass
+
+    def has_image_metadata(self):
+        if self.sub_type in mimes_metadata:
+            return True
+        return False
 
 
 class KittenGroomerFileCheck(KittenGroomerBase):
@@ -410,8 +422,37 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def image(self):
         '''Way to process an image'''
+        # Extract the metadata
+        if self.cur_file.has_image_metadata():
+            metadataFile = self._safe_metadata_split(".exif")
+            f = open(self.cur_file.src_path, 'rb')
+            tags = exifread.process_file(f) # TODO: Switch to PyExifTool for raw, etc. support?
+            for tag in sorted(tags.keys()):
+                if tag not in ('JPEGThumbnail', 'TIFFThumbnail', 'EXIF MakerNote'):
+                    metadataFile.write("Key: {}\tValue: {}\n".format(tag, tags[tag]))
+            metadataFile.close()
+            f.close()
+            self.cur_file.add_log_details('metadata', 'exif')
+            
+        # Create a temp directory
+        dst_dir, filename = os.path.split(self.cur_file.dst_path)
+        tmpdir = os.path.join(dst_dir, 'temp')
+        tmppath = os.path.join(tmpdir, filename)
+        self._safe_mkdir(tmpdir)
+
+        # Do our image conversions
+        warnings.simplefilter('error', Image.DecompressionBombWarning)
+        imIn = Image.open(self.cur_file.src_path)
+        imOut = Image.frombytes(imIn.mode, imIn.size, imIn.tobytes())
+        imOut.save(tmppath)
+
+        #Copy the file back out and cleanup
+        self._safe_copy(tmppath)
+        self._safe_rmtree(tmpdir)
+
         self.cur_file.log_string += 'Image file'
-        self._media_processing()
+        self.cur_file.add_log_details('processing_type', 'image')
+
 
     def video(self):
         '''Way to process a video'''
