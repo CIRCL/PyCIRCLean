@@ -12,8 +12,9 @@ import olefile
 import officedissector
 
 import warnings
-import exifread
 from PIL import Image
+from PIL.ExifTags import TAGS, GPSTAGS
+from PIL import PngImagePlugin
 
 from pdfid import PDFiD, cPDFiD
 
@@ -35,7 +36,11 @@ mimes_compressed = ['zip', 'rar', 'bzip2', 'lzip', 'lzma', 'lzop',
 mimes_data = ['octet-stream']
 
 # Prepare image/<subtype>
-mimes_metadata = ['jpeg', 'tiff']
+mimes_exif = ['image/jpeg', 'image/tiff']
+mimes_png = ['image/png']
+
+# Mime types we can pull metadata from
+mimes_metadata = ['image/jpeg', 'image/tiff', 'image/png']
 
 # Aliases
 aliases = {
@@ -127,8 +132,8 @@ class File(FileBase):
             # there are no known extensions associated to this mimetype.
             pass
 
-    def has_image_metadata(self):
-        if self.sub_type in mimes_metadata:
+    def has_metadata(self):
+        if self.mimetype in mimes_metadata:
             return True
         return False
 
@@ -161,6 +166,12 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         ]
         self.subtypes_application = self._init_subtypes_application(subtypes_apps)
 
+        types_metadata = [
+            (mimes_exif, self._metadata_exif),
+            (mimes_png, self._metadata_png),
+        ]
+        self.metadata_processing_options = self._init_subtypes_application(types_metadata)
+        
         self.mime_processing_options = {
             'text': self.text,
             'audio': self.audio,
@@ -413,27 +424,56 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self._safe_copy()
 
     #######################
+    # Metadata extractors
+    def _metadata_exif(self, metadataFile):
+        img = Image.open(self.cur_file.src_path)
+        exif = img._getexif().items()
+        md = {}
+        
+        for tag, value in exif:
+            print(tag)
+            print(value)
+            decoded = TAGS[tag]
+            if "GPSInfo" == decoded:
+                for t in value:
+                    md[GPSTAGS[t]] = value[t]
+            else:
+                md[decoded] = value
 
+        for tag in sorted(md.keys()):
+            if tag not in ('JPEGThumbnail', 'TIFFThumbnail', 'EXIF MakerNote'):
+                metadataFile.write("Key: {}\tValue: {}\n".format(tag, md[tag]))
+        self.cur_file.add_log_details('metadata', 'exif')
+        img.close()
+
+
+    def _metadata_png(self, metadataFile):
+        img = Image.open(self.cur_file.src_path)
+        for tag in sorted(img.info.keys()):
+            metadataFile.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
+        self.cur_file.add_log_details('metadata', 'png')
+        img.close()
+
+
+    def extract_metadata(self):
+        metadataFile = self._safe_metadata_split(".metadata.txt")
+        self.metadata_processing_options.get(self.cur_file.mimetype)(metadataFile)
+        metadataFile.close()
+
+    #######################
     # ##### Not converted, checking the mime type ######
     def audio(self):
         '''Way to process an audio file'''
         self.cur_file.log_string += 'Audio file'
         self._media_processing()
 
+        
     def image(self):
         '''Way to process an image'''
-        # Extract the metadata
-        if self.cur_file.has_image_metadata():
-            metadataFile = self._safe_metadata_split(".exif")
-            f = open(self.cur_file.src_path, 'rb')
-            tags = exifread.process_file(f) # TODO: Switch to PyExifTool for raw, etc. support?
-            for tag in sorted(tags.keys()):
-                if tag not in ('JPEGThumbnail', 'TIFFThumbnail', 'EXIF MakerNote'):
-                    metadataFile.write("Key: {}\tValue: {}\n".format(tag, tags[tag]))
-            metadataFile.close()
-            f.close()
-            self.cur_file.add_log_details('metadata', 'exif')
-            
+        if self.cur_file.has_metadata():
+            self.extract_metadata()
+
+        ## FIXME make sure this works for png, gif, tiff
         # Create a temp directory
         dst_dir, filename = os.path.split(self.cur_file.dst_path)
         tmpdir = os.path.join(dst_dir, 'temp')
@@ -442,13 +482,20 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
         # Do our image conversions
         warnings.simplefilter('error', Image.DecompressionBombWarning)
-        imIn = Image.open(self.cur_file.src_path)
-        imOut = Image.frombytes(imIn.mode, imIn.size, imIn.tobytes())
-        imOut.save(tmppath)
+        try:
+            imIn = Image.open(self.cur_file.src_path)
+            imOut = Image.frombytes(imIn.mode, imIn.size, imIn.tobytes())
+            imOut.save(tmppath)
 
-        #Copy the file back out and cleanup
-        self._safe_copy(tmppath)
-        self._safe_rmtree(tmpdir)
+            #Copy the file back out and cleanup
+            self._safe_copy(tmppath)
+            self._safe_rmtree(tmpdir)
+            
+        # Catch decompression bombs
+        except Exception as e:
+            print(e)
+            self.cur_file.make_dangerous()
+            self._safe_copy()
 
         self.cur_file.log_string += 'Image file'
         self.cur_file.add_log_details('processing_type', 'image')
