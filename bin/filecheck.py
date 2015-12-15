@@ -57,7 +57,7 @@ mal_ext = (
     # Shortcuts
     ".scf", ".lnk", ".inf",
     # Other
-    ".reg", "dll",
+    ".reg", ".dll",
     # Office macro (OOXML with macro enabled)
     ".docm", ".dotm", ".xlsm", ".xltm", ".xlam", ".pptm", ".potm", ".ppam",
     ".ppsm", ".sldm",
