@@ -12,8 +12,8 @@ import olefile
 import officedissector
 
 import warnings
+import exifread
 from PIL import Image
-from PIL.ExifTags import TAGS, GPSTAGS
 from PIL import PngImagePlugin
 
 from pdfid import PDFiD, cPDFiD
@@ -426,37 +426,65 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     #######################
     # Metadata extractors
     def _metadata_exif(self, metadataFile):
-        img = Image.open(self.cur_file.src_path)
-        exif = img._getexif().items()
-        md = {}
+        img = open(self.cur_file.src_path, 'rb')
+        tags = None
         
-        for tag, value in exif:
-            decoded = TAGS[tag]
-            if "GPSInfo" == decoded:
-                for t in value:
-                    md[GPSTAGS[t]] = value[t]
-            else:
-                md[decoded] = value
+        try:
+            tags = exifread.process_file(img, debug=True)
+        except Exception as e:
+            print("Error while trying to grab full metadata for file {}; retrying for partial data.".format(self.cur_file.src_path))
+            print(e)
+        if tags == None:
+            try:
+                tags = exifread.process_file(img, debug=True)
+            except Exception as e:
+                print("Failed to get any metadata for file {}.".format(self.cur_file.src_path))
+                print(e)
+                img.close()
+                return False
+                  
+        for tag in sorted(tags.keys()):
+            # These are long and obnoxious/binary
+            if tag not in ('JPEGThumbnail', 'TIFFThumbnail'):
+                printable = str(tags[tag])
 
-        for tag in sorted(md.keys()):
-            if tag not in ('JPEGThumbnail', 'TIFFThumbnail', 'EXIF MakerNote'):
-                metadataFile.write("Key: {}\tValue: {}\n".format(tag, md[tag]))
+                #Exifreader truncates data.
+                if len(printable) > 25 and printable.endswith(", ... ]"):
+                    value = tags[tag].values
+                    if isinstance(value, basestring):
+                        printable = value
+                    else:
+                        printable = str(value)
+                metadataFile.write("Key: {}\tValue: {}\n".format(tag, printable))
         self.cur_file.add_log_details('metadata', 'exif')
         img.close()
-
+        return True
 
     def _metadata_png(self, metadataFile):
-        img = Image.open(self.cur_file.src_path)
-        for tag in sorted(img.info.keys()):
-            metadataFile.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
-        self.cur_file.add_log_details('metadata', 'png')
-        img.close()
+        warnings.simplefilter('error', Image.DecompressionBombWarning)
+        try:
+            img = Image.open(self.cur_file.src_path)
+            for tag in sorted(img.info.keys()):
+                # These are long and obnoxious/binary
+                if tag not in ('icc_profile'):
+                    metadataFile.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
+            self.cur_file.add_log_details('metadata', 'png')
+            img.close()
+        # Catch decompression bombs
+        except Exception as e:
+            print("Caught exception processing metadata for {}".format(self.cur_file.src_path))
+            print(e)
+            self.cur_file.make_dangerous()
+            self._safe_copy()
+            return False
 
 
     def extract_metadata(self):
         metadataFile = self._safe_metadata_split(".metadata.txt")
-        self.metadata_processing_options.get(self.cur_file.mimetype)(metadataFile)
+        success = self.metadata_processing_options.get(self.cur_file.mimetype)(metadataFile)
         metadataFile.close()
+        if not success:
+            pass #FIXME Delete empty metadata file
 
     #######################
     # ##### Not converted, checking the mime type ######
@@ -491,6 +519,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             
         # Catch decompression bombs
         except Exception as e:
+            print("Caught exception (possible decompression bomb?) while translating file {}.".format(self.cur_file.src_path))
             print(e)
             self.cur_file.make_dangerous()
             self._safe_copy()
