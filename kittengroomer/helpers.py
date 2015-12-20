@@ -194,12 +194,12 @@ class KittenGroomerBase(object):
             os.remove(filepath)
 
     def _safe_mkdir(self, directory):
-        '''Remove a directory if it exists'''
+        '''Make a directory if it does not exist'''
         if not os.path.exists(directory):
             os.makedirs(directory)
 
     def _safe_copy(self, src=None, dst=None):
-        ''' Copy a file and create directory if needed '''
+        ''' Copy a file and create directory if needed'''
         if src is None:
             src = self.cur_file.src_path
         if dst is None:
@@ -214,8 +214,24 @@ class KittenGroomerBase(object):
             print(e)
             return False
 
+    def _safe_metadata_split(self, ext):
+        '''Create a separate file to hold this file's metadata'''
+        dst = self.cur_file.dst_path
+        try:
+            if os.path.exists(self.cur_file.src_path+ext):
+                raise KittenGroomerError("Cannot create split metadata file for \"" +
+                                         self.cur_file.dst_path + "\", type '"
+                                         + ext + "': File exists.")
+            dst_path, filename = os.path.split(dst)
+            self._safe_mkdir(dst_path)
+            return open(dst+ext, 'w+')
+        except Exception as e:
+            # TODO: Logfile
+            print(e)
+            return False
+        
     def _list_all_files(self, directory):
-        ''' Generate an iterator over all the files in a directory tree '''
+        ''' Generate an iterator over all the files in a directory tree'''
         for root, dirs, files in os.walk(directory):
             for filename in files:
                 filepath = os.path.join(root, filename)
