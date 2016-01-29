@@ -12,8 +12,8 @@ setup(
     description='Standalone CIRCLean/KittenGroomer code.',
     packages=['kittengroomer'],
     scripts=['bin/generic.py', 'bin/pier9.py', 'bin/specific.py', 'bin/filecheck.py'],
-    include_package_data = True,
-    package_data = {'data': ['PDFA_def.ps','srgb.icc']},
+    include_package_data=True,
+    package_data={'data': ['PDFA_def.ps', 'srgb.icc']},
     test_suite="tests",
     classifiers=[
         'License :: OSI Approved :: BSD License',
@@ -25,5 +25,5 @@ setup(
         'Topic :: Communications :: File Sharing',
         'Topic :: Security',
     ],
-    install_requires=['twiggy'],
+    install_requires=['twiggy', 'python-magic'],
 )

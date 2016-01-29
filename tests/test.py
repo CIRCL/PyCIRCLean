@@ -5,6 +5,9 @@ import unittest
 import os
 import sys
 
+if __name__ == '__main__':
+    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
+
 from bin.specific import KittenGroomerSpec
 from bin.pier9 import KittenGroomerPier9
 from bin.generic import KittenGroomer
