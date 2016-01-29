@@ -22,6 +22,7 @@ addons:
             - mercurial
 
 install:
+    - pip install -U pip
     # General dependencies
     - sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty multiverse" && sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse"
     - sudo apt-get update -qq
