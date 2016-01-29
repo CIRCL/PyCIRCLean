@@ -71,7 +71,7 @@ install:
     - mv path-traversal-samples/rar/*.rar tests/src/
 
 script:
-    - coverage run setup.py test
+    - coverage run --source=bin,kittengroomer setup.py test
 
 notifications:
     email:
