@@ -346,7 +346,13 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def _ooxml(self):
         self.cur_file.add_log_details('processing_type', 'ooxml')
-        doc = officedissector.doc.Document(self.cur_file.src_path)
+        try:
+            doc = officedissector.doc.Document(self.cur_file.src_path)
+        except Exception:
+            # Invalid file
+            self.cur_file.make_dangerous()
+            self._safe_copy()
+            return
         # There are probably other potentially malicious features:
         # fonts, custom props, custom XML
         if doc.is_macro_enabled or len(doc.features.macros) > 0:
