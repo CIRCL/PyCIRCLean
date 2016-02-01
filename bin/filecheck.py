@@ -171,7 +171,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             (mimes_png, self._metadata_png),
         ]
         self.metadata_processing_options = self._init_subtypes_application(types_metadata)
-        
+
         self.mime_processing_options = {
             'text': self.text,
             'audio': self.audio,
@@ -274,17 +274,21 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     # ##### Converted ######
     def text(self):
-        ''' LibreOffice should be able to open all the files '''
         for r in mimes_rtf:
             if r in self.cur_file.sub_type:
                 self.cur_file.log_string += 'Rich Text file'
                 # TODO: need a way to convert it to plain text
                 self.cur_file.force_ext('.txt')
                 self._safe_copy()
-        else:
-            self.cur_file.log_string += 'Text file'
-            self.cur_file.force_ext('.txt')
-            self._safe_copy()
+                return
+        for o in mimes_ooxml:
+            if o in self.cur_file.sub_type:
+                self.cur_file.log_string += 'OOXML File'
+                self._ooxml()
+                return
+        self.cur_file.log_string += 'Text file'
+        self.cur_file.force_ext('.txt')
+        self._safe_copy()
 
     def application(self):
         ''' Everything can be there, using the subtype to decide '''
@@ -428,7 +432,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     def _metadata_exif(self, metadataFile):
         img = open(self.cur_file.src_path, 'rb')
         tags = None
-        
+
         try:
             tags = exifread.process_file(img, debug=True)
         except Exception as e:
@@ -442,7 +446,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                 print(e)
                 img.close()
                 return False
-                  
+
         for tag in sorted(tags.keys()):
             # These are long and obnoxious/binary
             if tag not in ('JPEGThumbnail', 'TIFFThumbnail'):
@@ -493,7 +497,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.cur_file.log_string += 'Audio file'
         self._media_processing()
 
-        
+
     def image(self):
         '''Way to process an image'''
         if self.cur_file.has_metadata():
@@ -516,7 +520,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             #Copy the file back out and cleanup
             self._safe_copy(tmppath)
             self._safe_rmtree(tmpdir)
-            
+
         # Catch decompression bombs
         except Exception as e:
             print("Caught exception (possible decompression bomb?) while translating file {}.".format(self.cur_file.src_path))
