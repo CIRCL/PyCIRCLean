@@ -53,11 +53,13 @@ install:
     - pip install coveralls
     - pip install codecov
     # Prepare testings
+    # Zoo
     - git clone https://github.com/Rafiot/theZoo.git
     - pushd theZoo/malwares/Binaries
     - python unpackall.py
     - popd
     - mv theZoo/malwares/Binaries/out tests/src/
+    # path transversal
     - hg clone https://bitbucket.org/jwilk/path-traversal-samples
     - pushd path-traversal-samples
     - pushd zip
@@ -69,6 +71,9 @@ install:
     - popd
     - mv path-traversal-samples/zip/*.zip tests/src/
     - mv path-traversal-samples/rar/*.rar tests/src/
+    # Office docs
+    - git clone https://github.com/grierforensics/officedissector.git
+    - mv officedissector/test tests/src2/
 
 script:
     - coverage run --source=bin,kittengroomer setup.py test

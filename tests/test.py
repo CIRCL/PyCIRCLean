@@ -76,6 +76,15 @@ class TestBasic(unittest.TestCase):
         spec.processdir()
         self.dump_logs(spec)
 
+    def test_filecheck_2(self):
+        if sys.version_info.major >= 3:
+            return
+        src = os.path.join(self.curpath, 'tests/src2')
+        dst = os.path.join(self.curpath, 'tests/dst')
+        spec = KittenGroomerFileCheck(src, dst, debug=True)
+        spec.processdir()
+        self.dump_logs(spec)
+
     def test_help_file(self):
         f = FileBase('tests/src/blah.conf', 'tests/dst/blah.conf')
         f.make_unknown()
