@@ -60,6 +60,13 @@ class TestBasic(unittest.TestCase):
         spec.processdir()
         self.dump_logs(spec)
 
+    def test_generic_2(self):
+        src = os.path.join(self.curpath, 'tests/src')
+        dst = os.path.join(self.curpath, 'tests/dst')
+        spec = KittenGroomer(src, dst, debug=True)
+        spec.processdir()
+        self.dump_logs(spec)
+
     def test_filecheck(self):
         if sys.version_info.major >= 3:
             return
