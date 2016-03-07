@@ -1,0 +1,125 @@
+% DO NOT COMPILE THIS FILE DIRECTLY!
+% This is included by the other .tex files.
+
+\begin{frame}[t,plain]
+    \titlepage
+\end{frame}
+
+\begin{frame}[fragile]{Overview}
+    \begin{itemize}
+        \item Aims to be used in dedicated security applications to sanitize documents from hostile to trusted environments.
+        \item Generic way to handle large colections of files
+        \item Generate audit logs
+        \item Comes with many helpers
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Implementation}
+    \begin{itemize}
+        \item Copies files from a directory (source) to an other one (destination)
+        \item Computes hashes (sha1) of all the files in the source
+        \item Creates a directory tree on the destination directory
+        \item Gets the mime type of each file
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Existing modules}
+    \begin{itemize}
+        \item bin/filecheck.py: Search for active content in the source documents
+        \item bin/generic.py: Converts documents if possible
+        \item bin/specific.py: Only copy a specific extension if the mimetype matches
+        \item bin/pier9.py: Only copy specific extensions (3D softwares)
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{File Check}
+    \begin{itemize}
+        \item Discard known extensions with active content
+        \item Verifies if the extension corresponds to the mimetype (polyglot files)
+        \item Force extension on suposedly text files
+        \item Discards windows executables
+        \item Discard Office (Libreoffice and Windows Office) document with active content
+        \item Discard PDFs with active content
+        \item Unpack archives and process content
+        \item Extract metadata from images
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{File Check}
+    \begin{itemize}
+        \item Plus
+        \begin{itemize}
+            \item (almost) Pure python
+            \item Reliable
+            \item Fast
+        \end{itemize}
+        \item Minus
+        \begin{itemize}
+            \item Does not block a 0 day in a non-active content
+            \item Medium level of false positive (non-malicious active content)
+        \end{itemize}
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Generic}
+    \begin{itemize}
+        \item Verifies if the extension corresponds to the mimetype (polyglot files)
+        \item Converts to PDF and then to HTML all documents supported by libreoffice
+        \item Converts to HTML all PDF files
+        \item Discards windows executables
+        \item Unpack archives and process content
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Generic}
+    \begin{itemize}
+        \item Plus
+        \begin{itemize}
+            \item Very hard to have anything malicious in the output of the converted documents
+        \end{itemize}
+        \item Minus
+        \begin{itemize}
+            \item Slow
+            \item Opens the documents to convert (may run malicious code)
+            \item Many external dependencies
+            \item Unreliable: fails on 20\% of the documents
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Specific and Pier9}
+    \begin{itemize}
+        \item Dedicated to a very specific use
+        \item Whitelist on extension and/or MimeType
+        \item Plus
+        \begin{itemize}
+            \item Pure python
+            \item Very fast
+            \item Most secure
+        \end{itemize}
+        \item Minus
+        \begin{itemize}
+            \item Only works in a specific case
+            \item Many false positive
+        \end{itemize}
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Implement your own module - FileBase}
+    \begin{itemize}
+        \item The default conctructors gets the mime type of the file and initialize the log of the file
+        \item Surcharge the constructor accordingly to your needs
+        \item Has helpers to get and set information on the file being processed
+        \item Can force the extension of the file when copied
+        \item All thoses functions have to be used in order to handle the files accordingly to your requirements
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Implement your own module - KittenGroomerBase}
+    \begin{itemize}
+        \item The default constructor cleans the destination directory, starts the general logging and logs the content of the source directory
+        \item Has helpers to handle safely the file management
+        \item Writes the logs files
+   \end{itemize}
+\end{frame}
+
