@@ -21,8 +21,9 @@ Requirements by type of document:
 
 
 ```
-    sudo apt-get install p7zip-full p7zip-rar
+    sudo apt-get install p7zip-full p7zip-rar libxml2-dev libxslt1-dev
     pip install lxml officedissector git+https://github.com/ahupp/python-magic.git oletools olefile
+    pip install git+https://github.com/Rafiot/officedissector.git
     # pdfid is not a package, installing manually
     wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     unzip pdfid_v0_2_1.zip
