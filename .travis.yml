@@ -74,8 +74,10 @@ install:
     - mv path-traversal-samples/zip/*.zip tests/src/
     - mv path-traversal-samples/rar/*.rar tests/src/
     # Office docs
-    - git clone https://github.com/Rafiot/officedissector.git
-    - mv officedissector/test tests/src2/
+    - pushd tests/src2/
+    - wget http://www.officedissector.com/corpus/fraunhoferlibrary.zip
+    - unzip -o fraunhoferlibrary.zip
+    - popd
 
 script:
     - coverage run --source=bin,kittengroomer setup.py test
