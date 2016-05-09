@@ -159,7 +159,7 @@ class KittenGroomerBase(object):
 
     def _computehash(self, path):
         s = hashlib.sha1()
-        with open(path, 'rb') as f:
+        with open(path, 'rb', errors='surrogateescape') as f:
             while True:
                 buf = f.read(0x100000)
                 if not buf:
@@ -168,7 +168,7 @@ class KittenGroomerBase(object):
         return s.hexdigest()
 
     def tree(self, base_dir, padding='   '):
-        with open(self.log_content, 'a') as lf:
+        with open(self.log_content, 'a', errors='surrogateescape') as lf:
             lf.write('#' * 80 + '\n')
             lf.write('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir))))
             padding += '|  '
@@ -218,18 +218,18 @@ class KittenGroomerBase(object):
         '''Create a separate file to hold this file's metadata'''
         dst = self.cur_file.dst_path
         try:
-            if os.path.exists(self.cur_file.src_path+ext):
+            if os.path.exists(self.cur_file.src_path + ext):
                 raise KittenGroomerError("Cannot create split metadata file for \"" +
-                                         self.cur_file.dst_path + "\", type '"
-                                         + ext + "': File exists.")
+                                         self.cur_file.dst_path + "\", type '" +
+                                         ext + "': File exists.")
             dst_path, filename = os.path.split(dst)
             self._safe_mkdir(dst_path)
-            return open(dst+ext, 'w+')
+            return open(dst + ext, 'w+')
         except Exception as e:
             # TODO: Logfile
             print(e)
             return False
-        
+
     def _list_all_files(self, directory):
         ''' Generate an iterator over all the files in a directory tree'''
         for root, dirs, files in os.walk(directory):
