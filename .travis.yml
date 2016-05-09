@@ -82,7 +82,7 @@ install:
     - popd
 
 script:
-    - coverage run --source=bin,kittengroomer setup.py test
+    - travis_wait 30 coverage run --source=bin,kittengroomer setup.py test
 
 notifications:
     email:
