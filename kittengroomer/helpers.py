@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import sys
 import magic
 import hashlib
 import shutil
@@ -41,7 +42,12 @@ class FileBase(object):
             # magic will throw an IOError on a broken symlink
             self.mimetype = 'inode/symlink'
         else:
-            mt = magic.from_file(self.src_path, mime=True)
+            try:
+                mt = magic.from_file(self.src_path, mime=True)
+            except UnicodeEncodeError as e:
+                # FIXME: The encoding of the file is broken (possibly UTF-16)
+                mt = ''
+                self.log_details.update({'UnicodeError': e})
             try:
                 self.mimetype = mt.decode("utf-8")
             except:
@@ -168,6 +174,12 @@ class KittenGroomerBase(object):
         return s.hexdigest()
 
     def tree(self, base_dir, padding='   '):
+        if sys.version_info.major == 2:
+            self.__tree_py2(base_dir, padding)
+        else:
+            self.__tree_py3(base_dir, padding)
+
+    def __tree_py2(self, base_dir, padding='   '):
         with open(self.log_content, 'ab') as lf:
             lf.write('#' * 80 + '\n')
             lf.write('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir))))
@@ -181,6 +193,21 @@ class KittenGroomerBase(object):
                     self.tree(curpath, padding)
                 elif os.path.isfile(curpath):
                     lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)))
+
+    def __tree_py3(self, base_dir, padding='   '):
+        with open(self.log_content, 'ab') as lf:
+            lf.write(bytes('#' * 80 + '\n', 'UTF-8'))
+            lf.write(bytes('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir)).encode()), 'utf8'))
+            padding += '|  '
+            files = sorted(os.listdir(base_dir))
+            for f in files:
+                curpath = os.path.join(base_dir, f)
+                if os.path.islink(curpath):
+                    lf.write('{}+-- {}\t- Symbolic link to {}\n'.format(padding, f, os.readlink(curpath)).encode(errors='ignore'))
+                elif os.path.isdir(curpath):
+                    self.tree(curpath, padding)
+                elif os.path.isfile(curpath):
+                    lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)).encode(errors='ignore'))
 
     # ##### Helpers #####
     def _safe_rmtree(self, directory):

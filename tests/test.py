@@ -25,12 +25,12 @@ class TestBasic(unittest.TestCase):
         self.curpath = os.getcwd()
 
     def dump_logs(self, kg):
-        print(open(kg.log_processing, 'rb').read().decode("utf-8"))
+        print(open(kg.log_processing, 'rb').read())
         if kg.debug:
             if os.path.exists(kg.log_debug_err):
-                print(open(kg.log_debug_err, 'rb').read().decode("utf-8"))
+                print(open(kg.log_debug_err, 'rb').read())
             if os.path.exists(kg.log_debug_out):
-                print(open(kg.log_debug_out, 'rb').read().decode("utf-8"))
+                print(open(kg.log_debug_out, 'rb').read())
 
     def test_specific_valid(self):
         src = os.path.join(self.curpath, 'tests/src2')

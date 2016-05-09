@@ -43,7 +43,7 @@ install:
     - sudo apt-get install -y libreoffice libreoffice-script-provider-python unoconv
     # filecheck.py dependencies
     - sudo apt-get install libxml2-dev libxslt1-dev
-    - pip install lxml exifread pillow
+    - pip install -U lxml exifread pillow
     - pip install git+https://github.com/Rafiot/officedissector.git
     - if [ $(python -c 'import sys; print(sys.version_info.major)') == '2' ]; then pip install oletools olefile ; fi
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
@@ -79,7 +79,7 @@ install:
     - popd
 
 script:
-    - travis_wait 30 coverage run --source=bin,kittengroomer setup.py test
+    - travis_wait 60 coverage run --source=bin,kittengroomer setup.py test
 
 notifications:
     email:
