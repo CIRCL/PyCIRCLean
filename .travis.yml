@@ -40,8 +40,7 @@ install:
     - sudo make install
     - popd
     # generic.py: Other dependencies
-    - sudo apt-get install -y libreoffice
-    - sudo apt-get install -y unoconv
+    - sudo apt-get install -y libreoffice libreoffice-script-provider-python unoconv
     # filecheck.py dependencies
     - sudo apt-get install libxml2-dev libxslt1-dev
     - pip install lxml exifread pillow
