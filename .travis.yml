@@ -21,6 +21,9 @@ addons:
             # Testing dependencies
             - mercurial
 
+virtualenv:
+    system_site_packages: true
+
 install:
     - pip install -U pip
     # General dependencies
