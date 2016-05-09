@@ -159,7 +159,7 @@ class KittenGroomerBase(object):
 
     def _computehash(self, path):
         s = hashlib.sha1()
-        with open(path, 'rb', errors='surrogateescape') as f:
+        with open(path, 'rb') as f:
             while True:
                 buf = f.read(0x100000)
                 if not buf:
@@ -168,7 +168,7 @@ class KittenGroomerBase(object):
         return s.hexdigest()
 
     def tree(self, base_dir, padding='   '):
-        with open(self.log_content, 'a', errors='surrogateescape') as lf:
+        with open(self.log_content, 'ab') as lf:
             lf.write('#' * 80 + '\n')
             lf.write('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir))))
             padding += '|  '
