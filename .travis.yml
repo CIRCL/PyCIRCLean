@@ -3,7 +3,7 @@ language: python
 python:
     - "2.7_with_system_site_packages"
     - "3.3"
-    - "3.4_with_system_site_packages"
+    - "3.4"
     - "3.5"
     - "nightly"
 
@@ -45,7 +45,10 @@ install:
     - sudo apt-get install libxml2-dev libxslt1-dev
     - pip install -U lxml exifread pillow
     - pip install git+https://github.com/Rafiot/officedissector.git
+    - sudo pip install -U pip lxml exifread pillow
+    - sudo pip install git+https://github.com/Rafiot/officedissector.git
     - if [ $(python -c 'import sys; print(sys.version_info.major)') == '2' ]; then pip install oletools olefile ; fi
+    - if [ $(python -c 'import sys; print(sys.version_info.major)') == '2' ]; then sudo pip install oletools olefile ; fi
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
     - python setup.py -q install
@@ -73,9 +76,10 @@ install:
     - mv path-traversal-samples/zip/*.zip tests/src/
     - mv path-traversal-samples/rar/*.rar tests/src/
     # Office docs
-    - pushd tests/src2/
+    - pushd tests/src/
     - wget http://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
+    - rm fraunhoferlibrary.zip
     - popd
 
 script:
