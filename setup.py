@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='kittengroomer',
-    version='1.0',
+    version='2.0.2',
     author='Raphaël Vinot',
     author_email='raphael.vinot@circl.lu',
     maintainer='Raphaël Vinot',
