@@ -22,7 +22,6 @@ addons:
             - mercurial
 
 install:
-    - pip install -U pip
     # General dependencies
     - sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty multiverse" && sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse"
     - sudo apt-get update -qq
@@ -43,19 +42,22 @@ install:
     - sudo apt-get install -y libreoffice libreoffice-script-provider-python unoconv
     # filecheck.py dependencies
     - sudo apt-get install libxml2-dev libxslt1-dev
-    - pip install -U lxml exifread pillow
-    - pip install git+https://github.com/Rafiot/officedissector.git
-    - sudo pip install -U pip lxml exifread pillow
-    - sudo pip install git+https://github.com/Rafiot/officedissector.git
-    - if [ $(python -c 'import sys; print(sys.version_info.major)') == '2' ]; then pip install oletools olefile ; fi
-    - if [ $(python -c 'import sys; print(sys.version_info.major)') == '2' ]; then sudo pip install oletools olefile ; fi
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
-    - python setup.py -q install
+    - |
+      if [[ "$TRAVIS_PYTHON_VERSION" == "2.7_with_system_site_packages" ]]; then
+        sudo pip install -U pip lxml exifread pillow
+        sudo pip install -U git+https://github.com/Rafiot/officedissector.git
+        sudo pip install -U oletools olefile coveralls codecov
+        sudo python setup.py -q install
+      else
+        pip install -U pip lxml exifread pillow
+        pip install -U git+https://github.com/Rafiot/officedissector.git
+        pip install -U coveralls codecov
+        python setup.py -q install
+      fi
     # Testing dependencies
     - sudo apt-get install rar
-    - pip install coveralls
-    - pip install codecov
     # Prepare testings
     # Zoo
     - git clone https://github.com/Rafiot/theZoo.git
