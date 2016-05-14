@@ -77,6 +77,7 @@ install:
     - mv path-traversal-samples/rar/*.rar tests/src/
     # Office docs
     - pushd tests/src/
+    - wget https://bitbucket.org/decalage/olefileio_pl/raw/3073963b640935134ed0da34906fea8e506460be/Tests/images/test-ole-file.doc
     - wget http://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
