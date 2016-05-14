@@ -336,10 +336,10 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                 self.cur_file.add_log_details('macro', True)
                 self.cur_file.make_dangerous()
             for i in indicators:
-                if i._id == 'ObjectPool' and i.value:
+                if i.id == 'ObjectPool' and i.value:
                     # FIXME: Is it suspicious?
                     self.cur_file.add_log_details('objpool', True)
-                elif i._id == 'flash' and i.value:
+                elif i.id == 'flash' and i.value:
                     self.cur_file.add_log_details('flash', True)
                     self.cur_file.make_dangerous()
         self._safe_copy()
