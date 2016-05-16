@@ -82,6 +82,7 @@ install:
     - wget http://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
+    - 7z x 42.zip -p42
     - popd
 
 script:
