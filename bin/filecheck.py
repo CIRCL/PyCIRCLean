@@ -14,7 +14,7 @@ import officedissector
 import warnings
 import exifread
 from PIL import Image
-from PIL import PngImagePlugin
+# from PIL import PngImagePlugin
 
 from pdfid import PDFiD, cPDFiD
 
@@ -444,7 +444,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         except Exception as e:
             print("Error while trying to grab full metadata for file {}; retrying for partial data.".format(self.cur_file.src_path))
             print(e)
-        if tags == None:
+        if tags is None:
             try:
                 tags = exifread.process_file(img, debug=True)
             except Exception as e:
@@ -458,7 +458,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             if tag not in ('JPEGThumbnail', 'TIFFThumbnail'):
                 printable = str(tags[tag])
 
-                #Exifreader truncates data.
+                # Exifreader truncates data.
                 if len(printable) > 25 and printable.endswith(", ... ]"):
                     value = tags[tag].values
                     if isinstance(value, basestring):
@@ -488,13 +488,13 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             self._safe_copy()
             return False
 
-
     def extract_metadata(self):
         metadataFile = self._safe_metadata_split(".metadata.txt")
         success = self.metadata_processing_options.get(self.cur_file.mimetype)(metadataFile)
         metadataFile.close()
         if not success:
-            pass #FIXME Delete empty metadata file
+            # FIXME Delete empty metadata file
+            pass
 
     #######################
     # ##### Not converted, checking the mime type ######
@@ -503,13 +503,12 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.cur_file.log_string += 'Audio file'
         self._media_processing()
 
-
     def image(self):
         '''Way to process an image'''
         if self.cur_file.has_metadata():
             self.extract_metadata()
 
-        ## FIXME make sure this works for png, gif, tiff
+        # FIXME make sure this works for png, gif, tiff
         # Create a temp directory
         dst_dir, filename = os.path.split(self.cur_file.dst_path)
         tmpdir = os.path.join(dst_dir, 'temp')
@@ -523,7 +522,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             imOut = Image.frombytes(imIn.mode, imIn.size, imIn.tobytes())
             imOut.save(tmppath)
 
-            #Copy the file back out and cleanup
+            # Copy the file back out and cleanup
             self._safe_copy(tmppath)
             self._safe_rmtree(tmpdir)
 
@@ -536,7 +535,6 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
         self.cur_file.log_string += 'Image file'
         self.cur_file.add_log_details('processing_type', 'image')
-
 
     def video(self):
         '''Way to process a video'''
@@ -563,9 +561,11 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             self._print_log()
 
         if self.recursive >= self.max_recursive:
-            self.cur_log.warning('ARCHIVE BOMB.')
-            self.cur_log.warning('The content of the archive contains recursively other archives.')
-            self.cur_log.warning('This is a bad sign so the archive is not extracted to the destination key.')
+            self.cur_file.make_dangerous()
+            self.cur_file.add_log_details('Archive Bomb', True)
+            self.log_name.warning('ARCHIVE BOMB.')
+            self.log_name.warning('The content of the archive contains recursively other archives.')
+            self.log_name.warning('This is a bad sign so the archive is not extracted to the destination key.')
             self._safe_rmtree(src_dir)
             if src_dir.endswith('_temp'):
                 archbomb_path = src_dir[:-len('_temp')]

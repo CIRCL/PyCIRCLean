@@ -252,8 +252,7 @@ class KittenGroomer(KittenGroomerBase):
 
     def _pdfa(self, tmpsrcpath):
         '''Way to process PDF/A file'''
-        pdf_command = '{} --dest-dir / "{}" "{}"'.format(PDF2HTMLEX, tmpsrcpath,
-                                                     self.cur_file.dst_path + '.html')
+        pdf_command = '{} --dest-dir / "{}" "{}"'.format(PDF2HTMLEX, tmpsrcpath, self.cur_file.dst_path + '.html')
         self._run_process(pdf_command)
 
     def _pdf(self):
@@ -336,9 +335,11 @@ class KittenGroomer(KittenGroomerBase):
             self._print_log()
 
         if self.recursive >= self.max_recursive:
-            self.cur_log.warning('ARCHIVE BOMB.')
-            self.cur_log.warning('The content of the archive contains recursively other archives.')
-            self.cur_log.warning('This is a bad sign so the archive is not extracted to the destination key.')
+            self.cur_file.make_dangerous()
+            self.cur_file.add_log_details('Archive Bomb', True)
+            self.log_name.warning('ARCHIVE BOMB.')
+            self.log_name.warning('The content of the archive contains recursively other archives.')
+            self.log_name.warning('This is a bad sign so the archive is not extracted to the destination key.')
             self._safe_rmtree(src_dir)
             if src_dir.endswith('_temp'):
                 archbomb_path = src_dir[:-len('_temp')]
