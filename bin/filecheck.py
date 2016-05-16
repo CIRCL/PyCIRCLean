@@ -140,7 +140,7 @@ class File(FileBase):
 
 class KittenGroomerFileCheck(KittenGroomerBase):
 
-    def __init__(self, root_src=None, root_dst=None, max_recursive=5, debug=False):
+    def __init__(self, root_src=None, root_dst=None, max_recursive=2, debug=False):
         '''
             Initialize the basics of the conversion process
         '''
