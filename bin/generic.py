@@ -187,13 +187,15 @@ class KittenGroomer(KittenGroomerBase):
         ''' This main type is unknown, that should not happen '''
         self.cur_file.log_string += 'Unknown file'
 
-    # ##### Threated as malicious, no reason to have it on a USB key ######
     def example(self):
-        '''Way to process example file'''
+        '''Used in examples, should never be returned by libmagic'''
         self.cur_file.log_string += 'Example file'
-        self.cur_file.make_dangerous()
-        self._safe_copy()
 
+    def multipart(self):
+        '''Used in web apps, should never be returned by libmagic'''
+        self.cur_file.log_string += 'Multipart file'
+
+    # ##### Threated as malicious, no reason to have it on a USB key ######
     def message(self):
         '''Way to process message file'''
         self.cur_file.log_string += 'Message file'
@@ -205,14 +207,6 @@ class KittenGroomer(KittenGroomerBase):
         self.cur_file.log_string += 'Model file'
         self.cur_file.make_dangerous()
         self._safe_copy()
-
-    def multipart(self):
-        '''Way to process multipart file'''
-        self.cur_file.log_string += 'Multipart file'
-        self.cur_file.make_dangerous()
-        self._safe_copy()
-
-    #######################
 
     # ##### Converted ######
     def text(self):
