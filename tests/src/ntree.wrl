@@ -1,0 +1,181 @@
+#VRML V1.0 ascii
+
+DEF Ez3d_Scene Separator {
+    DEF Ez3d_Viewer Switch {
+	whichChild	-3
+	DEF Title Info {
+	    string	""
+	}
+	DEF Viewer Info {
+	    string	"walk"
+	}
+	DEF BackgroundColor Info {
+	    string	"0.000000 0.000000 0.000000"
+	}
+	DEF Cameras Switch {
+	    whichChild	0
+	    PerspectiveCamera {
+		position	1.12948 2.23403 9.88775
+		orientation	0.192413 -0.894646 -0.403219  6.1811
+		focalDistance	9.51932
+		heightAngle	0.683577
+	    }
+	}
+    }
+    DEF Ez3d_Environment Switch {
+	whichChild	-3
+    }
+    DEF Ez3d_Objects Switch {
+	whichChild	-3
+	DEF Cube001 Separator {
+	    Transform {
+		scaleFactor	1.76681 0.168973 1.76681
+	    }
+	    Texture2 {
+		filename	"brick.gif"
+		wrapS	REPEAT
+		wrapT	REPEAT
+	    }
+	    DEF Ez3d_Material Material {
+		ambientColor	0.0375 0.0375 0.0375
+		diffuseColor	0.425 0.425 0.425
+		specularColor	0.807547 0.807547 0.807547
+		shininess	0.5
+		transparency	0
+	    }
+	    ShapeHints {
+		vertexOrdering	COUNTERCLOCKWISE
+		shapeType	UNKNOWN_SHAPE_TYPE
+		creaseAngle	0.523599
+	    }
+	    DEF Ez3d_Cube001 Cube {
+	    }
+	}
+	DEF Cylinder001 Separator {
+	    Transform {
+		translation	0.0806677 1.11004 4.76837e-007
+		scaleFactor	0.176417 0.977561 0.156127
+		center	-5.52615e-009 4.58545e-008 0
+	    }
+	    Texture2 {
+		filename	"oak.gif"
+		wrapS	REPEAT
+		wrapT	REPEAT
+	    }
+	    ShapeHints {
+		vertexOrdering	COUNTERCLOCKWISE
+		shapeType	UNKNOWN_SHAPE_TYPE
+		creaseAngle	0.523599
+	    }
+	    DEF Ez3d_Cylinder001 Cylinder {
+	    }
+	}
+	DEF Group002 Separator {
+	    Transform {
+		translation	0.0497642 2.50354 -0.281726
+		center	0.174201 0.111916 0.106615
+	    }
+	    DEF Sphere001_2 Separator {
+		Transform {
+		    translation	-0.0497642 -0.0265024 -0.479769
+		}
+		DEF Ez3d_Material Material {
+		    ambientColor	0.0908158 0.776699 0.00823493
+		    diffuseColor	0.0935403 0.8 0.00848198
+		    specularColor	0.114655 0.980583 0.0103966
+		    shininess	0.184466
+		    transparency	0.485437
+		}
+		ShapeHints {
+		    vertexOrdering	COUNTERCLOCKWISE
+		    shapeType	UNKNOWN_SHAPE_TYPE
+		    creaseAngle	0.523599
+		}
+		DEF Ez3d_Sphere001_2 Sphere {
+		}
+	    }
+	    DEF Sphere001 Separator {
+		Transform {
+		    translation	-0.0497642 -0.178993 0.25727
+		}
+		DEF Ez3d_Material Material {
+		    ambientColor	0.0908158 0.776699 0.00823493
+		    diffuseColor	0.0935403 0.8 0.00848198
+		    specularColor	0.114655 0.980583 0.0103966
+		    shininess	0.184466
+		    transparency	0.485437
+		}
+		ShapeHints {
+		    vertexOrdering	COUNTERCLOCKWISE
+		    shapeType	UNKNOWN_SHAPE_TYPE
+		    creaseAngle	0.523599
+		}
+		DEF Ez3d_Sphere001 Sphere {
+		}
+	    }
+	    DEF Group001 Separator {
+		Transform {
+		    translation	0.0995283 0.205495 0.222499
+		    center	0.0746732 -0.077734 -0.115884
+		}
+		DEF Sphere001_4 Separator {
+		    Transform {
+			translation	0.557986 0.19733 0.231768
+		    }
+		    DEF Ez3d_Material Material {
+			ambientColor	0.0908158 0.776699 0.00823493
+			diffuseColor	0.0935403 0.8 0.00848198
+			specularColor	0.114655 0.980583 0.0103966
+			shininess	0.184466
+			transparency	0.485437
+		    }
+		    ShapeHints {
+			vertexOrdering	COUNTERCLOCKWISE
+			shapeType	UNKNOWN_SHAPE_TYPE
+			creaseAngle	0.523599
+		    }
+		    DEF Ez3d_Sphere001_4 Sphere {
+		    }
+		}
+		DEF Sphere001_1 Separator {
+		    Transform {
+			translation	-0.149346 -0.352797 0.470501
+		    }
+		    DEF Ez3d_Material Material {
+			ambientColor	0.0908158 0.776699 0.00823493
+			diffuseColor	0.0935403 0.8 0.00848198
+			specularColor	0.114655 0.980583 0.0103966
+			shininess	0.184466
+			transparency	0.485437
+		    }
+		    ShapeHints {
+			vertexOrdering	COUNTERCLOCKWISE
+			shapeType	UNKNOWN_SHAPE_TYPE
+			creaseAngle	0.523599
+		    }
+		    DEF Ez3d_Sphere001_1 Sphere {
+		    }
+		}
+		DEF Sphere001_3 Separator {
+		    Transform {
+			translation	-0.40864 0.155468 -0.702269
+		    }
+		    DEF Ez3d_Material Material {
+			ambientColor	0.0908158 0.776699 0.00823493
+			diffuseColor	0.0935403 0.8 0.00848198
+			specularColor	0.114655 0.980583 0.0103966
+			shininess	0.184466
+			transparency	0.485437
+		    }
+		    ShapeHints {
+			vertexOrdering	COUNTERCLOCKWISE
+			shapeType	UNKNOWN_SHAPE_TYPE
+			creaseAngle	0.523599
+		    }
+		    DEF Ez3d_Sphere001_3 Sphere {
+		    }
+		}
+	    }
+	}
+    }
+}
