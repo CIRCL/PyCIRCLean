@@ -46,7 +46,9 @@ mimes_metadata = ['image/jpeg', 'image/tiff', 'image/png']
 aliases = {
     # Win executables
     'application/x-msdos-program': 'application/x-dosexec',
-    'application/x-dosexec': 'application/x-msdos-program'
+    'application/x-dosexec': 'application/x-msdos-program',
+    # Other apps with confusing mimetypes
+    'application/rtf': 'text/rtf',
 }
 
 # Sometimes, mimetypes.guess_type is giving unexpected results, such as for the .tar.gz files:
