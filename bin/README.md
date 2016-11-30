@@ -1,12 +1,18 @@
+Example scripts
+===============
+
+These are a series of example scripts designed to demonstrate PyCIRCLean's capabilities. Feel free to
+adapt or modify any of them to suit your requirements. In order to use any of these scripts, you will need to
+install the PyCIRCLean dependencies (preferably in a virtualenv):
+
+```
+    pip install git+https://github.com/ahupp/python-magic.git   # we cannot use the PyPi package for now due to a bug
+    python setup.py install     # from the root of the repository
+```
+
 Requirements per script
 =======================
 
-*Note*: in order to use any of those script, you need to install then (in a virtualenv or system wide)
-
-```
-    pip install git+https://github.com/ahupp/python-magic.git # we cannot use the PyPi package for now due to a bug
-    python setup.py install # from the root of the repository
-```
 
 filecheck.py
 ------------
