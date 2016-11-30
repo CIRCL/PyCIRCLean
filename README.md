@@ -4,23 +4,32 @@
 
 # PyCIRCLean
 
-PyCIRCLean is the Python code used by [CIRCLean](https://www.circl.lu/projects/CIRCLean/), the USB key and document sanitizer. The code
-has been separated from the devices as PyCIRCLean software can be used for dedicated security applications to sanitize documents
-from hostile environments to trusted environments.
+PyCIRCLean is the core Python code used by [CIRCLean](https://github.com/CIRCL/Circlean/), an open-source
+USB key and document sanitizer created by [CIRCL](https://www.circl.lu/). This module has been separated from the 
+device-specific scripts and can be used for dedicated security applications to sanitize documents from hostile environments 
+to trusted environments.
 
 # Installation
 
 ~~~
-python setup.py build
 python setup.py install
+~~~
+
+OR
+
+~~~
+pip install .
 ~~~
 
 # How to use PyCIRCLean
 
-PyCIRCLean is a simple Python library to handle file checking and sanitization. PyCIRCLean purpose is to have a simple library that can be
-overloaded to cover specific checking and sanitization workflows in different organizations like industrial environment or restricted/classified ICT environment. A series of practical example are in the [./bin](./bin) directory.
+PyCIRCLean is a simple Python library to handle file checking and sanitization. PyCIRCLean is designed as a simple library
+that can be overloaded to cover specific checking and sanitization workflows in different organizations like industrial
+environments or restricted/classified ICT environments. A series of practical examples utilizing PyCIRCLean can be found
+in the [./bin](./bin) directory.
 
-The following simple example using PyCIRCLean will only copy files with .conf extension matching the 'text/plain' MIME type. If any other file is found on the original USB key (source directory), the files won't be copied to the destination directory.
+The following simple example using PyCIRCLean will only copy files with a .conf extension matching the 'text/plain' MIME
+type. If any other file is found in the source directory, the files won't be copied to the destination directory.
 
 ~~~python
 #!/usr/bin/env python
@@ -86,7 +95,7 @@ class KittenGroomerSpec(KittenGroomerBase):
                 valid = False
                 compare_ext = 'Extension: {} - Expected: {}'.format(self.cur_file.extension, ', '.join(self.valid_files.keys()))
             elif self.cur_file.mimetype != expected_mime:
-                # Unexpected mimetype => dissalowed
+                # Unexpected mimetype => disallowed
                 valid = False
                 compare_mime = 'Mime: {} - Expected: {}'.format(self.cur_file.mimetype, expected_mime)
             self.cur_file.add_log_details('valid', valid)
@@ -118,8 +127,8 @@ if __name__ == '__main__':
 # How to contribute
 
 We welcome contributions (including bug fixes, new code workflows) via pull requests. We are interested in any new workflows
-that can be used to improve security in different organizations. If you see any potential enhancement required to support
-your sanitization workflow, feel free to open an issue.
+that can be used to improve security in different organizations. If you see any potential enhancements required to support
+your sanitization workflow, please feel free to open an issue. Read [CONTRIBUTING.md](/CONTRIBUTING.md) for more information.
 
 
 # License
