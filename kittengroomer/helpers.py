@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import magic
 import hashlib
 import shutil
-from twiggy import quick_setup, log
 import argparse
+
+import magic
+from twiggy import quick_setup, log
 
 
 class KittenGroomerError(Exception):
@@ -37,7 +38,9 @@ class FileBase(object):
         self.log_details = {'filepath': self.src_path}
         self.log_string = ''
         a, self.extension = os.path.splitext(self.src_path)
+        self._get_mimetype()
 
+    def _get_mimetype(self):
         if os.path.islink(self.src_path):
             # magic will throw an IOError on a broken symlink
             self.mimetype = 'inode/symlink'
