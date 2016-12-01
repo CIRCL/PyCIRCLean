@@ -65,3 +65,10 @@ target/
 *.snm
 *.toc
 *.vrb
+
+# Project specific
+/tests/dst/*
+!/tests/logs/
+!/tests/.keepdir
+
+
