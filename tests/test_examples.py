@@ -6,78 +6,85 @@ import sys
 
 import pytest
 
-from bin.specific import KittenGroomerSpec
-from bin.pier9 import KittenGroomerPier9
-from bin.generic import KittenGroomer
+from PyCIRCLean.bin.specific import KittenGroomerSpec
+from PyCIRCLean.bin.pier9 import KittenGroomerPier9
+from PyCIRCLean.bin.generic import KittenGroomer
 
 if sys.version_info.major == 2:
-    from bin.filecheck import KittenGroomerFileCheck
+    from PyCIRCLean.bin.filecheck import KittenGroomerFileCheck
 
 
-def setup_module():
-    PY3 = sys.version_info.major == 3
-    CURPATH = os.getcwd()
+skip = pytest.mark.skip
+py2_only = pytest.mark.skipif(sys.version_info.major == 3,
+                                reason="filecheck.py only runs on python 2")
 
 
-def test_specific_valid(self):
-    src = os.path.join(CURPATH, 'tests/src2')
-    dst = os.path.join(CURPATH, 'tests/dst')
-    spec = KittenGroomerSpec(src, dst, debug=True)
+@pytest.fixture
+def src_simple():
+    return os.path.join(os.getcwd(), 'tests/src_simple')
+
+
+@pytest.fixture
+def src_complex():
+    return os.path.join(os.getcwd(), 'tests/src_complex')
+
+
+@pytest.fixture
+def dst():
+    return os.path.join(os.getcwd(), 'tests/dst')
+
+
+def test_specific_valid(src_simple, dst):
+    spec = KittenGroomerSpec(src_simple, dst, debug=True)
     spec.processdir()
-    self.dump_logs(spec)
+    dump_logs(spec)
 
-def test_specific_invalid(self):
-    src = os.path.join(CURPATH, 'tests/src')
-    dst = os.path.join(CURPATH, 'tests/dst')
-    spec = KittenGroomerSpec(src, dst, debug=True)
-    spec.processdir()
-    self.dump_logs(spec)
 
-def test_pier9(self):
-    src = os.path.join(CURPATH, 'tests/src')
-    dst = os.path.join(CURPATH, 'tests/dst')
-    spec = KittenGroomerPier9(src, dst, debug=True)
+def test_specific_invalid(src_complex, dst):
+    spec = KittenGroomerSpec(src_complex, dst, debug=True)
     spec.processdir()
-    self.dump_logs(spec)
+    dump_logs(spec)
 
-def test_generic(self):
-    src = os.path.join(CURPATH, 'tests/src2')
-    dst = os.path.join(CURPATH, 'tests/dst')
-    spec = KittenGroomer(src, dst, debug=True)
-    spec.processdir()
-    self.dump_logs(spec)
 
-def test_generic_2(self):
-    src = os.path.join(CURPATH, 'tests/src')
-    dst = os.path.join(CURPATH, 'tests/dst')
-    spec = KittenGroomer(src, dst, debug=True)
+def test_pier9(src_complex, dst):
+    spec = KittenGroomerPier9(src_complex, dst, debug=True)
     spec.processdir()
-    self.dump_logs(spec)
+    dump_logs(spec)
 
-def test_filecheck(self):
-    if PY3:
-        return
-    src = os.path.join(CURPATH, 'tests/src')
-    dst = os.path.join(CURPATH, 'tests/dst')
-    spec = KittenGroomerFileCheck(src, dst, debug=True)
-    spec.processdir()
-    self.dump_logs(spec)
 
-def test_filecheck_2(self):
-    if PY3:
-        return
-    src = os.path.join(self.CURPATH, 'tests/src2')
-    dst = os.path.join(self.CURPATH, 'tests/dst')
-    spec = KittenGroomerFileCheck(src, dst, debug=True)
+@skip
+def test_generic(src_simple, dst):
+    spec = KittenGroomer(src_simple, dst, debug=True)
     spec.processdir()
-    self.dump_logs(spec)
+    dump_logs(spec)
+
+
+@skip
+def test_generic_2(src_complex, dst):
+    spec = KittenGroomer(src_complex, dst, debug=True)
+    spec.processdir()
+    dump_logs(spec)
+
+
+@py2_only
+def test_filecheck(src_complex, dst):
+    spec = KittenGroomerFileCheck(src_complex, dst, debug=True)
+    spec.processdir()
+    dump_logs(spec)
+
+
+@py2_only
+def test_filecheck_2(src_simple, dst):
+    spec = KittenGroomerFileCheck(src_simple, dst, debug=True)
+    spec.processdir()
+    dump_logs(spec)
 
 ## Helper functions
 
-def dump_logs(self, kg):
-    print(open(kg.log_processing, 'rb').read())
-    if kg.debug:
-        if os.path.exists(kg.log_debug_err):
-            print(open(kg.log_debug_err, 'rb').read())
-        if os.path.exists(kg.log_debug_out):
-            print(open(kg.log_debug_out, 'rb').read())
+def dump_logs(spec):
+    print(open(spec.log_processing, 'rb').read())
+    if spec.debug:
+        if os.path.exists(spec.log_debug_err):
+            print(open(spec.log_debug_err, 'rb').read())
+        if os.path.exists(spec.log_debug_out):
+            print(open(spec.log_debug_out, 'rb').read())

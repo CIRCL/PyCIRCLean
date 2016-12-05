@@ -16,13 +16,6 @@ def test_base():
     assert kg.main
 
 
-def test_specific():
-    src = os.path.join(PATH, 'src2')
-    dst = os.path.join(PATH, 'dst')
-    spec = specific.KittenGroomerSpec(src, dst, debug=True)
-    spec.processdir()
-
-
 def test_help_file():
         f = FileBase('tests/src/blah.conf', 'tests/dst/blah.conf')
         f.make_unknown()
