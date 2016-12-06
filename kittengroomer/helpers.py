@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+"""
+Contains the base objects for use when creating a sanitizer using
+PyCIRCLean. Subclass FileBase and KittenGroomerBase to implement your
+desired behavior.
+"""
+
+
 import os
 import sys
 import hashlib
@@ -11,36 +19,36 @@ from twiggy import quick_setup, log
 
 
 class KittenGroomerError(Exception):
+    """Base KittenGroomer exception handler."""
+
     def __init__(self, message):
-        '''
-            Base KittenGroomer exception handler.
-        '''
         super(KittenGroomerError, self).__init__(message)
         self.message = message
 
 
 class ImplementationRequired(KittenGroomerError):
-    '''
-        Implementation required error
-    '''
+    """Implementation required error."""
+
     pass
 
 
 class FileBase(object):
+    """
+    Base object for individual files in the source directory. Has information
+    about the file as attributes and various helper methods. Initialised with
+    the source path and expected destination path. Subclass and add attributes
+    or methods relevant to a given implementation."
+    """
 
     def __init__(self, src_path, dst_path):
-        '''
-            Contains base information for a file on the source USB key,
-            initialised with expected src and dest path
-        '''
         self.src_path = src_path
         self.dst_path = dst_path
         self.log_details = {'filepath': self.src_path}
         self.log_string = ''
-        a, self.extension = os.path.splitext(self.src_path)
-        self._get_mimetype()
+        _, self.extension = os.path.splitext(self.src_path)
+        self._determine_mimetype()
 
-    def _get_mimetype(self):
+    def _determine_mimetype(self):
         if os.path.islink(self.src_path):
             # magic will throw an IOError on a broken symlink
             self.mimetype = 'inode/symlink'
@@ -55,7 +63,6 @@ class FileBase(object):
                 self.mimetype = mt.decode("utf-8")
             except:
                 self.mimetype = mt
-
         if self.mimetype and '/' in self.mimetype:
             self.main_type, self.sub_type = self.mimetype.split('/')
         else:
@@ -63,40 +70,53 @@ class FileBase(object):
             self.sub_type = ''
 
     def has_mimetype(self):
+        """
+        Returns True if file has a full mimetype, else False.
+
+        Returns False + updates log if self.main_type or self.sub_type
+        are not set.
+        """
+
         if not self.main_type or not self.sub_type:
             self.log_details.update({'broken_mime': True})
             return False
         return True
 
     def has_extension(self):
+        """
+        Returns True if self.extension is set, else False.
+
+        Returns False + updates self.log_details if self.extension is not set.
+        """
         if not self.extension:
             self.log_details.update({'no_extension': True})
             return False
         return True
 
     def is_dangerous(self):
+        """Returns True if self.log_details contains 'dangerous'."""
         if self.log_details.get('dangerous'):
             return True
         return False
 
     def is_symlink(self):
+        """Returns True and updates log if file is a symlink."""
         if self.has_mimetype() and self.main_type == 'inode' and self.sub_type == 'symlink':
             self.log_details.update({'symlink': os.readlink(self.src_path)})
             return True
         return False
 
     def add_log_details(self, key, value):
-        '''
-            Add an entry in the log dictionary
-        '''
+        """Takes a key + a value and adds them to self.log_details."""
         self.log_details[key] = value
 
     def make_dangerous(self):
-        '''
-            This file should be considered as dangerous and never run.
-            Prepending and appending DANGEROUS to the destination
-            file name avoid double-click of death
-        '''
+        """
+        Marks a file as dangerous.
+
+        Prepends and appends DANGEROUS to the destination file name
+        to avoid double-click of death.
+        """
         if self.is_dangerous():
             # Already marked as dangerous, do nothing
             return
@@ -105,11 +125,7 @@ class FileBase(object):
         self.dst_path = os.path.join(path, 'DANGEROUS_{}_DANGEROUS'.format(filename))
 
     def make_unknown(self):
-        '''
-            This file has an unknown type and it was not possible to take
-            a decision. Theuser will have to decide what to do.
-            Prepending UNKNOWN
-        '''
+        """Marks a file as an unknown type and prepends UNKNOWN to filename."""
         if self.is_dangerous() or self.log_details.get('binary'):
             # Already marked as dangerous or binary, do nothing
             return
@@ -118,11 +134,7 @@ class FileBase(object):
         self.dst_path = os.path.join(path, 'UNKNOWN_{}'.format(filename))
 
     def make_binary(self):
-        '''
-            This file is a binary, and should probably not be run.
-            Appending .bin avoir double click of death but the user
-            will have to decide by itself.
-        '''
+        """Marks a file as a binary and appends .bin to filename."""
         if self.is_dangerous():
             # Already marked as dangerous, do nothing
             return
@@ -131,6 +143,7 @@ class FileBase(object):
         self.dst_path = os.path.join(path, '{}.bin'.format(filename))
 
     def force_ext(self, ext):
+        """If dst_path does not end in ext, appends the ext and updates log."""
         if not self.dst_path.endswith(ext):
             self.log_details['force_ext'] = True
             self.dst_path += ext
