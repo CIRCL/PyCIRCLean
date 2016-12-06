@@ -34,13 +34,13 @@ class ImplementationRequired(KittenGroomerError):
 
 class FileBase(object):
     """
-    Base object for individual files in the source directory. Has information
-    about the file as attributes and various helper methods. Initialised with
-    the source path and expected destination path. Subclass and add attributes
-    or methods relevant to a given implementation."
+    Base object for individual files in the source directory. Contains file
+    attributes and various helper methods. Subclass and add attributes
+    or methods relevant to a given implementation.
     """
 
     def __init__(self, src_path, dst_path):
+        """Initialized with the source path and expected destination path."""
         self.src_path = src_path
         self.dst_path = dst_path
         self.log_details = {'filepath': self.src_path}
@@ -150,11 +150,10 @@ class FileBase(object):
 
 
 class KittenGroomerBase(object):
+    """Base object responsible for copy/sanitization process."""
 
     def __init__(self, root_src, root_dst, debug=False):
-        '''
-            Setup the base options of the copy/convert setup
-        '''
+        """Initialized with path to source and dest directories."""
         self.src_root_dir = root_src
         self.dst_root_dir = root_dst
         self.log_root_dir = os.path.join(self.dst_root_dir, 'logs')
@@ -166,8 +165,8 @@ class KittenGroomerBase(object):
 
         quick_setup(file=self.log_processing)
         self.log_name = log.name('files')
-        self.ressources_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
-        os.environ["PATH"] += os.pathsep + self.ressources_path
+        self.resources_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
+        os.environ["PATH"] += os.pathsep + self.resources_path
 
         self.cur_file = None
 
@@ -180,6 +179,7 @@ class KittenGroomerBase(object):
             self.log_debug_out = os.devnull
 
     def _computehash(self, path):
+        """Returns a sha1 hash of a file at a given path."""
         s = hashlib.sha1()
         with open(path, 'rb') as f:
             while True:
@@ -190,6 +190,7 @@ class KittenGroomerBase(object):
         return s.hexdigest()
 
     def tree(self, base_dir, padding='   '):
+        """Writes a graphical tree to the log for a given directory."""
         if sys.version_info.major == 2:
             self.__tree_py2(base_dir, padding)
         else:
@@ -227,22 +228,22 @@ class KittenGroomerBase(object):
 
     # ##### Helpers #####
     def _safe_rmtree(self, directory):
-        '''Remove a directory tree if it exists'''
+        """Remove a directory tree if it exists."""
         if os.path.exists(directory):
             shutil.rmtree(directory)
 
     def _safe_remove(self, filepath):
-        '''Remove a file if it exists'''
+        """Remove a file if it exists."""
         if os.path.exists(filepath):
             os.remove(filepath)
 
     def _safe_mkdir(self, directory):
-        '''Make a directory if it does not exist'''
+        """Make a directory if it does not exist."""
         if not os.path.exists(directory):
             os.makedirs(directory)
 
     def _safe_copy(self, src=None, dst=None):
-        ''' Copy a file and create directory if needed'''
+        """Copy a file and create directory if needed."""
         if src is None:
             src = self.cur_file.src_path
         if dst is None:
@@ -258,7 +259,7 @@ class KittenGroomerBase(object):
             return False
 
     def _safe_metadata_split(self, ext):
-        '''Create a separate file to hold this file's metadata'''
+        """Create a separate file to hold this file's metadata."""
         dst = self.cur_file.dst_path
         try:
             if os.path.exists(self.cur_file.src_path + ext):
@@ -274,31 +275,31 @@ class KittenGroomerBase(object):
             return False
 
     def _list_all_files(self, directory):
-        ''' Generate an iterator over all the files in a directory tree'''
+        """Generate an iterator over all the files in a directory tree."""
         for root, dirs, files in os.walk(directory):
             for filename in files:
                 filepath = os.path.join(root, filename)
                 yield filepath
 
     def _print_log(self):
-        '''
-            Print log, should be called after each file.
+        """
+        Print log, should be called after each file.
 
-            You probably want to reimplement it in the subclass
-        '''
+        You probably want to reimplement it in the subclass.
+        """
         tmp_log = self.log_name.fields(**self.cur_file.log_details)
         tmp_log.info('It did a thing.')
 
     #######################
 
     def processdir(self, src_dir=None, dst_dir=None):
-        '''
-            Main function doing the work, you have to implement it yourself.
-        '''
-        raise ImplementationRequired('You have to implement the result processdir.')
+        """
+        Implement this function in your subclass to define file processing behavior.
+        """
+        raise ImplementationRequired('Please implement processdir.')
 
 
-def main(kg_implementation, description='Call the KittenGroomer implementation to do things on files present in the source directory to the destination directory'):
+def main(kg_implementation, description='Call a KittenGroomer implementation to process files present in the source directory and copy them to the destination directory.'):
     parser = argparse.ArgumentParser(prog='KittenGroomer', description=description)
     parser.add_argument('-s', '--source', type=str, help='Source directory')
     parser.add_argument('-d', '--destination', type=str, help='Destination directory')
