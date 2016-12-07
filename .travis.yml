@@ -65,23 +65,23 @@ install:
     - popd
     - mv theZoo/malwares/Binaries/out tests/src/
     # path transversal
-    - hg clone https://bitbucket.org/jwilk/path-traversal-samples
-    - pushd path-traversal-samples
-    - pushd zip
-    - make
-    - popd
-    - pushd rar
-    - make
-    - popd
-    - popd
-    - mv path-traversal-samples/zip/*.zip tests/src/
-    - mv path-traversal-samples/rar/*.rar tests/src/
+    # - hg clone https://bitbucket.org/jwilk/path-traversal-samples
+    # - pushd path-traversal-samples
+    # - pushd zip
+    # - make
+    # - popd
+    # - pushd rar
+    # - make
+    # - popd
+    # - popd
+    # - mv path-traversal-samples/zip/*.zip tests/src/
+    # - mv path-traversal-samples/rar/*.rar tests/src/
     # Office docs
     - git clone https://github.com/eea/odfpy.git
     - mv odfpy/tests/examples/* tests/src/
     - pushd tests/src/
     - wget https://bitbucket.org/decalage/olefileio_pl/raw/3073963b640935134ed0da34906fea8e506460be/Tests/images/test-ole-file.doc
-    - wget http://www.officedissector.com/corpus/fraunhoferlibrary.zip
+    - wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
     - 7z x 42.zip -p42
