@@ -6,12 +6,12 @@ import sys
 
 import pytest
 
-from PyCIRCLean.bin.specific import KittenGroomerSpec
-from PyCIRCLean.bin.pier9 import KittenGroomerPier9
-from PyCIRCLean.bin.generic import KittenGroomer
+from bin.specific import KittenGroomerSpec
+from bin.pier9 import KittenGroomerPier9
+from bin.generic import KittenGroomer
 
 if sys.version_info.major == 2:
-    from PyCIRCLean.bin.filecheck import KittenGroomerFileCheck
+    from bin.filecheck import KittenGroomerFileCheck
 
 
 skip = pytest.mark.skip
@@ -52,14 +52,12 @@ def test_pier9(src_complex, dst):
     dump_logs(spec)
 
 
-@skip
 def test_generic(src_simple, dst):
     spec = KittenGroomer(src_simple, dst, debug=True)
     spec.processdir()
     dump_logs(spec)
 
 
-@skip
 def test_generic_2(src_complex, dst):
     spec = KittenGroomer(src_complex, dst, debug=True)
     spec.processdir()
