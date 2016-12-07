@@ -1,3 +1,4 @@
 twiggy
 python-magic
 pytest
+pytest-cov
