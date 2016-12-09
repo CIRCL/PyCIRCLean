@@ -258,7 +258,7 @@ class KittenGroomer(KittenGroomerBase):
         self._safe_mkdir(tmpdir)
         # The magic comes from here: http://svn.ghostscript.com/ghostscript/trunk/gs/doc/Ps2pdf.htm#PDFA
         curdir = os.getcwd()
-        os.chdir(self.ressources_path)
+        os.chdir(self.resources_path)
         gs_command = '{} -dPDFA -dQUIET -dSAFER -dBATCH -dNOPAUSE -dNOOUTERSAVE -sProcessColorModel=DeviceCMYK -sDEVICE=pdfwrite -sPDFACompatibilityPolicy=1 -sOutputFile="{}" ./PDFA_def.ps "{}"'.format(
             GS, os.path.join(curdir, tmppath), os.path.join(curdir, self.cur_file.src_path))
         self._run_process(gs_command)

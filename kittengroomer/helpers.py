@@ -262,7 +262,7 @@ class KittenGroomerBase(object):
         """Create a separate file to hold this file's metadata."""
         dst = self.cur_file.dst_path
         try:
-            if os.path.exists(self.cur_file.src_path + ext):
+            if os.path.exists(self.cur_file.src_path + ext): # should we check dst_path as well?
                 raise KittenGroomerError("Cannot create split metadata file for \"" +
                                          self.cur_file.dst_path + "\", type '" +
                                          ext + "': File exists.")
