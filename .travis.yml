@@ -48,40 +48,41 @@ install:
       if [[ "$TRAVIS_PYTHON_VERSION" == "2.7_with_system_site_packages" ]]; then
         sudo pip install -U pip lxml exifread pillow
         sudo pip install -U git+https://github.com/Rafiot/officedissector.git
-        sudo pip install -U oletools olefile coveralls codecov
+        sudo pip install -U oletools olefile coveralls codecov pytest-cov
       else
         pip install -U pip lxml exifread pillow
         pip install -U git+https://github.com/Rafiot/officedissector.git
-        pip install -U coveralls codecov
+        pip install -U coveralls codecov pytest-cov
       fi
-    - python setup.py -q install
+    # Module dependencies
+    - pip install -r dev-requirements.txt
     # Testing dependencies
     - sudo apt-get install rar
-    # Prepare testings
+    # Prepare tests
     # Zoo
     - git clone https://github.com/Rafiot/theZoo.git
     - pushd theZoo/malwares/Binaries
     - python unpackall.py
     - popd
-    - mv theZoo/malwares/Binaries/out tests/src/
-    # path transversal
-    - hg clone https://bitbucket.org/jwilk/path-traversal-samples
-    - pushd path-traversal-samples
-    - pushd zip
-    - make
-    - popd
-    - pushd rar
-    - make
-    - popd
-    - popd
-    - mv path-traversal-samples/zip/*.zip tests/src/
-    - mv path-traversal-samples/rar/*.rar tests/src/
+    - mv theZoo/malwares/Binaries/out tests/src_complex/
+    # path traversal
+    # - hg clone https://bitbucket.org/jwilk/path-traversal-samples
+    # - pushd path-traversal-samples
+    # - pushd zip
+    # - make
+    # - popd
+    # - pushd rar
+    # - make
+    # - popd
+    # - popd
+    # - mv path-traversal-samples/zip/*.zip tests/src_complex/
+    # - mv path-traversal-samples/rar/*.rar tests/src_complex/
     # Office docs
     - git clone https://github.com/eea/odfpy.git
-    - mv odfpy/tests/examples/* tests/src/
-    - pushd tests/src/
+    - mv odfpy/tests/examples/* tests/src_complex/
+    - pushd tests/src_complex/
     - wget https://bitbucket.org/decalage/olefileio_pl/raw/3073963b640935134ed0da34906fea8e506460be/Tests/images/test-ole-file.doc
-    - wget http://www.officedissector.com/corpus/fraunhoferlibrary.zip
+    - wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
     - 7z x 42.zip -p42
@@ -92,7 +93,7 @@ install:
     - popd
 
 script:
-    - travis_wait 60 coverage run --source=bin,kittengroomer setup.py test
+    - travis_wait 60 py.test --cov=kittengroomer --cov=bin tests/
 
 notifications:
     email:

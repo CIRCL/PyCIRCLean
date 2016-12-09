@@ -1,1 +1,1 @@
-This directory contains files that may of may not be used in the project
+This directory contains extra files that may or may not be used in the project
