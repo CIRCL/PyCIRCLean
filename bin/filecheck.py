@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import sys
 import mimetypes
 import shlex
 import subprocess
@@ -21,6 +22,7 @@ from pdfid import PDFiD, cPDFiD
 from kittengroomer import FileBase, KittenGroomerBase, main
 
 SEVENZ = '/usr/bin/7z'
+PY3 = sys.version_info.major == 3
 
 
 # Prepare application/<subtype>

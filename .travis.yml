@@ -1,13 +1,14 @@
 language: python
 
 python:
-    - "2.7_with_system_site_packages"
-    - "3.3"
-    - "3.4"
-    - "3.5"
-    - "nightly"
+    - 2.7
+    - 3.3
+    - 3.4
+    - 3.5
+    - nightly
 
 sudo: required
+# do we need sudo? should double check
 
 dist: trusty
 
@@ -44,18 +45,16 @@ install:
     - sudo apt-get install libxml2-dev libxslt1-dev
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
+    - pip install -U pip
+    - pip install lxml exifread pillow
+    - pip install git+https://github.com/Rafiot/officedissector.git
     - |
-      if [[ "$TRAVIS_PYTHON_VERSION" == "2.7_with_system_site_packages" ]]; then
-        sudo pip install -U pip lxml exifread pillow
-        sudo pip install -U git+https://github.com/Rafiot/officedissector.git
-        sudo pip install -U oletools olefile coveralls codecov pytest-cov
-      else
-        pip install -U pip lxml exifread pillow
-        pip install -U git+https://github.com/Rafiot/officedissector.git
-        pip install -U coveralls codecov pytest-cov
+      if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
+        pip install -U oletools olefile
       fi
     # Module dependencies
     - pip install -r dev-requirements.txt
+    - pip install coveralls codecov
     # Testing dependencies
     - sudo apt-get install rar
     # Prepare tests
@@ -65,18 +64,18 @@ install:
     - python unpackall.py
     - popd
     - mv theZoo/malwares/Binaries/out tests/src_complex/
-    # path traversal
-    # - hg clone https://bitbucket.org/jwilk/path-traversal-samples
-    # - pushd path-traversal-samples
-    # - pushd zip
-    # - make
-    # - popd
-    # - pushd rar
-    # - make
-    # - popd
-    # - popd
-    # - mv path-traversal-samples/zip/*.zip tests/src_complex/
-    # - mv path-traversal-samples/rar/*.rar tests/src_complex/
+    # Path traversal
+    - git clone https://github.com/jwilk/path-traversal-samples
+    - pushd path-traversal-samples
+    - pushd zip
+    - make
+    - popd
+    - pushd rar
+    - make
+    - popd
+    - popd
+    - mv path-traversal-samples/zip/*.zip tests/src_complex/
+    - mv path-traversal-samples/rar/*.rar tests/src_complex/
     # Office docs
     - git clone https://github.com/eea/odfpy.git
     - mv odfpy/tests/examples/* tests/src_complex/
