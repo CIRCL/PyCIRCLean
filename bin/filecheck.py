@@ -241,7 +241,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     def inode(self):
         ''' Usually empty file. No reason (?) to copy it on the dest key'''
         if self.cur_file.is_symlink():
-            self.cur_file.log_string += 'Symlink to {}'.format(self.log_details['symlink'])
+            self.cur_file.log_string += 'Symlink to {}'.format(self.cur_file.log_details['symlink'])
         else:
             self.cur_file.log_string += 'Inode file'
 
@@ -390,19 +390,19 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         xmlDoc = PDFiD(self.cur_file.src_path)
         oPDFiD = cPDFiD(xmlDoc, True)
         # TODO: other keywords?
-        if oPDFiD.encrypt > 0:
+        if oPDFiD.encrypt.count > 0:
             self.cur_file.add_log_details('encrypted', True)
             self.cur_file.make_dangerous()
-        if oPDFiD.js > 0 or oPDFiD.javascript > 0:
+        if oPDFiD.js.count > 0 or oPDFiD.javascript.count > 0:
             self.cur_file.add_log_details('javascript', True)
             self.cur_file.make_dangerous()
-        if oPDFiD.aa > 0 or oPDFiD.openaction > 0:
+        if oPDFiD.aa.count > 0 or oPDFiD.openaction.count > 0:
             self.cur_file.add_log_details('openaction', True)
             self.cur_file.make_dangerous()
-        if oPDFiD.richmedia > 0:
+        if oPDFiD.richmedia.count > 0:
             self.cur_file.add_log_details('flash', True)
             self.cur_file.make_dangerous()
-        if oPDFiD.launch > 0:
+        if oPDFiD.launch.count > 0:
             self.cur_file.add_log_details('launch', True)
             self.cur_file.make_dangerous()
 
@@ -459,7 +459,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                 # Exifreader truncates data.
                 if len(printable) > 25 and printable.endswith(", ... ]"):
                     value = tags[tag].values
-                    if isinstance(value, basestring):
+                    if isinstance(value, str):
                         printable = value
                     else:
                         printable = str(value)
