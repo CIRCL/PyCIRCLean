@@ -9,9 +9,7 @@ import pytest
 from bin.specific import KittenGroomerSpec
 from bin.pier9 import KittenGroomerPier9
 from bin.generic import KittenGroomer
-
-if sys.version_info.major == 2:
-    from bin.filecheck import KittenGroomerFileCheck
+from bin.filecheck import KittenGroomerFileCheck
 
 
 skip = pytest.mark.skip
@@ -64,14 +62,12 @@ def test_generic_2(src_complex, dst):
     dump_logs(spec)
 
 
-@py2_only
 def test_filecheck(src_complex, dst):
     spec = KittenGroomerFileCheck(src_complex, dst, debug=True)
     spec.processdir()
     dump_logs(spec)
 
 
-@py2_only
 def test_filecheck_2(src_simple, dst):
     spec = KittenGroomerFileCheck(src_simple, dst, debug=True)
     spec.processdir()

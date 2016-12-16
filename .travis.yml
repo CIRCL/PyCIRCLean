@@ -47,11 +47,9 @@ install:
     - unzip pdfid_v0_2_1.zip
     - pip install -U pip
     - pip install lxml exifread pillow
+    - pip install olefile
+    - pip install git+https://github.com/decalage2/oletools.git
     - pip install git+https://github.com/Rafiot/officedissector.git
-    - |
-      if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
-        pip install -U oletools olefile
-      fi
     # Module dependencies
     - pip install -r dev-requirements.txt
     - pip install coveralls codecov
