@@ -1,13 +1,12 @@
-Example scripts
-===============
+Examples
+========
 
-These are a series of example scripts designed to demonstrate PyCIRCLean's capabilities. Feel free to
-adapt or modify any of them to suit your requirements. In order to use any of these scripts, you will need to
-install the PyCIRCLean dependencies (preferably in a virtualenv):
+These are several sanitizers that demonstrate PyCIRCLean's capabilities. Feel free to
+adapt or modify any of them to suit your requirements. In order to use any of these scripts,
+you will first need to install the PyCIRCLean dependencies (preferably in a virtualenv):
 
 ```
-    pip install git+https://github.com/ahupp/python-magic.git   # we cannot use the PyPi package for now due to a bug
-    python setup.py install     # from the root of the repository
+    pip install .
 ```
 
 Requirements per script
@@ -16,23 +15,22 @@ Requirements per script
 filecheck.py
 ------------
 
-*WARNING*: Only works with Python 2.7 (oletools and olefile aren't ported to Python3 for now)
-
 Requirements by type of document:
 * Microsoft office: oletools, olefile
 * OOXML: officedissector
 * PDF: pdfid
 * Archives: p7zip-full, p7zip-rar
+* Metadata: exifread
+* Images: pillow
 
 
 ```
     sudo apt-get install p7zip-full p7zip-rar libxml2-dev libxslt1-dev
-    pip install lxml officedissector git+https://github.com/ahupp/python-magic.git oletools olefile
+    pip install lxml oletools olefile pillow exifread
     pip install git+https://github.com/Rafiot/officedissector.git
     # pdfid is not a package, installing manually
     wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     unzip pdfid_v0_2_1.zip
-    python setup.py -q install
 ```
 
 generic.py
