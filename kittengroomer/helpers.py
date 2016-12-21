@@ -81,7 +81,6 @@ class FileBase(object):
         Returns False + updates log if self.main_type or self.sub_type
         are not set.
         """
-
         if not self.main_type or not self.sub_type:
             self.log_details.update({'broken_mime': True})
             return False
@@ -93,16 +92,22 @@ class FileBase(object):
 
         Returns False + updates self.log_details if self.extension is not set.
         """
-        if not self.extension:
+        if self.extension == '':
             self.log_details.update({'no_extension': True})
             return False
         return True
 
     def is_dangerous(self):
         """Returns True if self.log_details contains 'dangerous'."""
-        if self.log_details.get('dangerous'):
-            return True
-        return False
+        return ('dangerous' in self.log_details)
+
+    def is_unknown(self):
+        """Returns True if self.log_details contains 'unknown'."""
+        return ('unknown' in self.log_details)
+
+    def is_binary(self):
+        """returns True if self.log_details contains 'binary'."""
+        return ('binary' in self.log_details)
 
     def is_symlink(self):
         """Returns True and updates log if file is a symlink."""
@@ -120,10 +125,9 @@ class FileBase(object):
         Marks a file as dangerous.
 
         Prepends and appends DANGEROUS to the destination file name
-        to avoid double-click of death.
+        to help prevent double-click of death.
         """
         if self.is_dangerous():
-            # Already marked as dangerous, do nothing
             return
         self.log_details['dangerous'] = True
         path, filename = os.path.split(self.dst_path)
@@ -131,8 +135,7 @@ class FileBase(object):
 
     def make_unknown(self):
         """Marks a file as an unknown type and prepends UNKNOWN to filename."""
-        if self.is_dangerous() or self.log_details.get('binary'):
-            # Already marked as dangerous or binary, do nothing
+        if self.is_dangerous() or self.is_binary():
             return
         self.log_details['unknown'] = True
         path, filename = os.path.split(self.dst_path)
@@ -141,7 +144,6 @@ class FileBase(object):
     def make_binary(self):
         """Marks a file as a binary and appends .bin to filename."""
         if self.is_dangerous():
-            # Already marked as dangerous, do nothing
             return
         self.log_details['binary'] = True
         path, filename = os.path.split(self.dst_path)
@@ -265,9 +267,10 @@ class KittenGroomerBase(object):
 
     def _safe_metadata_split(self, ext):
         """Create a separate file to hold this file's metadata."""
+        # TODO: fix logic in this method
         dst = self.cur_file.dst_path
         try:
-            if os.path.exists(self.cur_file.src_path + ext): # should we check dst_path as well?
+            if os.path.exists(self.cur_file.src_path + ext):  # should we check dst_path as well?
                 raise KittenGroomerError("Cannot create split metadata file for \"" +
                                          self.cur_file.dst_path + "\", type '" +
                                          ext + "': File exists.")
