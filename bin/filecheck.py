@@ -4,7 +4,6 @@ import os
 import mimetypes
 import shlex
 import subprocess
-import time
 import zipfile
 
 import oletools.oleid
@@ -206,27 +205,14 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         else:
             tmp_log.debug(self.cur_file.log_string)
 
-    def _run_process(self, command_string, timeout=0, background=False):
+    def _run_process(self, command_string, timeout=None):
         """Run command_string in a subprocess, wait until it finishes."""
-        if timeout != 0:
-            deadline = time.time() + timeout
-        else:
-            deadline = None
         args = shlex.split(command_string)
         with open(self.log_debug_err, 'ab') as stderr, open(self.log_debug_out, 'ab') as stdout:
-            p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
-        if background:
-            # This timer is here to make sure the unoconv listener is properly started.
-            time.sleep(10)
-            return True
-        while True:
-            code = p.poll()
-            if code is not None:
-                break
-            if deadline is not None and time.time() > deadline:
-                p.kill()
-                break
-            time.sleep(1)
+            try:
+                subprocess.check_call(args, stdout=stdout, stderr=stderr, timeout=timeout)
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+                return
         return True
 
     #######################
