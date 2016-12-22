@@ -45,8 +45,12 @@ class FileBase(object):
         self.dst_path = dst_path
         self.log_details = {'filepath': self.src_path}
         self.log_string = ''
-        _, self.extension = os.path.splitext(self.src_path)
+        self._determine_extension()
         self._determine_mimetype()
+
+    def _determine_extension(self):
+        _, ext = os.path.splitext(self.src_path)
+        self.extension = ext.lower()
 
     def _determine_mimetype(self):
         if os.path.islink(self.src_path):

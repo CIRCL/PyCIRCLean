@@ -113,6 +113,13 @@ class TestFileBase:
         # assert file.log_details == copied_log     # this fails for now, we need to make log_details undeletable
         # we should probably check for more extensions here
 
+    def test_extension_uppercase(self, tmpdir):
+        file_path = tmpdir.join('TEST.TXT')
+        file_path.write('testing')
+        file_path = file_path.strpath
+        file = FileBase(file_path, file_path)
+        assert file.extension == '.txt'
+
     def test_mimetypes(self, generic_conf_file):
         assert generic_conf_file.has_mimetype()
         assert generic_conf_file.mimetype == 'text/plain'
