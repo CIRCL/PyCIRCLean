@@ -1,0 +1,4 @@
+[autorun]
+open=setup.exe
+icon=setup.ico
+label=My install CD
