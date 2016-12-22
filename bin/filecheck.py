@@ -560,6 +560,19 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     #######################
 
+    def process_file(self, srcpath, dstpath, relative_path):
+        self.cur_file = File(srcpath, dstpath)
+        self.log_name.info('Processing {} ({}/{})',
+                           relative_path,
+                           self.cur_file.main_type,
+                           self.cur_file.sub_type)
+        if not self.cur_file.is_dangerous():
+            self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
+        else:
+            self._safe_copy()
+        if not self.cur_file.is_recursive:
+            self._print_log()
+
     def processdir(self, src_dir=None, dst_dir=None):
         """Main function coordinating file processing."""
         if src_dir is None:
@@ -574,16 +587,10 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             self._handle_archivebomb(src_dir)
 
         for srcpath in self._list_all_files(src_dir):
-            self.cur_file = File(srcpath, srcpath.replace(src_dir, dst_dir))
-
-            self.log_name.info('Processing {} ({}/{})', srcpath.replace(src_dir + '/', ''),
-                               self.cur_file.main_type, self.cur_file.sub_type)
-            if not self.cur_file.is_dangerous():
-                self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
-            else:
-                self._safe_copy()
-            if not self.cur_file.is_recursive:
-                self._print_log()
+            dstpath = srcpath.replace(src_dir, dst_dir)
+            relative_path = srcpath.replace(src_dir + '/', '')
+            # which path do we want in the log?
+            self.process_file(srcpath, dstpath, relative_path)
 
 
 if __name__ == '__main__':
