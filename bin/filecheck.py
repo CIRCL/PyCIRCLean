@@ -197,6 +197,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def _print_log(self):
         """Print the logs related to the current file being processed."""
+        # TODO: change name to _write_log
         tmp_log = self.log_name.fields(**self.cur_file.log_details)
         if self.cur_file.is_dangerous():
             tmp_log.warning(self.cur_file.log_string)

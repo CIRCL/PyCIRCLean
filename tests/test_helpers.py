@@ -21,7 +21,7 @@ class TestFileBase:
 
     @fixture
     def source_file(self):
-        return 'tests/src_simple/blah.conf'
+        return 'tests/src_valid/blah.conf'
 
     @fixture
     def dest_file(self):
@@ -84,7 +84,7 @@ class TestFileBase:
     # We should probably catch everytime that happens and tell the user explicitly happened (and maybe put it in the log)
 
     def test_create(self):
-        file = FileBase('tests/src_simple/blah.conf', '/tests/dst/blah.conf')
+        file = FileBase('tests/src_valid/blah.conf', '/tests/dst/blah.conf')
 
     def test_create_broken(self, tmpdir):
         with pytest.raises(TypeError):
@@ -221,7 +221,7 @@ class TestKittenGroomerBase:
 
     @fixture
     def source_directory(self):
-        return 'tests/src_complex'
+        return 'tests/src_invalid'
 
     @fixture
     def dest_directory(self):
