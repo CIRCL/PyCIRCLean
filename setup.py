@@ -12,9 +12,6 @@ setup(
     description='Standalone CIRCLean/KittenGroomer code.',
     packages=['kittengroomer'],
     scripts=[
-        'bin/generic.py',
-        'bin/pier9.py',
-        'bin/specific.py',
         'bin/filecheck.py'
     ],
     include_package_data=True,

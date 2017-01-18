@@ -17,8 +17,6 @@ addons:
         packages:
             # General dependencies
             - p7zip-full
-            # generic.py dependencies
-            - ghostscript
             # Testing dependencies
             - mercurial
 
@@ -26,21 +24,7 @@ install:
     # General dependencies
     - sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty multiverse" && sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse"
     - sudo apt-get update -qq
-    - sudo apt-get install -y p7zip-rar
-    # generic.py: pdf2htmlEX + dependencies
-    - sudo add-apt-repository ppa:fontforge/fontforge --yes
-    # to get a working 0.26 poppler
-    - sudo add-apt-repository ppa:delayargentina/delayx --yes
-    - sudo apt-get update -qq
-    - sudo apt-get install -y libpoppler-dev libpoppler-private-dev libspiro-dev libcairo-dev libpango1.0-dev libfreetype6-dev libltdl-dev libfontforge-dev python-imaging python-pip firefox xvfb
-    - git clone https://github.com/coolwanglu/pdf2htmlEX.git
-    - pushd pdf2htmlEX
-    - cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_SVG=ON .
-    - make
-    - sudo make install
-    - popd
-    # generic.py: Other dependencies
-    - sudo apt-get install -y libreoffice libreoffice-script-provider-python unoconv
+    - sudo apt-get install -y p7zip-rar python-pip
     # filecheck.py dependencies
     - sudo apt-get install libxml2-dev libxslt1-dev
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
@@ -82,7 +66,7 @@ install:
     - wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
-    - 7z x 42.zip -p42
+    - 7z x -p42 42.zip
     - wget http://www.sample-videos.com/audio/mp3/india-national-anthem.mp3
     - wget http://www.sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4
     - wget http://thewalter.net/stef/software/rtfx/sample.rtf
