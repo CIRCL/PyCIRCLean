@@ -30,23 +30,22 @@ install:
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
     - pip install -U pip
-    - pip install lxml exifread pillow
-    - pip install olefile
+    - pip install lxml exifread pillow olefile
     - pip install git+https://github.com/decalage2/oletools.git
-    - pip install git+https://github.com/Rafiot/officedissector.git
-    # Module dependencies
+    - pip install git+https://github.com/grierforensics/officedissector.git
+    # PyCIRCLean dependencies
     - pip install -r dev-requirements.txt
     - pip install coveralls codecov
     # Testing dependencies
     - sudo apt-get install rar
     # Prepare tests
-    # Zoo
+    # Malware from theZoo
     - git clone https://github.com/Rafiot/theZoo.git
     - pushd theZoo/malwares/Binaries
     - python unpackall.py
     - popd
     - mv theZoo/malwares/Binaries/out tests/src_invalid/
-    # Path traversal
+    # Path traversal attacks
     - git clone https://github.com/jwilk/path-traversal-samples
     - pushd path-traversal-samples
     - pushd zip
@@ -67,6 +66,7 @@ install:
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
     - 7z x -p42 42.zip
+    # Some random samples
     - wget http://www.sample-videos.com/audio/mp3/india-national-anthem.mp3
     - wget http://www.sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4
     - wget http://thewalter.net/stef/software/rtfx/sample.rtf
