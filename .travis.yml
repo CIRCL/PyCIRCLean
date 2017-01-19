@@ -70,7 +70,6 @@ install:
     - wget http://www.sample-videos.com/audio/mp3/india-national-anthem.mp3
     - wget http://www.sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4
     - wget http://thewalter.net/stef/software/rtfx/sample.rtf
-    - echo "blah" > test.obj
     - popd
 
 script:
