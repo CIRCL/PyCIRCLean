@@ -14,7 +14,6 @@ setup(
     scripts=[
         'bin/filecheck.py'
     ],
-    test_suite="tests",
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Development Status :: 5 - Production/Stable',
