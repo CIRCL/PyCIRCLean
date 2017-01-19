@@ -14,8 +14,6 @@ setup(
     scripts=[
         'bin/filecheck.py'
     ],
-    include_package_data=True,
-    package_data={'data': ['PDFA_def.ps', 'srgb.icc']},
     test_suite="tests",
     classifiers=[
         'License :: OSI Approved :: BSD License',
