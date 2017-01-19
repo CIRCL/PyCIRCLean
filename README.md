@@ -7,7 +7,7 @@
 PyCIRCLean is the core Python code used by [CIRCLean](https://github.com/CIRCL/Circlean/), an open-source
 USB key and document sanitizer created by [CIRCL](https://www.circl.lu/). This module has been separated from the 
 device-specific scripts and can be used for dedicated security applications to sanitize documents from hostile environments 
-to trusted environments.
+to trusted environments. PyCIRCLean is currently Python 3.3+ only.
 
 # Installation
 

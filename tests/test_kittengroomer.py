@@ -2,14 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
 import pytest
 
 from kittengroomer import FileBase, KittenGroomerBase
 from kittengroomer.helpers import ImplementationRequired
 
-PY3 = sys.version_info.major == 3
 skip = pytest.mark.skip
 xfail = pytest.mark.xfail
 fixture = pytest.fixture
@@ -89,18 +87,10 @@ class TestFileBase:
     def test_create_broken(self, tmpdir):
         with pytest.raises(TypeError):
             file_no_args = FileBase()
-        if PY3:
-            with pytest.raises(FileNotFoundError):
-                file_empty_args = FileBase('', '')
-        else:
-            with pytest.raises(IOError):
-                file_empty_args = FileBase('', '')
-        if PY3:
-            with pytest.raises(IsADirectoryError):
-                file_directory = FileBase(tmpdir.strpath, tmpdir.strpath)
-        else:
-            with pytest.raises(IOError):
-                file_directory = FileBase(tmpdir.strpath, tmpdir.strpath)
+        with pytest.raises(FileNotFoundError):
+            file_empty_args = FileBase('', '')
+        with pytest.raises(IsADirectoryError):
+            file_directory = FileBase(tmpdir.strpath, tmpdir.strpath)
         # are there other cases here? path to a file that doesn't exist? permissions?
 
     def test_init(self, generic_conf_file):
