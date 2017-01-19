@@ -67,8 +67,8 @@ target/
 *.vrb
 
 # Project specific
-/tests/dst/*
-!/tests/logs/
-!/tests/.keepdir
-
-
+tests/dst/*
+tests/test_logs/*
+!tests/**/.keepdir
+!tests/src_invalid/*
+!tests/src_valid/*

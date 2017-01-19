@@ -1,7 +1,6 @@
 language: python
 
 python:
-    - 2.7
     - 3.3
     - 3.4
     - 3.5
@@ -17,8 +16,6 @@ addons:
         packages:
             # General dependencies
             - p7zip-full
-            # generic.py dependencies
-            - ghostscript
             # Testing dependencies
             - mercurial
 
@@ -26,45 +23,28 @@ install:
     # General dependencies
     - sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty multiverse" && sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse"
     - sudo apt-get update -qq
-    - sudo apt-get install -y p7zip-rar
-    # generic.py: pdf2htmlEX + dependencies
-    - sudo add-apt-repository ppa:fontforge/fontforge --yes
-    # to get a working 0.26 poppler
-    - sudo add-apt-repository ppa:delayargentina/delayx --yes
-    - sudo apt-get update -qq
-    - sudo apt-get install -y libpoppler-dev libpoppler-private-dev libspiro-dev libcairo-dev libpango1.0-dev libfreetype6-dev libltdl-dev libfontforge-dev python-imaging python-pip firefox xvfb
-    - git clone https://github.com/coolwanglu/pdf2htmlEX.git
-    - pushd pdf2htmlEX
-    - cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_SVG=ON .
-    - make
-    - sudo make install
-    - popd
-    # generic.py: Other dependencies
-    - sudo apt-get install -y libreoffice libreoffice-script-provider-python unoconv
+    - sudo apt-get install -y p7zip-rar python-pip
     # filecheck.py dependencies
     - sudo apt-get install libxml2-dev libxslt1-dev
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
     - pip install -U pip
-    - pip install lxml exifread pillow
-    - pip install git+https://github.com/Rafiot/officedissector.git
-    - |
-      if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
-        pip install -U oletools olefile
-      fi
-    # Module dependencies
+    - pip install lxml exifread pillow olefile
+    - pip install git+https://github.com/decalage2/oletools.git
+    - pip install git+https://github.com/grierforensics/officedissector.git
+    # PyCIRCLean dependencies
     - pip install -r dev-requirements.txt
     - pip install coveralls codecov
     # Testing dependencies
     - sudo apt-get install rar
     # Prepare tests
-    # Zoo
+    # Malware from theZoo
     - git clone https://github.com/Rafiot/theZoo.git
     - pushd theZoo/malwares/Binaries
     - python unpackall.py
     - popd
-    - mv theZoo/malwares/Binaries/out tests/src_complex/
-    # Path traversal
+    - mv theZoo/malwares/Binaries/out tests/src_invalid/
+    # Path traversal attacks
     - git clone https://github.com/jwilk/path-traversal-samples
     - pushd path-traversal-samples
     - pushd zip
@@ -74,25 +54,25 @@ install:
     - make
     - popd
     - popd
-    - mv path-traversal-samples/zip/*.zip tests/src_complex/
-    - mv path-traversal-samples/rar/*.rar tests/src_complex/
+    - mv path-traversal-samples/zip/*.zip tests/src_invalid/
+    - mv path-traversal-samples/rar/*.rar tests/src_invalid/
     # Office docs
     - git clone https://github.com/eea/odfpy.git
-    - mv odfpy/tests/examples/* tests/src_complex/
-    - pushd tests/src_complex/
+    - mv odfpy/tests/examples/* tests/src_invalid/
+    - pushd tests/src_invalid/
     - wget https://bitbucket.org/decalage/olefileio_pl/raw/3073963b640935134ed0da34906fea8e506460be/Tests/images/test-ole-file.doc
     - wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
-    - 7z x 42.zip -p42
+    - 7z x -p42 42.zip
+    # Some random samples
     - wget http://www.sample-videos.com/audio/mp3/india-national-anthem.mp3
     - wget http://www.sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4
     - wget http://thewalter.net/stef/software/rtfx/sample.rtf
-    - echo "blah" > test.obj
     - popd
 
 script:
-    - travis_wait 60 py.test --cov=kittengroomer --cov=bin tests/
+    - travis_wait 30 py.test --cov=kittengroomer --cov=bin tests/
 
 notifications:
     email:
