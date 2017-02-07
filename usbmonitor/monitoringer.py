@@ -118,6 +118,7 @@ if __name__=="__main__":
         os.system("pmount -r {0} {1}".format(partition.device_node,"sourceusb"))
         
         # Copy all the files using pyCirclean here!
+        #TODO: CALL PyCirClean and remove the following "print" call
         print("do the needed stuff")
         
         
