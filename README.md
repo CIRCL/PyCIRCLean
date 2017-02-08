@@ -22,8 +22,9 @@ pip install .
 
 # How to use PyCIRCLean
 
-PyCIRCLean is a simple Python library to handle file checking and sanitization. PyCIRCLean is designed as a simple library
-that can be overloaded to cover specific checking and sanitization workflows in different organizations like industrial
+PyCIRCLean is a simple Python library to handle file checking and sanitization.
+PyCIRCLean is designed to be overloaded and extended to cover specific checking
+and sanitization workflows in different organizations such as industrial
 environments or restricted/classified ICT environments. A series of practical examples utilizing PyCIRCLean can be found
 in the [./examples](./examples) directory.
 
@@ -125,9 +126,12 @@ if __name__ == '__main__':
 
 # How to contribute
 
-We welcome contributions (including bug fixes, new code workflows) via pull requests. We are interested in any new workflows
-that can be used to improve security in different organizations. If you see any potential enhancements required to support
-your sanitization workflow, please feel free to open an issue. Read [CONTRIBUTING.md](/CONTRIBUTING.md) for more information.
+We welcome contributions (including bug fixes, new example file processing
+workflows) via pull requests. We are particularly interested in any new workflows
+that can be used to improve security in different organizations. If you see any
+potential enhancements required to support your sanitization workflow, please feel
+free to open an issue. Read [CONTRIBUTING.md](/CONTRIBUTING.md) for more
+information.
 
 
 # License
