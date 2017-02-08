@@ -1,12 +1,11 @@
 [![Build Status](https://travis-ci.org/CIRCL/PyCIRCLean.svg?branch=master)](https://travis-ci.org/CIRCL/PyCIRCLean)
 [![codecov.io](https://codecov.io/github/CIRCL/PyCIRCLean/coverage.svg?branch=master)](https://codecov.io/github/CIRCL/PyCIRCLean?branch=master)
-[![Coverage Status](https://coveralls.io/repos/github/Rafiot/PyCIRCLean/badge.svg?branch=master)](https://coveralls.io/github/Rafiot/PyCIRCLean?branch=master)
 
 # PyCIRCLean
 
 PyCIRCLean is the core Python code used by [CIRCLean](https://github.com/CIRCL/Circlean/), an open-source
-USB key and document sanitizer created by [CIRCL](https://www.circl.lu/). This module has been separated from the 
-device-specific scripts and can be used for dedicated security applications to sanitize documents from hostile environments 
+USB key and document sanitizer created by [CIRCL](https://www.circl.lu/). This module has been separated from the
+device-specific scripts and can be used for dedicated security applications to sanitize documents from hostile environments
 to trusted environments. PyCIRCLean is currently Python 3.3+ only.
 
 # Installation
