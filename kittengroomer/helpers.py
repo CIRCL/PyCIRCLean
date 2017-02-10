@@ -163,21 +163,21 @@ class KittenGroomerBase(object):
         """Initialized with path to source and dest directories."""
         self.src_root_dir = root_src
         self.dst_root_dir = root_dst
+        self.debug = debug
+        self.cur_file = None
+        # Setup logs
         self.log_root_dir = os.path.join(self.dst_root_dir, 'logs')
         self._safe_rmtree(self.log_root_dir)
         self._safe_mkdir(self.log_root_dir)
         self.log_processing = os.path.join(self.log_root_dir, 'processing.log')
         self.log_content = os.path.join(self.log_root_dir, 'content.log')
-        self.tree(self.src_root_dir)
-
         quick_setup(file=self.log_processing)
         self.log_name = log.name('files')
+
+        self.tree(self.src_root_dir)
         self.resources_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
         os.environ["PATH"] += os.pathsep + self.resources_path
 
-        self.cur_file = None
-
-        self.debug = debug
         if self.debug:
             self.log_debug_err = os.path.join(self.log_root_dir, 'debug_stderr.log')
             self.log_debug_out = os.path.join(self.log_root_dir, 'debug_stdout.log')
