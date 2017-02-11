@@ -9,7 +9,6 @@ desired behavior.
 
 
 import os
-import sys
 import hashlib
 import shutil
 import argparse
@@ -198,27 +197,6 @@ class KittenGroomerBase(object):
 
     def tree(self, base_dir, padding='   '):
         """Writes a graphical tree to the log for a given directory."""
-        if sys.version_info.major == 2:
-            self.__tree_py2(base_dir, padding)
-        else:
-            self.__tree_py3(base_dir, padding)
-
-    def __tree_py2(self, base_dir, padding='   '):
-        with open(self.log_content, 'ab') as lf:
-            lf.write('#' * 80 + '\n')
-            lf.write('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir))))
-            padding += '|  '
-            files = sorted(os.listdir(base_dir))
-            for f in files:
-                curpath = os.path.join(base_dir, f)
-                if os.path.islink(curpath):
-                    lf.write('{}+-- {}\t- Symbolic link to {}\n'.format(padding, f, os.readlink(curpath)))
-                elif os.path.isdir(curpath):
-                    self.tree(curpath, padding)
-                elif os.path.isfile(curpath):
-                    lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)))
-
-    def __tree_py3(self, base_dir, padding='   '):
         with open(self.log_content, 'ab') as lf:
             lf.write(bytes('#' * 80 + '\n', 'UTF-8'))
             lf.write(bytes('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir)).encode()), 'utf8'))

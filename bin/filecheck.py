@@ -144,11 +144,7 @@ class File(FileBase):
 
 class KittenGroomerFileCheck(KittenGroomerBase):
 
-    def __init__(self, root_src=None, root_dst=None, max_recursive_depth=2, debug=False):
-        if root_src is None:
-            root_src = os.path.join(os.sep, 'media', 'src')
-        if root_dst is None:
-            root_dst = os.path.join(os.sep, 'media', 'dst')
+    def __init__(self, root_src, root_dst, max_recursive_depth=2, debug=False):
         super(KittenGroomerFileCheck, self).__init__(root_src, root_dst, debug)
         self.recursive_archive_depth = 0
         self.max_recursive_depth = max_recursive_depth
