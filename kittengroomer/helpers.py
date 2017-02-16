@@ -154,6 +154,25 @@ class FileBase(object):
             self.log_details['force_ext'] = True
             self.dst_path += ext
 
+    def create_metadata_file(self, ext):
+        """Create a separate file to hold this file's metadata."""
+        try:
+            # make sure we aren't overwriting anything
+            if os.path.exists(self.src_path + ext):
+                raise KittenGroomerError("Cannot create split metadata file for \"" +
+                                         self.dst_path + "\", type '" +
+                                         ext + "': File exists.")
+            else:
+                # TODO: Uncomment these after object relationships are fixed
+                # dst_dir_path, filename = os.path.split(self.dst_path)
+                # self._safe_mkdir(dst_dir_path)
+                # TODO: Check extension for leading "."
+                self.metadata_file_path = self.dst_path + ext
+                return self.metadata_file_path
+        except KittenGroomerError as e:
+            # TODO: Write to log file
+            return False
+
 
 class KittenGroomerBase(object):
     """Base object responsible for copy/sanitization process."""
@@ -243,25 +262,8 @@ class KittenGroomerBase(object):
             print(e)
             return False
 
-    def _safe_metadata_split(self, ext):
-        """Create a separate file to hold this file's metadata."""
-        # TODO: fix logic in this method
-        dst = self.cur_file.dst_path
-        try:
-            if os.path.exists(self.cur_file.src_path + ext):  # should we check dst_path as well?
-                raise KittenGroomerError("Cannot create split metadata file for \"" +
-                                         self.cur_file.dst_path + "\", type '" +
-                                         ext + "': File exists.")
-            dst_path, filename = os.path.split(dst)
-            self._safe_mkdir(dst_path)
-            return open(dst + ext, 'w+')
-        except Exception as e:
-            # TODO: Logfile
-            print(e)
-            return False
-
     def _list_all_files(self, directory):
-        """Generator yield path to all of the files in a directory tree."""
+        """Generator yielding path to all of the files in a directory tree."""
         for root, dirs, files in os.walk(directory):
             for filename in files:
                 filepath = os.path.join(root, filename)

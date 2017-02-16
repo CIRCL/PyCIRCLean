@@ -427,7 +427,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     #######################
     # Metadata extractors
-    def _metadata_exif(self, metadata_file):
+    def _metadata_exif(self, metadata_file_path):
         img = open(self.cur_file.src_path, 'rb')
         tags = None
 
@@ -457,19 +457,22 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                         printable = value
                     else:
                         printable = str(value)
-                metadata_file.write("Key: {}\tValue: {}\n".format(tag, printable))
+
+                with open(metadata_file_path, 'w+') as metadata_file:
+                    metadata_file.write("Key: {}\tValue: {}\n".format(tag, printable))
         self.cur_file.add_log_details('metadata', 'exif')
         img.close()
         return True
 
-    def _metadata_png(self, metadataFile):
+    def _metadata_png(self, metadata_file_path):
         warnings.simplefilter('error', Image.DecompressionBombWarning)
         try:
             img = Image.open(self.cur_file.src_path)
             for tag in sorted(img.info.keys()):
                 # These are long and obnoxious/binary
                 if tag not in ('icc_profile'):
-                    metadataFile.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
+                    with open(metadata_file_path, 'w+') as metadata_file:
+                        metadata_file.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
             self.cur_file.add_log_details('metadata', 'png')
             img.close()
         # Catch decompression bombs
@@ -481,12 +484,12 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             return False
 
     def extract_metadata(self):
-        metadata_file = self._safe_metadata_split(".metadata.txt")
-        success = self.metadata_processing_options.get(self.cur_file.mimetype)(metadata_file)
-        metadata_file.close()
-        if not success:
-            # FIXME Delete empty metadata file
-            pass
+        metadata_file_path = self.cur_file.create_metadata_file(".metadata.txt")
+        # todo: write metadata to file
+        mime = self.cur_file.mimetype
+        metadata_processing_method = self.metadata_processing_options.get(mime)
+        if metadata_processing_method:
+            metadata_processing_method(metadata_file_path)
 
     #######################
     # ##### Media - audio and video aren't converted ######

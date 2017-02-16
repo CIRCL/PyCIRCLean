@@ -213,6 +213,16 @@ class TestFileBase:
         assert generic_conf_file.log_details.get('force_ext') is None
         # shouldn't change a file's extension if it already is right
 
+    def test_create_metadata_file(self, temp_file):
+        # Try making a metadata file
+        metadata_file_path = temp_file.create_metadata_file('.metadata.txt')
+        with open(metadata_file_path, 'w+') as metadata_file:
+            metadata_file.write('Have some metadata!')
+        # Shouldn't be able to make a metadata file with no extension
+        assert temp_file.create_metadata_file('') is False
+        # if metadata file already exists
+        # if there is no metadata to write should this work?
+
 
 class TestKittenGroomerBase:
 
@@ -257,18 +267,6 @@ class TestKittenGroomerBase:
         simple_groomer.cur_file = FileBase(file.strpath, filedest.strpath)
         assert simple_groomer._safe_copy() is True
         #check that it handles weird file path inputs
-
-    def test_safe_metadata_split(self, tmpdir):
-        file = tmpdir.join('test.txt')
-        file.write('testing')
-        simple_groomer = KittenGroomerBase(tmpdir.strpath, tmpdir.strpath)
-        simple_groomer.cur_file = FileBase(file.strpath, file.strpath)
-        metadata_file = simple_groomer._safe_metadata_split('metadata.log')
-        metadata_file.write('Have some metadata!')
-        metadata_file.close()
-        assert simple_groomer._safe_metadata_split('') is False
-        # if metadata file already exists
-        # if there is no metadata to write should this work?
 
     def test_list_all_files(self, tmpdir):
         file = tmpdir.join('test.txt')
