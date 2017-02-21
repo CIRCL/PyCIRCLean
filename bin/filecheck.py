@@ -82,8 +82,8 @@ MAL_EXTS = (
 
 class File(FileBase):
 
-    def __init__(self, src_path, dst_path):
-        super(File, self).__init__(src_path, dst_path)
+    def __init__(self, src_path, dst_path, logger):
+        super(File, self).__init__(src_path, dst_path, logger)
         self.is_recursive = False
         self._check_dangerous()
         if self.is_dangerous():
@@ -148,6 +148,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         super(KittenGroomerFileCheck, self).__init__(root_src, root_dst, debug)
         self.recursive_archive_depth = 0
         self.max_recursive_depth = max_recursive_depth
+        self.log_name = self.logger.log
 
         subtypes_apps = [
             (mimes_office, self._winoffice),
@@ -193,7 +194,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     def _print_log(self):
         """Print the logs related to the current file being processed."""
         # TODO: change name to _write_log
-        tmp_log = self.log_name.fields(**self.cur_file.log_details)
+        tmp_log = self.logger.log.fields(**self.cur_file.log_details)
         if self.cur_file.is_dangerous():
             tmp_log.warning(self.cur_file.log_string)
         elif self.cur_file.log_details.get('unknown') or self.cur_file.log_details.get('binary'):
@@ -205,7 +206,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         """Run command_string in a subprocess, wait until it finishes."""
         args = shlex.split(command_string)
         # TODO: log_debug_err and log_debug are now broken, fix
-        with open(self.log_debug_err, 'ab') as stderr, open(self.log_debug_out, 'ab') as stdout:
+        with open(self.logger.log_debug_err, 'ab') as stderr, open(self.logger.log_debug_out, 'ab') as stdout:
             try:
                 subprocess.check_call(args, stdout=stdout, stderr=stderr, timeout=timeout)
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
@@ -400,7 +401,8 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         extract_command = '{} -p1 x "{}" -o"{}" -bd -aoa'.format(SEVENZ_PATH, self.cur_file.src_path, tmpdir)
         self._run_process(extract_command)
         self.recursive_archive_depth += 1
-        self.tree(tmpdir)
+        # Broken so commenting out for now:
+        # self.tree(tmpdir)
         self.processdir(tmpdir, self.cur_file.dst_path)
         self.recursive_archive_depth -= 1
         self._safe_rmtree(tmpdir)
@@ -549,7 +551,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     #######################
 
     def process_file(self, srcpath, dstpath, relative_path):
-        self.cur_file = File(srcpath, dstpath)
+        self.cur_file = File(srcpath, dstpath, self.logger)
         self.log_name.info('Processing {} ({}/{})',
                            relative_path,
                            self.cur_file.main_type,

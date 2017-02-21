@@ -42,6 +42,7 @@ class FileBase(object):
         """Initialized with the source path and expected destination path."""
         self.src_path = src_path
         self.dst_path = dst_path
+        # TODO: rename this. file_information? file_data? file_metadata? file_log?
         self.log_details = {'filepath': self.src_path}
         self.log_string = ''
         self._determine_extension()
@@ -221,6 +222,13 @@ class GroomerLog(object):
                 s.update(buf)
         return s.hexdigest()
 
+    def add_file(self):
+        pass
+        # Should this return a sublog that the file can then write to? Does that work? Too confusing to understand?
+
+    def add_event(self, event, log_level):
+        pass
+
 
 class KittenGroomerBase(object):
     """Base object responsible for copy/sanitization process."""
@@ -278,6 +286,7 @@ class KittenGroomerBase(object):
 
     #######################
 
+    # TODO: feels like this funciton doesn't need to exist if we move main()
     def processdir(self, src_dir, dst_dir):
         """
         Implement this function in your subclass to define file processing behavior.
@@ -285,6 +294,7 @@ class KittenGroomerBase(object):
         raise ImplementationRequired('Please implement processdir.')
 
 
+# TODO: Maybe this shouldn't exist? It should probably get moved to filecheck since this isn't really API code
 def main(kg_implementation, description='Call a KittenGroomer implementation to process files present in the source directory and copy them to the destination directory.'):
     parser = argparse.ArgumentParser(prog='KittenGroomer', description=description)
     parser.add_argument('-s', '--source', type=str, help='Source directory')
