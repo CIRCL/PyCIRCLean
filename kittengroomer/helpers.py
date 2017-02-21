@@ -14,7 +14,7 @@ import shutil
 import argparse
 
 import magic
-from twiggy import quick_setup, log
+import twiggy
 
 
 class KittenGroomerError(Exception):
@@ -38,7 +38,7 @@ class FileBase(object):
     or methods relevant to a given implementation.
     """
 
-    def __init__(self, src_path, dst_path):
+    def __init__(self, src_path, dst_path, logger=None):
         """Initialized with the source path and expected destination path."""
         self.src_path = src_path
         self.dst_path = dst_path
@@ -46,6 +46,7 @@ class FileBase(object):
         self.log_string = ''
         self._determine_extension()
         self._determine_mimetype()
+        self.logger = logger
 
     def _determine_extension(self):
         _, ext = os.path.splitext(self.src_path)
@@ -174,45 +175,24 @@ class FileBase(object):
             return False
 
 
-class KittenGroomerBase(object):
-    """Base object responsible for copy/sanitization process."""
+class GroomerLog(object):
+    """Groomer logging object"""
 
-    def __init__(self, root_src, root_dst, debug=False):
-        """Initialized with path to source and dest directories."""
-        self.src_root_dir = root_src
-        self.dst_root_dir = root_dst
-        self.debug = debug
-        self.cur_file = None
-        # Setup logs
-        self.log_root_dir = os.path.join(self.dst_root_dir, 'logs')
-        self._safe_rmtree(self.log_root_dir)
-        self._safe_mkdir(self.log_root_dir)
-        self.log_processing = os.path.join(self.log_root_dir, 'processing.log')
-        self.log_content = os.path.join(self.log_root_dir, 'content.log')
-        quick_setup(file=self.log_processing)
-        self.log_name = log.name('files')
-
-        self.tree(self.src_root_dir)
-        self.resources_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
-        os.environ["PATH"] += os.pathsep + self.resources_path
-
-        if self.debug:
-            self.log_debug_err = os.path.join(self.log_root_dir, 'debug_stderr.log')
-            self.log_debug_out = os.path.join(self.log_root_dir, 'debug_stdout.log')
+    def __init__(self, root_dir, debug=False):
+        self.log_dir_path = os.path.join(root_dir, 'logs')
+        if os.path.exists(self.log_dir_path):
+            shutil.rmtree(self.log_dir_path)
+        os.makedirs(self.log_dir_path)
+        self.log_processing = os.path.join(self.log_dir_path, 'processing.log')
+        self.log_content = os.path.join(self.log_dir_path, 'content.log')
+        twiggy.quick_setup(file=self.log_processing)
+        self.log = twiggy.log.name('files')
+        if debug:
+            self.log_debug_err = os.path.join(self.log_dir_path, 'debug_stderr.log')
+            self.log_debug_out = os.path.join(self.log_dir_path, 'debug_stdout.log')
         else:
             self.log_debug_err = os.devnull
             self.log_debug_out = os.devnull
-
-    def _computehash(self, path):
-        """Returns a sha256 hash of a file at a given path."""
-        s = hashlib.sha256()
-        with open(path, 'rb') as f:
-            while True:
-                buf = f.read(0x100000)
-                if not buf:
-                    break
-                s.update(buf)
-        return s.hexdigest()
 
     def tree(self, base_dir, padding='   '):
         """Writes a graphical tree to the log for a given directory."""
@@ -229,6 +209,32 @@ class KittenGroomerBase(object):
                     self.tree(curpath, padding)
                 elif os.path.isfile(curpath):
                     lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)).encode(errors='ignore'))
+
+    def _computehash(self, path):
+        """Returns a sha256 hash of a file at a given path."""
+        s = hashlib.sha256()
+        with open(path, 'rb') as f:
+            while True:
+                buf = f.read(0x100000)
+                if not buf:
+                    break
+                s.update(buf)
+        return s.hexdigest()
+
+
+class KittenGroomerBase(object):
+    """Base object responsible for copy/sanitization process."""
+
+    def __init__(self, root_src, root_dst, debug=False):
+        """Initialized with path to source and dest directories."""
+        self.src_root_dir = root_src
+        self.dst_root_dir = root_dst
+        self.debug = debug
+        self.cur_file = None
+        self.logger = GroomerLog(self.dst_root_dir, debug)
+        # Add data/ to PATH
+        # self.resources_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
+        # os.environ["PATH"] += os.pathsep + self.resources_path
 
     # ##### Helpers #####
     def _safe_rmtree(self, directory):
@@ -262,6 +268,7 @@ class KittenGroomerBase(object):
             print(e)
             return False
 
+    # TODO: this isn't a private method, change and edit the groomers as well
     def _list_all_files(self, directory):
         """Generator yielding path to all of the files in a directory tree."""
         for root, dirs, files in os.walk(directory):
@@ -269,18 +276,9 @@ class KittenGroomerBase(object):
                 filepath = os.path.join(root, filename)
                 yield filepath
 
-    def _print_log(self):
-        """
-        Print log, should be called after each file.
-
-        You probably want to reimplement it in the subclass.
-        """
-        tmp_log = self.log_name.fields(**self.cur_file.log_details)
-        tmp_log.info('It did a thing.')
-
     #######################
 
-    def processdir(self, src_dir=None, dst_dir=None):
+    def processdir(self, src_dir, dst_dir):
         """
         Implement this function in your subclass to define file processing behavior.
         """

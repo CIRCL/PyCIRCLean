@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from kittengroomer import FileBase, KittenGroomerBase
+from kittengroomer import FileBase, KittenGroomerBase, GroomerLog
 from kittengroomer.helpers import ImplementationRequired
 
 skip = pytest.mark.skip
@@ -224,6 +224,12 @@ class TestFileBase:
         # if there is no metadata to write should this work?
 
 
+class TestLogger:
+    @xfail
+    def test_tree(self, tmpdir):
+        GroomerLog.tree(tmpdir)
+
+
 class TestKittenGroomerBase:
 
     @fixture
@@ -248,15 +254,6 @@ class TestKittenGroomerBase:
                                           debug=True)
         # we should maybe protect access to self.current_file in some way?
 
-    def test_computehash(self, tmpdir):
-        file = tmpdir.join('test.txt')
-        file.write('testing')
-        simple_groomer = KittenGroomerBase(tmpdir.strpath, tmpdir.strpath)
-        simple_groomer._computehash(file.strpath)
-
-    def test_tree(self, generic_groomer):
-        generic_groomer.tree(generic_groomer.src_root_dir)
-
     def test_safe_copy(self, tmpdir):
         file = tmpdir.join('test.txt')
         file.write('testing')
@@ -278,11 +275,6 @@ class TestKittenGroomerBase:
         assert file.strpath in files
         assert testdir.strpath not in files
 
-    def test_print_log(self, generic_groomer):
-        with pytest.raises(AttributeError):
-            generic_groomer._print_log()
-        # Kind of a bad test, but this should be implemented by the user anyway
-
     def test_processdir(self, generic_groomer):
         with pytest.raises(ImplementationRequired):
-            generic_groomer.processdir()
+            generic_groomer.processdir(None, None)

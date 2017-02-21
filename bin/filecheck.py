@@ -204,6 +204,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     def _run_process(self, command_string, timeout=None):
         """Run command_string in a subprocess, wait until it finishes."""
         args = shlex.split(command_string)
+        # TODO: log_debug_err and log_debug are now broken, fix
         with open(self.log_debug_err, 'ab') as stderr, open(self.log_debug_out, 'ab') as stdout:
             try:
                 subprocess.check_call(args, stdout=stdout, stderr=stderr, timeout=timeout)
