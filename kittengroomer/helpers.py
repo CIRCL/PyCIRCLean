@@ -165,9 +165,9 @@ class FileBase(object):
                                          self.dst_path + "\", type '" +
                                          ext + "': File exists.")
             else:
-                # TODO: Uncomment these after object relationships are fixed
-                # dst_dir_path, filename = os.path.split(self.dst_path)
-                # self._safe_mkdir(dst_dir_path)
+                dst_dir_path, filename = os.path.split(self.dst_path)
+                if not os.path.exists(dst_dir_path):
+                    os.makedirs(dst_dir_path)
                 # TODO: Check extension for leading "."
                 self.metadata_file_path = self.dst_path + ext
                 return self.metadata_file_path
