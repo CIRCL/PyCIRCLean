@@ -9,75 +9,75 @@ import zipfile
 import oletools.oleid
 import olefile
 import officedissector
-
 import warnings
 import exifread
 from PIL import Image
 # from PIL import PngImagePlugin
-
 from pdfid import PDFiD, cPDFiD
 
 from kittengroomer import FileBase, KittenGroomerBase, main
 
+
 SEVENZ_PATH = '/usr/bin/7z'
 
 
-# Prepare application/<subtype>
-mimes_ooxml = ['vnd.openxmlformats-officedocument.']
-mimes_office = ['msword', 'vnd.ms-']
-mimes_libreoffice = ['vnd.oasis.opendocument']
-mimes_rtf = ['rtf', 'richtext']
-mimes_pdf = ['pdf', 'postscript']
-mimes_xml = ['xml']
-mimes_ms = ['dosexec']
-mimes_compressed = ['zip', 'rar', 'bzip2', 'lzip', 'lzma', 'lzop',
-                    'xz', 'compress', 'gzip', 'tar']
-mimes_data = ['octet-stream']
+class Config:
+    # Application subtypes (mimetype: 'application/<subtype>')
+    mimes_ooxml = ['vnd.openxmlformats-officedocument.']
+    mimes_office = ['msword', 'vnd.ms-']
+    mimes_libreoffice = ['vnd.oasis.opendocument']
+    mimes_rtf = ['rtf', 'richtext']
+    mimes_pdf = ['pdf', 'postscript']
+    mimes_xml = ['xml']
+    mimes_ms = ['dosexec']
+    mimes_compressed = ['zip', 'rar', 'bzip2', 'lzip', 'lzma', 'lzop',
+                        'xz', 'compress', 'gzip', 'tar']
+    mimes_data = ['octet-stream']
 
-# Prepare image/<subtype>
-mimes_exif = ['image/jpeg', 'image/tiff']
-mimes_png = ['image/png']
+    # Image subtypes
+    mimes_exif = ['image/jpeg', 'image/tiff']
+    mimes_png = ['image/png']
 
-# Mimetypes we can pull metadata from
-mimes_metadata = ['image/jpeg', 'image/tiff', 'image/png']
+    # Mimetypes with metadata
+    mimes_metadata = ['image/jpeg', 'image/tiff', 'image/png']
 
-# Aliases
-aliases = {
-    # Win executables
-    'application/x-msdos-program': 'application/x-dosexec',
-    'application/x-dosexec': 'application/x-msdos-program',
-    # Other apps with confusing mimetypes
-    'application/rtf': 'text/rtf',
-}
+    # Commonly used malicious extensions
+    # Sources: http://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
+    # https://github.com/wiregit/wirecode/blob/master/components/core-settings/src/main/java/org/limewire/core/settings/FilterSettings.java
+    malicious_exts = (
+        # Applications
+        ".exe", ".pif", ".application", ".gadget", ".msi", ".msp", ".com", ".scr",
+        ".hta", ".cpl", ".msc", ".jar",
+        # Scripts
+        ".bat", ".cmd", ".vb", ".vbs", ".vbe", ".js", ".jse", ".ws", ".wsf",
+        ".wsc", ".wsh", ".ps1", ".ps1xml", ".ps2", ".ps2xml", ".psc1", ".psc2",
+        ".msh", ".msh1", ".msh2", ".mshxml", ".msh1xml", ".msh2xml",
+        # Shortcuts
+        ".scf", ".lnk", ".inf",
+        # Other
+        ".reg", ".dll",
+        # Office macro (OOXML with macro enabled)
+        ".docm", ".dotm", ".xlsm", ".xltm", ".xlam", ".pptm", ".potm", ".ppam",
+        ".ppsm", ".sldm",
+        # banned from wirecode
+        ".asf", ".asx", ".au", ".htm", ".html", ".mht", ".vbs",
+        ".wax", ".wm", ".wma", ".wmd", ".wmv", ".wmx", ".wmz", ".wvx",
+    )
 
-# Sometimes, mimetypes.guess_type is giving unexpected results, such as for the .tar.gz files:
-# In [12]: mimetypes.guess_type('toot.tar.gz', strict=False)
-# Out[12]: ('application/x-tar', 'gzip')
-# It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
-propertype = {'.gz': 'application/gzip'}
+    # Aliases
+    aliases = {
+        # Win executables
+        'application/x-msdos-program': 'application/x-dosexec',
+        'application/x-dosexec': 'application/x-msdos-program',
+        # Other apps with confusing mimetypes
+        'application/rtf': 'text/rtf',
+    }
 
-# Commonly used malicious extensions
-# Sources: http://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
-# https://github.com/wiregit/wirecode/blob/master/components/core-settings/src/main/java/org/limewire/core/settings/FilterSettings.java
-MAL_EXTS = (
-    # Applications
-    ".exe", ".pif", ".application", ".gadget", ".msi", ".msp", ".com", ".scr",
-    ".hta", ".cpl", ".msc", ".jar",
-    # Scripts
-    ".bat", ".cmd", ".vb", ".vbs", ".vbe", ".js", ".jse", ".ws", ".wsf",
-    ".wsc", ".wsh", ".ps1", ".ps1xml", ".ps2", ".ps2xml", ".psc1", ".psc2",
-    ".msh", ".msh1", ".msh2", ".mshxml", ".msh1xml", ".msh2xml",
-    # Shortcuts
-    ".scf", ".lnk", ".inf",
-    # Other
-    ".reg", ".dll",
-    # Office macro (OOXML with macro enabled)
-    ".docm", ".dotm", ".xlsm", ".xltm", ".xlam", ".pptm", ".potm", ".ppam",
-    ".ppsm", ".sldm",
-    # banned from wirecode
-    ".asf", ".asx", ".au", ".htm", ".html", ".mht", ".vbs",
-    ".wax", ".wm", ".wma", ".wmd", ".wmv", ".wmx", ".wmz", ".wvx",
-)
+    # Sometimes, mimetypes.guess_type gives unexpected results, such as for .tar.gz files:
+    # In [12]: mimetypes.guess_type('toot.tar.gz', strict=False)
+    # Out[12]: ('application/x-tar', 'gzip')
+    # It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
+    override_ext = {'.gz': 'application/gzip'}
 
 
 class File(FileBase):
@@ -101,7 +101,7 @@ class File(FileBase):
             self.make_dangerous()
         if not self.has_extension():
             self.make_dangerous()
-        if self.extension in MAL_EXTS:
+        if self.extension in Config.malicious_exts:
             self.log_details.update({'malicious_extension': self.extension})
             self.make_dangerous()
 
@@ -111,12 +111,12 @@ class File(FileBase):
         module's list of valid mimetypes and the expected mimetype based on its
         extension differs from the mimetype determined by libmagic, then it
         marks the file as dangerous."""
-        if propertype.get(self.extension) is not None:
-            expected_mimetype = propertype.get(self.extension)
+        if self.extension in Config.override_ext:
+            expected_mimetype = Config.override_ext[self.extension]
         else:
             expected_mimetype, encoding = mimetypes.guess_type(self.src_path, strict=False)
-            if aliases.get(expected_mimetype) is not None:
-                expected_mimetype = aliases.get(expected_mimetype)
+            if expected_mimetype in Config.aliases:
+                expected_mimetype = Config.aliases[expected_mimetype]
         is_known_extension = self.extension in mimetypes.types_map.keys()
         if is_known_extension and expected_mimetype != self.mimetype:
             self.log_details.update({'expected_mimetype': expected_mimetype})
@@ -126,8 +126,8 @@ class File(FileBase):
         """Takes the mimetype (as determined by libmagic) and determines
         whether the list of extensions that are normally associated with
         that extension contains the file's actual extension."""
-        if aliases.get(self.mimetype) is not None:
-            mimetype = aliases.get(self.mimetype)
+        if self.mimetype in Config.aliases:
+            mimetype = Config.aliases[self.mimetype]
         else:
             mimetype = self.mimetype
         expected_extensions = mimetypes.guess_all_extensions(mimetype, strict=False)
@@ -137,7 +137,7 @@ class File(FileBase):
                 self.make_dangerous()
 
     def has_metadata(self):
-        if self.mimetype in mimes_metadata:
+        if self.mimetype in Config.mimes_metadata:
             return True
         return False
 
@@ -151,23 +151,23 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.log_name = self.logger.log
 
         subtypes_apps = [
-            (mimes_office, self._winoffice),
-            (mimes_ooxml, self._ooxml),
-            (mimes_rtf, self.text),
-            (mimes_libreoffice, self._libreoffice),
-            (mimes_pdf, self._pdf),
-            (mimes_xml, self.text),
-            (mimes_ms, self._executables),
-            (mimes_compressed, self._archive),
-            (mimes_data, self._binary_app),
+            (Config.mimes_office, self._winoffice),
+            (Config.mimes_ooxml, self._ooxml),
+            (Config.mimes_rtf, self.text),
+            (Config.mimes_libreoffice, self._libreoffice),
+            (Config.mimes_pdf, self._pdf),
+            (Config.mimes_xml, self.text),
+            (Config.mimes_ms, self._executables),
+            (Config.mimes_compressed, self._archive),
+            (Config.mimes_data, self._binary_app),
         ]
-        self.subtypes_application = self._init_subtypes_application(subtypes_apps)
+        self.app_subtype_methods = self._make_method_dict(subtypes_apps)
 
         types_metadata = [
-            (mimes_exif, self._metadata_exif),
-            (mimes_png, self._metadata_png),
+            (Config.mimes_exif, self._metadata_exif),
+            (Config.mimes_png, self._metadata_png),
         ]
-        self.metadata_processing_options = self._init_subtypes_application(types_metadata)
+        self.metadata_mimetype_methods = self._make_method_dict(types_metadata)
 
         self.mime_processing_options = {
             'text': self.text,
@@ -183,17 +183,17 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         }
 
     # ##### Helper functions #####
-    def _init_subtypes_application(self, subtypes_application):
-        """Creates a dictionary with the right method based on the sub mime type."""
-        subtype_dict = {}
-        for list_subtypes, func in subtypes_application:
-            for st in list_subtypes:
-                subtype_dict[st] = func
-        return subtype_dict
+    def _make_method_dict(self, list_of_tuples):
+        """Returns a dictionary with mimetype: method pairs."""
+        dict_to_return = {}
+        for list_of_subtypes, method in list_of_tuples:
+            for subtype in list_of_subtypes:
+                dict_to_return[subtype] = method
+        return dict_to_return
 
     def _print_log(self):
         """Print the logs related to the current file being processed."""
-        # TODO: change name to _write_log
+        # TODO: change name to _write_log, move to helpers
         tmp_log = self.logger.log.fields(**self.cur_file.log_details)
         if self.cur_file.is_dangerous():
             tmp_log.warning(self.cur_file.log_string)
@@ -205,7 +205,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     def _run_process(self, command_string, timeout=None):
         """Run command_string in a subprocess, wait until it finishes."""
         args = shlex.split(command_string)
-        # TODO: log_debug_err and log_debug are now broken, fix
+        # TODO: log_debug_err and log_debug are now broken, fix, move to helpers
         with open(self.logger.log_debug_err, 'ab') as stderr, open(self.logger.log_debug_out, 'ab') as stdout:
             try:
                 subprocess.check_call(args, stdout=stdout, stderr=stderr, timeout=timeout)
@@ -250,15 +250,15 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     # ##### Files that will be converted ######
     def text(self):
         """Process an rtf, ooxml, or plaintext file."""
-        for r in mimes_rtf:
-            if r in self.cur_file.sub_type:
+        for mt in Config.mimes_rtf:
+            if mt in self.cur_file.sub_type:
                 self.cur_file.log_string += 'Rich Text file'
                 # TODO: need a way to convert it to plain text
                 self.cur_file.force_ext('.txt')
                 self._safe_copy()
                 return
-        for o in mimes_ooxml:
-            if o in self.cur_file.sub_type:
+        for mt in Config.mimes_ooxml:
+            if mt in self.cur_file.sub_type:
                 self.cur_file.log_string += 'OOXML File'
                 self._ooxml()
                 return
@@ -268,9 +268,9 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def application(self):
         """Processes an application specific file according to its subtype."""
-        for subtype, fct in self.subtypes_application.items():
+        for subtype, method in self.app_subtype_methods.items():
             if subtype in self.cur_file.sub_type:
-                fct()
+                method()
                 self.cur_file.log_string += 'Application file'
                 return
         self.cur_file.log_string += 'Unknown Application file'
@@ -401,8 +401,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         extract_command = '{} -p1 x "{}" -o"{}" -bd -aoa'.format(SEVENZ_PATH, self.cur_file.src_path, tmpdir)
         self._run_process(extract_command)
         self.recursive_archive_depth += 1
-        # Broken so commenting out for now:
-        # self.tree(tmpdir)
+        self.logger.tree(tmpdir)
         self.processdir(tmpdir, self.cur_file.dst_path)
         self.recursive_archive_depth -= 1
         self._safe_rmtree(tmpdir)
@@ -488,10 +487,10 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def extract_metadata(self):
         metadata_file_path = self.cur_file.create_metadata_file(".metadata.txt")
-        # todo: write metadata to file
-        mime = self.cur_file.mimetype
-        metadata_processing_method = self.metadata_processing_options.get(mime)
+        mt = self.cur_file.mimetype
+        metadata_processing_method = self.metadata_mimetype_methods.get(mt)
         if metadata_processing_method:
+            # TODO: should we return metadata and write it here instead of in processing method?
             metadata_processing_method(metadata_file_path)
 
     #######################
@@ -565,6 +564,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def processdir(self, src_dir=None, dst_dir=None):
         """Main function coordinating file processing."""
+        # TODO: do we need defaults here?
         if src_dir is None:
             src_dir = self.src_root_dir
         if dst_dir is None:
