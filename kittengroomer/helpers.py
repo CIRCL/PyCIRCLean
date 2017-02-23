@@ -240,9 +240,6 @@ class KittenGroomerBase(object):
         self.debug = debug
         self.cur_file = None
         self.logger = GroomerLog(self.dst_root_dir, debug)
-        # Add data/ to PATH
-        # self.resources_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
-        # os.environ["PATH"] += os.pathsep + self.resources_path
 
     # ##### Helpers #####
     def _safe_rmtree(self, directory):
