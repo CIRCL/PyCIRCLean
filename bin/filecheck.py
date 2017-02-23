@@ -5,6 +5,7 @@ import mimetypes
 import shlex
 import subprocess
 import zipfile
+import argparse
 
 import oletools.oleid
 import olefile
@@ -15,7 +16,7 @@ from PIL import Image
 # from PIL import PngImagePlugin
 from pdfid import PDFiD, cPDFiD
 
-from kittengroomer import FileBase, KittenGroomerBase, main
+from kittengroomer import FileBase, KittenGroomerBase
 
 
 SEVENZ_PATH = '/usr/bin/7z'
@@ -389,7 +390,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def _archive(self):
         """Processes an archive using 7zip. The archive is extracted to a
-        temporary directory and self.processdir is called on that directory.
+        temporary directory and self.process_dir is called on that directory.
         The recursive archive depth is increased to protect against archive
         bombs."""
         self.cur_file.add_log_details('processing_type', 'archive')
@@ -401,7 +402,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self._run_process(extract_command)
         self.recursive_archive_depth += 1
         self.logger.tree(tmpdir)
-        self.processdir(tmpdir, self.cur_file.dst_path)
+        self.process_dir(tmpdir, self.cur_file.dst_path)
         self.recursive_archive_depth -= 1
         self._safe_rmtree(tmpdir)
 
@@ -561,14 +562,8 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         if not self.cur_file.is_recursive:
             self._write_log()
 
-    def processdir(self, src_dir=None, dst_dir=None):
+    def process_dir(self, src_dir, dst_dir):
         """Main function coordinating file processing."""
-        # TODO: do we actually need defaults here?
-        if src_dir is None:
-            src_dir = self.src_root_dir
-        if dst_dir is None:
-            dst_dir = self.dst_root_dir
-
         if self.recursive_archive_depth > 0:
             self._write_log()
 
@@ -580,8 +575,17 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             relative_path = srcpath.replace(src_dir + '/', '')
             self.process_file(srcpath, dstpath, relative_path)
 
-    def process_archive(self, src_dir, dst_dir):
-        pass
+    def run(self):
+        self.process_dir(self.src_root_dir, self.src_dst_dir)
+
+
+def main(kg_implementation, description):
+    parser = argparse.ArgumentParser(prog='KittenGroomer', description=description)
+    parser.add_argument('-s', '--source', type=str, help='Source directory')
+    parser.add_argument('-d', '--destination', type=str, help='Destination directory')
+    args = parser.parse_args()
+    kg = kg_implementation(args.source, args.destination)
+    kg.run()
 
 
 if __name__ == '__main__':
