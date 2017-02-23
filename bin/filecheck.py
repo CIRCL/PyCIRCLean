@@ -191,9 +191,9 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                 dict_to_return[subtype] = method
         return dict_to_return
 
-    def _print_log(self):
+    def _write_log(self):
         """Print the logs related to the current file being processed."""
-        # TODO: change name to _write_log, move to helpers
+        # TODO: move to helpers
         tmp_log = self.logger.log.fields(**self.cur_file.log_details)
         if self.cur_file.is_dangerous():
             tmp_log.warning(self.cur_file.log_string)
@@ -205,7 +205,6 @@ class KittenGroomerFileCheck(KittenGroomerBase):
     def _run_process(self, command_string, timeout=None):
         """Run command_string in a subprocess, wait until it finishes."""
         args = shlex.split(command_string)
-        # TODO: log_debug_err and log_debug are now broken, fix, move to helpers
         with open(self.logger.log_debug_err, 'ab') as stderr, open(self.logger.log_debug_out, 'ab') as stdout:
             try:
                 subprocess.check_call(args, stdout=stdout, stderr=stderr, timeout=timeout)
@@ -560,18 +559,18 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         else:
             self._safe_copy()
         if not self.cur_file.is_recursive:
-            self._print_log()
+            self._write_log()
 
     def processdir(self, src_dir=None, dst_dir=None):
         """Main function coordinating file processing."""
-        # TODO: do we need defaults here?
+        # TODO: do we actually need defaults here?
         if src_dir is None:
             src_dir = self.src_root_dir
         if dst_dir is None:
             dst_dir = self.dst_root_dir
 
         if self.recursive_archive_depth > 0:
-            self._print_log()
+            self._write_log()
 
         if self.recursive_archive_depth >= self.max_recursive_depth:
             self._handle_archivebomb(src_dir)
@@ -579,8 +578,10 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         for srcpath in self._list_all_files(src_dir):
             dstpath = srcpath.replace(src_dir, dst_dir)
             relative_path = srcpath.replace(src_dir + '/', '')
-            # which path do we want in the log?
             self.process_file(srcpath, dstpath, relative_path)
+
+    def process_archive(self, src_dir, dst_dir):
+        pass
 
 
 if __name__ == '__main__':

@@ -286,7 +286,7 @@ class KittenGroomerBase(object):
 
     #######################
 
-    # TODO: feels like this funciton doesn't need to exist if we move main()
+    # TODO: feels like this function doesn't need to exist if we move main()
     def processdir(self, src_dir, dst_dir):
         """
         Implement this function in your subclass to define file processing behavior.

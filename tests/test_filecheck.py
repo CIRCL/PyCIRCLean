@@ -45,4 +45,6 @@ class TestIntegration:
 
 
 class TestFileHandling:
-    pass
+    def test_autorun(self):
+        # Run on a single autorun file, confirm that it gets flagged as dangerous
+        pass
