@@ -45,13 +45,13 @@ class FileBase(object):
         # TODO: rename this. file_information? file_data? file_metadata? file_log?
         self.log_details = {'filepath': self.src_path}
         self.log_string = ''
-        self._determine_extension()
+        self.extension = self._determine_extension()
         self._determine_mimetype()
         self.logger = logger
 
     def _determine_extension(self):
         _, ext = os.path.splitext(self.src_path)
-        self.extension = ext.lower()
+        return ext.lower()
 
     def _determine_mimetype(self):
         if os.path.islink(self.src_path):
@@ -60,7 +60,7 @@ class FileBase(object):
         else:
             try:
                 mt = magic.from_file(self.src_path, mime=True)
-                # note: magic will always return something, even if it's just 'data'
+                # Note: magic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
                 # FIXME: The encoding of the file is broken (possibly UTF-16)
                 mt = ''
@@ -223,8 +223,9 @@ class GroomerLog(object):
         return s.hexdigest()
 
     def add_file(self):
+        # File object will add itself
+        # return a sublog for the file
         pass
-        # Should this return a sublog that the file can then write to? Does that work? Too confusing to understand?
 
     def add_event(self, event, log_level):
         pass
