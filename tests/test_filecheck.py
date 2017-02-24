@@ -33,13 +33,13 @@ class TestIntegration:
 
     def test_filecheck(self, src_invalid, dst):
         groomer = KittenGroomerFileCheck(src_invalid, dst, debug=True)
-        groomer.processdir()
+        groomer.run()
         test_description = "filecheck_invalid"
         save_logs(groomer, test_description)
 
     def test_filecheck_2(self, src_valid, dst):
         groomer = KittenGroomerFileCheck(src_valid, dst, debug=True)
-        groomer.processdir()
+        groomer.run()
         test_description = "filecheck_valid"
         save_logs(groomer, test_description)
 

@@ -60,7 +60,7 @@ class FileBase(object):
         else:
             try:
                 mt = magic.from_file(self.src_path, mime=True)
-                # magic will always return something, even if it's just 'data'
+                # note: magic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
                 # FIXME: The encoding of the file is broken (possibly UTF-16)
                 mt = ''

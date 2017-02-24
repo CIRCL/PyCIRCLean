@@ -576,7 +576,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             self.process_file(srcpath, dstpath, relative_path)
 
     def run(self):
-        self.process_dir(self.src_root_dir, self.src_dst_dir)
+        self.process_dir(self.src_root_dir, self.dst_root_dir)
 
 
 def main(kg_implementation, description):
