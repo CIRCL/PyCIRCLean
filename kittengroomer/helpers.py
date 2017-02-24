@@ -274,8 +274,7 @@ class KittenGroomerBase(object):
             print(e)
             return False
 
-    # TODO: this isn't a private method, change and edit the groomers as well
-    def _list_all_files(self, directory):
+    def list_all_files(self, directory):
         """Generator yielding path to all of the files in a directory tree."""
         for root, dirs, files in os.walk(directory):
             for filename in files:

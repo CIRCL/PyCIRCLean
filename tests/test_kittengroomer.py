@@ -271,7 +271,7 @@ class TestKittenGroomerBase:
         testdir = tmpdir.join('testdir')
         os.mkdir(testdir.strpath)
         simple_groomer = KittenGroomerBase(tmpdir.strpath, tmpdir.strpath)
-        files = simple_groomer._list_all_files(simple_groomer.src_root_dir)
+        files = simple_groomer.list_all_files(simple_groomer.src_root_dir)
         assert file.strpath in files
         assert testdir.strpath not in files
 

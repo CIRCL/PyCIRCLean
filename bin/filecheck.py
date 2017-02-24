@@ -570,7 +570,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         if self.recursive_archive_depth >= self.max_recursive_depth:
             self._handle_archivebomb(src_dir)
 
-        for srcpath in self._list_all_files(src_dir):
+        for srcpath in self.list_all_files(src_dir):
             dstpath = srcpath.replace(src_dir, dst_dir)
             relative_path = srcpath.replace(src_dir + '/', '')
             self.process_file(srcpath, dstpath, relative_path)

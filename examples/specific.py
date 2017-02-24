@@ -54,7 +54,7 @@ class KittenGroomerSpec(KittenGroomerBase):
         '''
         to_copy = []
         error = []
-        for srcpath in self._list_all_files(self.src_root_dir):
+        for srcpath in self.list_all_files(self.src_root_dir):
             valid = True
             self.log_name.info('Processing {}', srcpath.replace(self.src_root_dir + '/', ''))
             self.cur_file = FileSpec(srcpath, srcpath.replace(self.src_root_dir, self.dst_root_dir))

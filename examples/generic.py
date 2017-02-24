@@ -339,7 +339,7 @@ class KittenGroomer(KittenGroomerBase):
                 archbomb_path = src_dir[:-len('_temp')]
                 self._safe_remove(archbomb_path)
 
-        for srcpath in self._list_all_files(src_dir):
+        for srcpath in self.list_all_files(src_dir):
             self.cur_file = File(srcpath, srcpath.replace(src_dir, dst_dir))
 
             self.log_name.info('Processing {} ({}/{})', srcpath.replace(src_dir + '/', ''),
