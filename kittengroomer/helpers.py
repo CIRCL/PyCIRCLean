@@ -42,7 +42,7 @@ class FileBase(object):
         """Initialized with the source path and expected destination path."""
         self.src_path = src_path
         self.dst_path = dst_path
-        # TODO: rename this. file_information? file_data? file_metadata? file_log?
+        # TODO: rename this to file_properties
         self.log_details = {'filepath': self.src_path}
         self.log_string = ''
         self.extension = self._determine_extension()

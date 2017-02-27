@@ -170,7 +170,8 @@ class File(FileBase):
                 self.make_dangerous()
 
     def check(self):
-        pass
+        if not self.is_dangerous():
+            self.mime_processing_options.get(self.main_type, self.unknown)()
 
     # ##### Helper functions #####
     def _make_method_dict(self, list_of_tuples):
@@ -184,14 +185,15 @@ class File(FileBase):
     def _write_log(self):
         """Print the logs related to the current file being processed."""
         # TODO: move to helpers?
-        tmp_log = self.logger.log.fields(**self.cur_file.log_details)
-        if self.cur_file.is_dangerous():
-            tmp_log.warning(self.cur_file.log_string)
-        elif self.cur_file.log_details.get('unknown') or self.cur_file.log_details.get('binary'):
-            tmp_log.info(self.cur_file.log_string)
+        tmp_log = self.logger.log.fields(**self.log_details)
+        if self.is_dangerous():
+            tmp_log.warning(self.log_string)
+        elif self.log_details.get('unknown') or self.log_details.get('binary'):
+            tmp_log.info(self.log_string)
         else:
-            tmp_log.debug(self.cur_file.log_string)
+            tmp_log.debug(self.log_string)
 
+    # Make this an @property
     def has_metadata(self):
         if self.mimetype in Config.mimes_metadata:
             return True
@@ -211,198 +213,197 @@ class File(FileBase):
     # ##### Discarded mimetypes, reason in the docstring ######
     def inode(self):
         """Empty file or symlink."""
-        if self.cur_file.is_symlink():
-            self.cur_file.log_string += 'Symlink to {}'.format(self.cur_file.log_details['symlink'])
+        if self.is_symlink():
+            self.log_string += 'Symlink to {}'.format(self.log_details['symlink'])
         else:
-            self.cur_file.log_string += 'Inode file'
+            self.log_string += 'Inode file'
 
     def unknown(self):
         """Main type should never be unknown."""
-        self.cur_file.log_string += 'Unknown file'
+        self.log_string += 'Unknown file'
 
     def example(self):
         """Used in examples, should never be returned by libmagic."""
-        self.cur_file.log_string += 'Example file'
+        self.log_string += 'Example file'
 
     def multipart(self):
         """Used in web apps, should never be returned by libmagic"""
-        self.cur_file.log_string += 'Multipart file'
+        self.log_string += 'Multipart file'
 
     # ##### Treated as malicious, no reason to have it on a USB key ######
     def message(self):
         """Process a message file."""
-        self.cur_file.log_string += 'Message file'
-        self.cur_file.make_dangerous()
+        self.log_string += 'Message file'
+        self.make_dangerous()
         self._safe_copy()
 
     def model(self):
         """Process a model file."""
-        self.cur_file.log_string += 'Model file'
-        self.cur_file.make_dangerous()
+        self.log_string += 'Model file'
+        self.make_dangerous()
         self._safe_copy()
 
     # ##### Files that will be converted ######
     def text(self):
         """Process an rtf, ooxml, or plaintext file."""
         for mt in Config.mimes_rtf:
-            if mt in self.cur_file.sub_type:
-                self.cur_file.log_string += 'Rich Text file'
+            if mt in self.sub_type:
+                self.log_string += 'Rich Text file'
                 # TODO: need a way to convert it to plain text
-                self.cur_file.force_ext('.txt')
+                self.force_ext('.txt')
                 self._safe_copy()
                 return
         for mt in Config.mimes_ooxml:
-            if mt in self.cur_file.sub_type:
-                self.cur_file.log_string += 'OOXML File'
+            if mt in self.sub_type:
+                self.log_string += 'OOXML File'
                 self._ooxml()
                 return
-        self.cur_file.log_string += 'Text file'
-        self.cur_file.force_ext('.txt')
+        self.log_string += 'Text file'
+        self.force_ext('.txt')
         self._safe_copy()
 
     def application(self):
         """Processes an application specific file according to its subtype."""
         for subtype, method in self.app_subtype_methods.items():
-            if subtype in self.cur_file.sub_type:
+            if subtype in self.sub_type:
                 method()
-                self.cur_file.log_string += 'Application file'
+                self.log_string += 'Application file'
                 return
-        self.cur_file.log_string += 'Unknown Application file'
+        self.log_string += 'Unknown Application file'
         self._unknown_app()
 
     def _executables(self):
         """Processes an executable file."""
-        self.cur_file.add_log_details('processing_type', 'executable')
-        self.cur_file.make_dangerous()
+        self.add_log_details('processing_type', 'executable')
+        self.make_dangerous()
         self._safe_copy()
 
     def _winoffice(self):
         """Processes a winoffice file using olefile/oletools."""
-        self.cur_file.add_log_details('processing_type', 'WinOffice')
+        self.add_log_details('processing_type', 'WinOffice')
         # Try as if it is a valid document
-        oid = oletools.oleid.OleID(self.cur_file.src_path)
-        if not olefile.isOleFile(self.cur_file.src_path):
+        oid = oletools.oleid.OleID(self.src_path)
+        if not olefile.isOleFile(self.src_path):
             # Manual processing, may already count as suspicious
             try:
-                ole = olefile.OleFileIO(self.cur_file.src_path, raise_defects=olefile.DEFECT_INCORRECT)
+                ole = olefile.OleFileIO(self.src_path, raise_defects=olefile.DEFECT_INCORRECT)
             except:
-                self.cur_file.add_log_details('not_parsable', True)
-                self.cur_file.make_dangerous()
+                self.add_log_details('not_parsable', True)
+                self.make_dangerous()
             if ole.parsing_issues:
-                self.cur_file.add_log_details('parsing_issues', True)
-                self.cur_file.make_dangerous()
+                self.add_log_details('parsing_issues', True)
+                self.make_dangerous()
             else:
                 if ole.exists('macros/vba') or ole.exists('Macros') \
                         or ole.exists('_VBA_PROJECT_CUR') or ole.exists('VBA'):
-                    self.cur_file.add_log_details('macro', True)
-                    self.cur_file.make_dangerous()
+                    self.add_log_details('macro', True)
+                    self.make_dangerous()
         else:
             indicators = oid.check()
             # Encrypted ban be set by multiple checks on the script
             if oid.encrypted.value:
-                self.cur_file.add_log_details('encrypted', True)
-                self.cur_file.make_dangerous()
+                self.add_log_details('encrypted', True)
+                self.make_dangerous()
             if oid.macros.value or oid.ole.exists('macros/vba') or oid.ole.exists('Macros') \
                     or oid.ole.exists('_VBA_PROJECT_CUR') or oid.ole.exists('VBA'):
-                self.cur_file.add_log_details('macro', True)
-                self.cur_file.make_dangerous()
+                self.add_log_details('macro', True)
+                self.make_dangerous()
             for i in indicators:
                 if i.id == 'ObjectPool' and i.value:
                     # FIXME: Is it suspicious?
-                    self.cur_file.add_log_details('objpool', True)
+                    self.add_log_details('objpool', True)
                 elif i.id == 'flash' and i.value:
-                    self.cur_file.add_log_details('flash', True)
-                    self.cur_file.make_dangerous()
+                    self.add_log_details('flash', True)
+                    self.make_dangerous()
         self._safe_copy()
 
     def _ooxml(self):
         """Processes an ooxml file."""
-        self.cur_file.add_log_details('processing_type', 'ooxml')
+        self.add_log_details('processing_type', 'ooxml')
         try:
-            doc = officedissector.doc.Document(self.cur_file.src_path)
+            doc = officedissector.doc.Document(self.src_path)
         except Exception:
             # Invalid file
-            self.cur_file.make_dangerous()
+            self.make_dangerous()
             self._safe_copy()
             return
         # There are probably other potentially malicious features:
         # fonts, custom props, custom XML
         if doc.is_macro_enabled or len(doc.features.macros) > 0:
-            self.cur_file.add_log_details('macro', True)
-            self.cur_file.make_dangerous()
+            self.add_log_details('macro', True)
+            self.make_dangerous()
         if len(doc.features.embedded_controls) > 0:
-            self.cur_file.add_log_details('activex', True)
-            self.cur_file.make_dangerous()
+            self.add_log_details('activex', True)
+            self.make_dangerous()
         if len(doc.features.embedded_objects) > 0:
             # Exploited by CVE-2014-4114 (OLE)
-            self.cur_file.add_log_details('embedded_obj', True)
-            self.cur_file.make_dangerous()
+            self.add_log_details('embedded_obj', True)
+            self.make_dangerous()
         if len(doc.features.embedded_packages) > 0:
-            self.cur_file.add_log_details('embedded_pack', True)
-            self.cur_file.make_dangerous()
+            self.add_log_details('embedded_pack', True)
+            self.make_dangerous()
         self._safe_copy()
 
     def _libreoffice(self):
         """Processes a libreoffice file."""
-        self.cur_file.add_log_details('processing_type', 'libreoffice')
+        self.add_log_details('processing_type', 'libreoffice')
         # As long as there ar no way to do a sanity check on the files => dangerous
         try:
-            lodoc = zipfile.ZipFile(self.cur_file.src_path, 'r')
+            lodoc = zipfile.ZipFile(self.src_path, 'r')
         except:
-            self.cur_file.add_log_details('invalid', True)
-            self.cur_file.make_dangerous()
+            self.add_log_details('invalid', True)
+            self.make_dangerous()
         for f in lodoc.infolist():
             fname = f.filename.lower()
             if fname.startswith('script') or fname.startswith('basic') or \
                     fname.startswith('object') or fname.endswith('.bin'):
-                self.cur_file.add_log_details('macro', True)
-                self.cur_file.make_dangerous()
+                self.add_log_details('macro', True)
+                self.make_dangerous()
         self._safe_copy()
 
     def _pdf(self):
         """Processes a PDF file."""
-        self.cur_file.add_log_details('processing_type', 'pdf')
-        xmlDoc = PDFiD(self.cur_file.src_path)
+        self.add_log_details('processing_type', 'pdf')
+        xmlDoc = PDFiD(self.src_path)
         oPDFiD = cPDFiD(xmlDoc, True)
         # TODO: other keywords?
         if oPDFiD.encrypt.count > 0:
-            self.cur_file.add_log_details('encrypted', True)
-            self.cur_file.make_dangerous()
+            self.add_log_details('encrypted', True)
+            self.make_dangerous()
         if oPDFiD.js.count > 0 or oPDFiD.javascript.count > 0:
-            self.cur_file.add_log_details('javascript', True)
-            self.cur_file.make_dangerous()
+            self.add_log_details('javascript', True)
+            self.make_dangerous()
         if oPDFiD.aa.count > 0 or oPDFiD.openaction.count > 0:
-            self.cur_file.add_log_details('openaction', True)
-            self.cur_file.make_dangerous()
+            self.add_log_details('openaction', True)
+            self.make_dangerous()
         if oPDFiD.richmedia.count > 0:
-            self.cur_file.add_log_details('flash', True)
-            self.cur_file.make_dangerous()
+            self.add_log_details('flash', True)
+            self.make_dangerous()
         if oPDFiD.launch.count > 0:
-            self.cur_file.add_log_details('launch', True)
-            self.cur_file.make_dangerous()
-        self._safe_copy()
+            self.add_log_details('launch', True)
+            self.make_dangerous()
 
     def _archive(self):
         """Processes an archive using 7zip. The archive is extracted to a
         temporary directory and self.process_dir is called on that directory.
         The recursive archive depth is increased to protect against archive
         bombs."""
-        self.cur_file.add_log_details('processing_type', 'archive')
-        self.cur_file.is_recursive = True
-        self.cur_file.log_string += 'Archive extracted, processing content.'
-        tmpdir = self.cur_file.dst_path + '_temp'
+        self.add_log_details('processing_type', 'archive')
+        self.is_recursive = True
+        self.log_string += 'Archive extracted, processing content.'
+        tmpdir = self.dst_path + '_temp'
         self._safe_mkdir(tmpdir)
-        extract_command = '{} -p1 x "{}" -o"{}" -bd -aoa'.format(SEVENZ_PATH, self.cur_file.src_path, tmpdir)
+        extract_command = '{} -p1 x "{}" -o"{}" -bd -aoa'.format(SEVENZ_PATH, self.src_path, tmpdir)
         self._run_process(extract_command)
         self.recursive_archive_depth += 1
         self.logger.tree(tmpdir)
-        self.process_dir(tmpdir, self.cur_file.dst_path)
+        self.process_dir(tmpdir, self.dst_path)
         self.recursive_archive_depth -= 1
         self._safe_rmtree(tmpdir)
 
     def _handle_archivebomb(self, src_dir):
-        self.cur_file.make_dangerous()
-        self.cur_file.add_log_details('Archive Bomb', True)
+        self.make_dangerous()
+        self.add_log_details('Archive Bomb', True)
         self.log_name.warning('ARCHIVE BOMB.')
         self.log_name.warning('The content of the archive contains recursively other archives.')
         self.log_name.warning('This is a bad sign so the archive is not extracted to the destination key.')
@@ -413,30 +414,30 @@ class File(FileBase):
 
     def _unknown_app(self):
         """Processes an unknown file."""
-        self.cur_file.make_unknown()
+        self.make_unknown()
         self._safe_copy()
 
     def _binary_app(self):
         """Processses an unknown binary file."""
-        self.cur_file.make_binary()
+        self.make_binary()
         self._safe_copy()
 
     #######################
     # Metadata extractors
     def _metadata_exif(self, metadata_file_path):
-        img = open(self.cur_file.src_path, 'rb')
+        img = open(self.src_path, 'rb')
         tags = None
 
         try:
             tags = exifread.process_file(img, debug=True)
         except Exception as e:
-            print("Error while trying to grab full metadata for file {}; retrying for partial data.".format(self.cur_file.src_path))
+            print("Error while trying to grab full metadata for file {}; retrying for partial data.".format(self.src_path))
             print(e)
         if tags is None:
             try:
                 tags = exifread.process_file(img, debug=True)
             except Exception as e:
-                print("Failed to get any metadata for file {}.".format(self.cur_file.src_path))
+                print("Failed to get any metadata for file {}.".format(self.src_path))
                 print(e)
                 img.close()
                 return False
@@ -456,32 +457,32 @@ class File(FileBase):
 
                 with open(metadata_file_path, 'w+') as metadata_file:
                     metadata_file.write("Key: {}\tValue: {}\n".format(tag, printable))
-        self.cur_file.add_log_details('metadata', 'exif')
+        self.add_log_details('metadata', 'exif')
         img.close()
         return True
 
     def _metadata_png(self, metadata_file_path):
         warnings.simplefilter('error', Image.DecompressionBombWarning)
         try:
-            img = Image.open(self.cur_file.src_path)
+            img = Image.open(self.src_path)
             for tag in sorted(img.info.keys()):
                 # These are long and obnoxious/binary
                 if tag not in ('icc_profile'):
                     with open(metadata_file_path, 'w+') as metadata_file:
                         metadata_file.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
-            self.cur_file.add_log_details('metadata', 'png')
+            self.add_log_details('metadata', 'png')
             img.close()
         # Catch decompression bombs
         except Exception as e:
-            print("Caught exception processing metadata for {}".format(self.cur_file.src_path))
+            print("Caught exception processing metadata for {}".format(self.src_path))
             print(e)
-            self.cur_file.make_dangerous()
+            self.make_dangerous()
             self._safe_copy()
             return False
 
     def extract_metadata(self):
-        metadata_file_path = self.cur_file.create_metadata_file(".metadata.txt")
-        mt = self.cur_file.mimetype
+        metadata_file_path = self.create_metadata_file(".metadata.txt")
+        mt = self.mimetype
         metadata_processing_method = self.metadata_mimetype_methods.get(mt)
         if metadata_processing_method:
             # TODO: should we return metadata and write it here instead of in processing method?
@@ -491,17 +492,17 @@ class File(FileBase):
     # ##### Media - audio and video aren't converted ######
     def audio(self):
         """Processes an audio file."""
-        self.cur_file.log_string += 'Audio file'
+        self.log_string += 'Audio file'
         self._media_processing()
 
     def video(self):
         """Processes a video."""
-        self.cur_file.log_string += 'Video file'
+        self.log_string += 'Video file'
         self._media_processing()
 
     def _media_processing(self):
         """Generic way to process all media files."""
-        self.cur_file.add_log_details('processing_type', 'media')
+        self.add_log_details('processing_type', 'media')
         self._safe_copy()
 
     def image(self):
@@ -510,12 +511,12 @@ class File(FileBase):
         Extracts metadata if metadata is present. Creates a temporary
         directory, opens the using PIL.Image, saves it to the temporary
         directory, and copies it to the destination."""
-        if self.cur_file.has_metadata():
+        if self.has_metadata():
             self.extract_metadata()
 
         # FIXME make sure this works for png, gif, tiff
         # Create a temp directory
-        dst_dir, filename = os.path.split(self.cur_file.dst_path)
+        dst_dir, filename = os.path.split(self.dst_path)
         tmpdir = os.path.join(dst_dir, 'temp')
         tmppath = os.path.join(tmpdir, filename)
         self._safe_mkdir(tmpdir)
@@ -523,7 +524,7 @@ class File(FileBase):
         # Do our image conversions
         warnings.simplefilter('error', Image.DecompressionBombWarning)
         try:
-            imIn = Image.open(self.cur_file.src_path)
+            imIn = Image.open(self.src_path)
             imOut = Image.frombytes(imIn.mode, imIn.size, imIn.tobytes())
             imOut.save(tmppath)
 
@@ -533,13 +534,13 @@ class File(FileBase):
 
         # Catch decompression bombs
         except Exception as e:
-            print("Caught exception (possible decompression bomb?) while translating file {}.".format(self.cur_file.src_path))
+            print("Caught exception (possible decompression bomb?) while translating file {}.".format(self.src_path))
             print(e)
-            self.cur_file.make_dangerous()
+            self.make_dangerous()
             self._safe_copy()
 
-        self.cur_file.log_string += 'Image file'
-        self.cur_file.add_log_details('processing_type', 'image')
+        self.log_string += 'Image file'
+        self.add_log_details('processing_type', 'image')
 
 
 class KittenGroomerFileCheck(KittenGroomerBase):
@@ -557,22 +558,20 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                            self.cur_file.main_type,
                            self.cur_file.sub_type)
         self.cur_file.check()
-
-        if not self.cur_file.is_dangerous():
-            self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
+        if self.cur_file.is_archive:
+            # Handle archive
+            pass
         else:
+            # TODO: Check if should be copied, maybe have an attribute for this?
             self._safe_copy()
-        if not self.cur_file.is_recursive:
             self._write_log()
 
     def process_dir(self, src_dir, dst_dir):
         """Main function coordinating file processing."""
         if self.recursive_archive_depth > 0:
             self._write_log()
-
         if self.recursive_archive_depth >= self.max_recursive_depth:
             self._handle_archivebomb(src_dir)
-
         for srcpath in self.list_all_files(src_dir):
             dstpath = srcpath.replace(src_dir, dst_dir)
             relative_path = srcpath.replace(src_dir + '/', '')
