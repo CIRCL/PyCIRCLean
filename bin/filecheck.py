@@ -96,6 +96,38 @@ class File(FileBase):
         self._check_extension()
         self._check_mime()
 
+        subtypes_apps = [
+            (Config.mimes_office, self._winoffice),
+            (Config.mimes_ooxml, self._ooxml),
+            (Config.mimes_rtf, self.text),
+            (Config.mimes_libreoffice, self._libreoffice),
+            (Config.mimes_pdf, self._pdf),
+            (Config.mimes_xml, self.text),
+            (Config.mimes_ms, self._executables),
+            (Config.mimes_compressed, self._archive),
+            (Config.mimes_data, self._binary_app),
+        ]
+        self.app_subtype_methods = self._make_method_dict(subtypes_apps)
+
+        types_metadata = [
+            (Config.mimes_exif, self._metadata_exif),
+            (Config.mimes_png, self._metadata_png),
+        ]
+        self.metadata_mimetype_methods = self._make_method_dict(types_metadata)
+
+        self.mime_processing_options = {
+            'text': self.text,
+            'audio': self.audio,
+            'image': self.image,
+            'video': self.video,
+            'application': self.application,
+            'example': self.example,
+            'message': self.message,
+            'model': self.model,
+            'multipart': self.multipart,
+            'inode': self.inode,
+        }
+
     def _check_dangerous(self):
         if not self.has_mimetype():
             # No mimetype, should not happen.
@@ -137,51 +169,8 @@ class File(FileBase):
                 self.log_details.update({'expected_extensions': expected_extensions})
                 self.make_dangerous()
 
-    def has_metadata(self):
-        if self.mimetype in Config.mimes_metadata:
-            return True
-        return False
-
-
-class KittenGroomerFileCheck(KittenGroomerBase):
-
-    def __init__(self, root_src, root_dst, max_recursive_depth=2, debug=False):
-        super(KittenGroomerFileCheck, self).__init__(root_src, root_dst, debug)
-        self.recursive_archive_depth = 0
-        self.max_recursive_depth = max_recursive_depth
-        self.log_name = self.logger.log
-
-        subtypes_apps = [
-            (Config.mimes_office, self._winoffice),
-            (Config.mimes_ooxml, self._ooxml),
-            (Config.mimes_rtf, self.text),
-            (Config.mimes_libreoffice, self._libreoffice),
-            (Config.mimes_pdf, self._pdf),
-            (Config.mimes_xml, self.text),
-            (Config.mimes_ms, self._executables),
-            (Config.mimes_compressed, self._archive),
-            (Config.mimes_data, self._binary_app),
-        ]
-        self.app_subtype_methods = self._make_method_dict(subtypes_apps)
-
-        types_metadata = [
-            (Config.mimes_exif, self._metadata_exif),
-            (Config.mimes_png, self._metadata_png),
-        ]
-        self.metadata_mimetype_methods = self._make_method_dict(types_metadata)
-
-        self.mime_processing_options = {
-            'text': self.text,
-            'audio': self.audio,
-            'image': self.image,
-            'video': self.video,
-            'application': self.application,
-            'example': self.example,
-            'message': self.message,
-            'model': self.model,
-            'multipart': self.multipart,
-            'inode': self.inode,
-        }
+    def check(self):
+        pass
 
     # ##### Helper functions #####
     def _make_method_dict(self, list_of_tuples):
@@ -194,7 +183,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def _write_log(self):
         """Print the logs related to the current file being processed."""
-        # TODO: move to helpers
+        # TODO: move to helpers?
         tmp_log = self.logger.log.fields(**self.cur_file.log_details)
         if self.cur_file.is_dangerous():
             tmp_log.warning(self.cur_file.log_string)
@@ -202,6 +191,11 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             tmp_log.info(self.cur_file.log_string)
         else:
             tmp_log.debug(self.cur_file.log_string)
+
+    def has_metadata(self):
+        if self.mimetype in Config.mimes_metadata:
+            return True
+        return False
 
     def _run_process(self, command_string, timeout=None):
         """Run command_string in a subprocess, wait until it finishes."""
@@ -547,7 +541,14 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.cur_file.log_string += 'Image file'
         self.cur_file.add_log_details('processing_type', 'image')
 
-    #######################
+
+class KittenGroomerFileCheck(KittenGroomerBase):
+
+    def __init__(self, root_src, root_dst, max_recursive_depth=2, debug=False):
+        super(KittenGroomerFileCheck, self).__init__(root_src, root_dst, debug)
+        self.recursive_archive_depth = 0
+        self.max_recursive_depth = max_recursive_depth
+        self.log_name = self.logger.log
 
     def process_file(self, srcpath, dstpath, relative_path):
         self.cur_file = File(srcpath, dstpath, self.logger)
@@ -555,6 +556,8 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                            relative_path,
                            self.cur_file.main_type,
                            self.cur_file.sub_type)
+        self.cur_file.check()
+
         if not self.cur_file.is_dangerous():
             self.mime_processing_options.get(self.cur_file.main_type, self.unknown)()
         else:
