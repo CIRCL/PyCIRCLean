@@ -182,7 +182,7 @@ class File(FileBase):
 
     def write_log(self):
         """Print the logs related to the current file being processed."""
-        # TODO: move to helpers.py?
+        # LOG: move to helpers.py?
         tmp_log = self.logger.log.fields(**self.log_details)
         if self.is_dangerous():
             tmp_log.warning(self.log_string)
@@ -191,7 +191,7 @@ class File(FileBase):
         else:
             tmp_log.debug(self.log_string)
 
-    # TODO: Make this an @property
+    @property
     def has_metadata(self):
         if self.mimetype in Config.mimes_metadata:
             return True
@@ -397,14 +397,14 @@ class File(FileBase):
         try:
             tags = exifread.process_file(img, debug=True)
         except Exception as e:
-            # TODO: log instead of print
+            # LOG: log instead of print
             print("Error while trying to grab full metadata for file {}; retrying for partial data.".format(self.src_path))
             print(e)
         if tags is None:
             try:
                 tags = exifread.process_file(img, debug=True)
             except Exception as e:
-                # TODO: log instead of print
+                # LOG: log instead of print
                 print("Failed to get any metadata for file {}.".format(self.src_path))
                 print(e)
                 img.close()
@@ -439,7 +439,7 @@ class File(FileBase):
             img.close()
         # Catch decompression bombs
         except Exception as e:
-            # TODO: log instead of print
+            # LOG: log instead of print
             print("Caught exception processing metadata for {}".format(self.src_path))
             print(e)
             self.make_dangerous()
@@ -476,7 +476,7 @@ class File(FileBase):
         temporary directory on dest key, opens the using PIL.Image,saves it to
         the temporary directory, and copies it to the destination."""
         # TODO: make sure this method works for png, gif, tiff
-        if self.has_metadata():
+        if self.has_metadata:
             self.extract_metadata()
         tempdir_path = self.make_tempdir()
         tempfile_path = os.path.join(tempdir_path, self.filename)
@@ -488,7 +488,7 @@ class File(FileBase):
             self.src_path = tempfile_path
         except Exception as e:  # Catch decompression bombs
             # TODO: change this from all Exceptions to specific DecompressionBombWarning
-            # TODO: change this from printing to logging
+            # LOG: change this from printing to logging
             print("Caught exception (possible decompression bomb?) while translating file {}.".format(self.src_path))
             print(e)
             self.make_dangerous()
@@ -505,7 +505,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def process_dir(self, src_dir, dst_dir):
         """Main function coordinating file processing."""
-        # TODO: we probably want to move this write_log elsewhere:
+        # LOG: we probably want to move this write_log elsewhere:
         # if self.recursive_archive_depth > 0:
         #     self.write_log()
         # TODO: Can we clean up the way we handle relative_path?
@@ -513,7 +513,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             dstpath = srcpath.replace(src_dir, dst_dir)
             relative_path = srcpath.replace(src_dir + '/', '')
             self.cur_file = File(srcpath, dstpath, self.logger)
-            # TODO: move this logging code elsewhere
+            # LOG: move this logging code elsewhere
             self.logger.log.info('Processing {} ({}/{})',
                                  relative_path,
                                  self.cur_file.main_type,
@@ -546,7 +546,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             unpack_command = command_str.format(SEVENZ_PATH,
                                                 file.src_path, tempdir_path)
             self._run_process(unpack_command)
-            # TODO: check that tree is working correctly here
+            # LOG: check that tree is working correctly here
             self.logger.tree(tempdir_path)
             self.process_dir(tempdir_path, file.dst_path)
             self._safe_rmtree(tempdir_path)

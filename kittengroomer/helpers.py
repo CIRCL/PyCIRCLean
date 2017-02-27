@@ -173,12 +173,12 @@ class FileBase(object):
                 self.metadata_file_path = self.dst_path + ext
                 return self.metadata_file_path
         except KittenGroomerError as e:
-            # TODO: Write to log file
+            # LOG: Write to log file
             return False
 
 
-class GroomerLog(object):
-    """Groomer logging object"""
+class GroomerLogger(object):
+    """Groomer logging interface"""
 
     def __init__(self, root_dir, debug=False):
         self.log_dir_path = os.path.join(root_dir, 'logs')
@@ -223,8 +223,8 @@ class GroomerLog(object):
                 s.update(buf)
         return s.hexdigest()
 
-    def add_file(self):
-        # File object will add itself
+    def add_file(self, file):
+        # File object will add itself?
         # return a sublog for the file
         pass
 
@@ -241,7 +241,7 @@ class KittenGroomerBase(object):
         self.dst_root_dir = root_dst
         self.debug = debug
         self.cur_file = None
-        self.logger = GroomerLog(self.dst_root_dir, debug)
+        self.logger = GroomerLogger(self.dst_root_dir, debug)
 
     # ##### Helpers #####
     def _safe_rmtree(self, directory):
@@ -271,7 +271,7 @@ class KittenGroomerBase(object):
             shutil.copy(src, dst)
             return True
         except Exception as e:
-            # TODO: Logfile
+            # LOG: Logfile
             print(e)
             return False
 
