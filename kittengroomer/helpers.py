@@ -42,12 +42,13 @@ class FileBase(object):
         """Initialized with the source path and expected destination path."""
         self.src_path = src_path
         self.dst_path = dst_path
-        # TODO: rename this to file_properties
+        # TODO: rename this to file_properties (and change in other groomers)
         self.log_details = {'filepath': self.src_path}
         self.log_string = ''
         self.extension = self._determine_extension()
         self._determine_mimetype()
         self.logger = logger
+        self.filename = os.path.basename(self.src_path)
 
     def _determine_extension(self):
         _, ext = os.path.splitext(self.src_path)
