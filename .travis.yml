@@ -66,8 +66,8 @@ install:
     - rm fraunhoferlibrary.zip
     - 7z x -p42 42.zip
     # Some random samples
-    - wget http://www.sample-videos.com/audio/mp3/india-national-anthem.mp3
-    - wget http://www.sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4
+    # - wget http://www.sample-videos.com/audio/mp3/india-national-anthem.mp3
+    # - wget http://www.sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4
     - wget http://thewalter.net/stef/software/rtfx/sample.rtf
     - popd
 

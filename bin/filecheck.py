@@ -182,7 +182,7 @@ class File(FileBase):
 
     def write_log(self):
         """Print the logs related to the current file being processed."""
-        # TODO: move to helpers?
+        # TODO: move to helpers.py?
         tmp_log = self.logger.log.fields(**self.log_details)
         if self.is_dangerous():
             tmp_log.warning(self.log_string)
@@ -191,23 +191,13 @@ class File(FileBase):
         else:
             tmp_log.debug(self.log_string)
 
-    # Make this an @property
+    # TODO: Make this an @property
     def has_metadata(self):
         if self.mimetype in Config.mimes_metadata:
             return True
         return False
 
-    def _run_process(self, command_string, timeout=None):
-        """Run command_string in a subprocess, wait until it finishes."""
-        args = shlex.split(command_string)
-        with open(self.logger.log_debug_err, 'ab') as stderr, open(self.logger.log_debug_out, 'ab') as stdout:
-            try:
-                subprocess.check_call(args, stdout=stdout, stderr=stderr, timeout=timeout)
-            except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
-                return
-        return True
-
-    def _make_tempdir(self):
+    def make_tempdir(self):
         """Make a temporary directory."""
         self.tempdir_path = self.dst_path + '_temp'
         if not os.path.exists(self.tempdir_path):
@@ -348,6 +338,7 @@ class File(FileBase):
         try:
             lodoc = zipfile.ZipFile(self.src_path, 'r')
         except:
+            # TODO: are there specific exceptions we should catch here? Or is anything ok
             self.add_log_details('invalid', True)
             self.make_dangerous()
         for f in lodoc.infolist():
@@ -362,7 +353,7 @@ class File(FileBase):
         self.add_log_details('processing_type', 'pdf')
         xmlDoc = PDFiD(self.src_path)
         oPDFiD = cPDFiD(xmlDoc, True)
-        # TODO: other keywords?
+        # TODO: are there other characteristics which should be dangerous?
         if oPDFiD.encrypt.count > 0:
             self.add_log_details('encrypted', True)
             self.make_dangerous()
@@ -399,6 +390,7 @@ class File(FileBase):
     #######################
     # Metadata extractors
     def _metadata_exif(self, metadata_file_path):
+        # TODO: this method is kind of long, can we shorten it?
         img = open(self.src_path, 'rb')
         tags = None
 
@@ -486,7 +478,7 @@ class File(FileBase):
         # TODO: make sure this method works for png, gif, tiff
         if self.has_metadata():
             self.extract_metadata()
-        tempdir_path = self._make_tempdir()
+        tempdir_path = self.make_tempdir()
         tempfile_path = os.path.join(tempdir_path, self.filename)
         warnings.simplefilter('error', Image.DecompressionBombWarning)
         try:  # Do image conversions
@@ -495,6 +487,7 @@ class File(FileBase):
             img_out.save(tempfile_path)
             self.src_path = tempfile_path
         except Exception as e:  # Catch decompression bombs
+            # TODO: change this from all Exceptions to specific DecompressionBombWarning
             # TODO: change this from printing to logging
             print("Caught exception (possible decompression bomb?) while translating file {}.".format(self.src_path))
             print(e)
@@ -512,7 +505,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def process_dir(self, src_dir, dst_dir):
         """Main function coordinating file processing."""
-        # TODO: Think we want to move write_log elsewhere:
+        # TODO: we probably want to move this write_log elsewhere:
         # if self.recursive_archive_depth > 0:
         #     self.write_log()
         # TODO: Can we clean up the way we handle relative_path?
@@ -532,7 +525,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         if file.is_recursive:
             self.process_archive(file)
         else:
-            # TODO: Check if should be copied, make an attribute for should be copied True/False
+            # TODO: Make a File attribute for should be copied True/False and check it
             self._safe_copy()
         file.write_log()
         if hasattr(file, "tempdir_path"):
@@ -548,19 +541,16 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         if self.recursive_archive_depth >= self.max_recursive_depth:
             self._handle_archivebomb(file)
         else:
-            tempdir_path = file._make_tempdir()
-            # Unpack the archive
-            base_command = '{} -p1 x "{}" -o"{}" -bd -aoa'
-            extract_command = base_command.format(SEVENZ_PATH, file.src_path, tempdir_path)
-            file._run_process(extract_command)
-            # Add it to the tree
+            tempdir_path = file.make_tempdir()
+            command_str = '{} -p1 x "{}" -o"{}" -bd -aoa'
+            unpack_command = command_str.format(SEVENZ_PATH,
+                                                file.src_path, tempdir_path)
+            self._run_process(unpack_command)
+            # TODO: check that tree is working correctly here
             self.logger.tree(tempdir_path)
-            # List all files, process them
             self.process_dir(tempdir_path, file.dst_path)
-            # Clean up
             self._safe_rmtree(tempdir_path)
         self.recursive_archive_depth -= 1
-
 
     def _handle_archivebomb(self, file):
         file.make_dangerous()
@@ -568,13 +558,17 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.logger.log.warning('ARCHIVE BOMB.')
         self.logger.log.warning('The content of the archive contains recursively other archives.')
         self.logger.log.warning('This is a bad sign so the archive is not extracted to the destination key.')
-        # TODO: are we sure we want to delete the archive on the source key? Commenting out for now
-        # self._safe_rmtree(file.src_dir)
-        # What is the goal of this code:
-        # if file.src_dir.endswith('_temp'):
-        #     # TODO: change the way bomb_path is constructed and the way we check for tempdir
-        #     bomb_path = file.src_dir[:-len('_temp')]
-        #     self._safe_remove(bomb_path)
+        # TODO: delete whatever we want to delete that's already been copied to dest dir
+
+    def _run_process(self, command_string, timeout=None):
+        """Run command_string in a subprocess, wait until it finishes."""
+        args = shlex.split(command_string)
+        with open(self.logger.log_debug_err, 'ab') as stderr, open(self.logger.log_debug_out, 'ab') as stdout:
+            try:
+                subprocess.check_call(args, stdout=stdout, stderr=stderr, timeout=timeout)
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+                return
+        return True
 
     def run(self):
         self.process_dir(self.src_root_dir, self.dst_root_dir)
