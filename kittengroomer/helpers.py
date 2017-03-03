@@ -27,7 +27,6 @@ class KittenGroomerError(Exception):
 
 class ImplementationRequired(KittenGroomerError):
     """Implementation required error."""
-
     pass
 
 
@@ -46,7 +45,9 @@ class FileBase(object):
         self.log_details = {'filepath': self.src_path}
         self.log_string = ''
         self.extension = self._determine_extension()
-        self._determine_mimetype()
+        self.mimetype = self._determine_mimetype()
+        if self.mimetype:
+            self.main_type, self.sub_type = self._split_subtypes(self.mimetype)
         self.logger = logger
         self.filename = os.path.basename(self.src_path)
 
@@ -57,24 +58,27 @@ class FileBase(object):
     def _determine_mimetype(self):
         if os.path.islink(self.src_path):
             # magic will throw an IOError on a broken symlink
-            self.mimetype = 'inode/symlink'
+            mimetype = 'inode/symlink'
         else:
             try:
                 mt = magic.from_file(self.src_path, mime=True)
                 # Note: magic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
                 # FIXME: The encoding of the file is broken (possibly UTF-16)
-                mt = ''
+                mt = None
                 self.log_details.update({'UnicodeError': e})
             try:
-                self.mimetype = mt.decode("utf-8")
+                mimetype = mt.decode("utf-8")
             except:
-                self.mimetype = mt
-        if self.mimetype and '/' in self.mimetype:
-            self.main_type, self.sub_type = self.mimetype.split('/')
+                mimetype = mt
+        return mimetype
+
+    def _split_subtypes(self, mimetype):
+        if '/' in mimetype:
+            main_type, sub_type = mimetype.split('/')
         else:
-            self.main_type = ''
-            self.sub_type = ''
+            main_type, sub_type = None, None
+        return main_type, sub_type
 
     def has_mimetype(self):
         """
@@ -243,7 +247,6 @@ class KittenGroomerBase(object):
         self.cur_file = None
         self.logger = GroomerLogger(self.dst_root_dir, debug)
 
-    # ##### Helpers #####
     def _safe_rmtree(self, directory):
         """Remove a directory tree if it exists."""
         if os.path.exists(directory):
