@@ -86,9 +86,6 @@ class File(FileBase):
     def __init__(self, src_path, dst_path, logger):
         super(File, self).__init__(src_path, dst_path, logger)
         self.is_recursive = False
-        self.log_details.update({'maintype': self.main_type,
-                                 'subtype': self.sub_type,
-                                 'extension': self.extension})
 
         subtypes_apps = [
             (Config.mimes_office, self._winoffice),
@@ -128,7 +125,7 @@ class File(FileBase):
         if not self.has_extension():
             self.make_dangerous()
         if self.extension in Config.malicious_exts:
-            self.log_details.update({'malicious_extension': self.extension})
+            self.set_property('malicious_extension', self.extension)
             self.make_dangerous()
 
     def _check_extension(self):
@@ -146,7 +143,7 @@ class File(FileBase):
                 expected_mimetype = Config.aliases[expected_mimetype]
         is_known_extension = self.extension in mimetypes.types_map.keys()
         if is_known_extension and expected_mimetype != self.mimetype:
-            self.log_details.update({'expected_mimetype': expected_mimetype})
+            self.set_property('expected_mimetype', expected_mimetype)
             self.make_dangerous()
 
     def _check_mimetype(self):
@@ -161,7 +158,7 @@ class File(FileBase):
                                                              strict=False)
         if expected_extensions:
             if self.has_extension() and self.extension not in expected_extensions:
-                self.log_details.update({'expected_extensions': expected_extensions})
+                self.set_property('expected_extensions', expected_extensions)
                 self.make_dangerous()
 
     def check(self):
@@ -182,11 +179,11 @@ class File(FileBase):
 
     def write_log(self):
         """Print the logs related to the current file being processed."""
-        # LOG: move to helpers.py?
-        tmp_log = self.logger.log.fields(**self.log_details)
+        # LOG: move to helpers.py and change
+        tmp_log = self.logger.log.fields(**self._file_props)
         if self.is_dangerous():
             tmp_log.warning(self.log_string)
-        elif self.log_details.get('unknown') or self.log_details.get('binary'):
+        elif self.get_property('unknown') or self.get_property('binary'):
             tmp_log.info(self.log_string)
         else:
             tmp_log.debug(self.log_string)
@@ -209,7 +206,7 @@ class File(FileBase):
     def inode(self):
         """Empty file or symlink."""
         if self.is_symlink():
-            self.log_string += 'Symlink to {}'.format(self.log_details['symlink'])
+            self.log_string += 'Symlink to {}'.format(self.get_property('symlink'))
         else:
             self.log_string += 'Inode file'
 
@@ -265,12 +262,12 @@ class File(FileBase):
 
     def _executables(self):
         """Processes an executable file."""
-        self.add_log_details('processing_type', 'executable')
+        self.set_property('processing_type', 'executable')
         self.make_dangerous()
 
     def _winoffice(self):
         """Processes a winoffice file using olefile/oletools."""
-        self.add_log_details('processing_type', 'WinOffice')
+        self.set_property('processing_type', 'WinOffice')
         # Try as if it is a valid document
         oid = oletools.oleid.OleID(self.src_path)
         if not olefile.isOleFile(self.src_path):
@@ -278,37 +275,37 @@ class File(FileBase):
             try:
                 ole = olefile.OleFileIO(self.src_path, raise_defects=olefile.DEFECT_INCORRECT)
             except:
-                self.add_log_details('not_parsable', True)
+                self.set_property('not_parsable', True)
                 self.make_dangerous()
             if ole.parsing_issues:
-                self.add_log_details('parsing_issues', True)
+                self.set_property('parsing_issues', True)
                 self.make_dangerous()
             else:
                 if ole.exists('macros/vba') or ole.exists('Macros') \
                         or ole.exists('_VBA_PROJECT_CUR') or ole.exists('VBA'):
-                    self.add_log_details('macro', True)
+                    self.set_property('macro', True)
                     self.make_dangerous()
         else:
             indicators = oid.check()
             # Encrypted ban be set by multiple checks on the script
             if oid.encrypted.value:
-                self.add_log_details('encrypted', True)
+                self.set_property('encrypted', True)
                 self.make_dangerous()
             if oid.macros.value or oid.ole.exists('macros/vba') or oid.ole.exists('Macros') \
                     or oid.ole.exists('_VBA_PROJECT_CUR') or oid.ole.exists('VBA'):
-                self.add_log_details('macro', True)
+                self.set_property('macro', True)
                 self.make_dangerous()
             for i in indicators:
                 if i.id == 'ObjectPool' and i.value:
                     # FIXME: Is it suspicious?
-                    self.add_log_details('objpool', True)
+                    self.set_property('objpool', True)
                 elif i.id == 'flash' and i.value:
-                    self.add_log_details('flash', True)
+                    self.set_property('flash', True)
                     self.make_dangerous()
 
     def _ooxml(self):
         """Processes an ooxml file."""
-        self.add_log_details('processing_type', 'ooxml')
+        self.set_property('processing_type', 'ooxml')
         try:
             doc = officedissector.doc.Document(self.src_path)
         except Exception:
@@ -318,56 +315,56 @@ class File(FileBase):
         # There are probably other potentially malicious features:
         # fonts, custom props, custom XML
         if doc.is_macro_enabled or len(doc.features.macros) > 0:
-            self.add_log_details('macro', True)
+            self.set_property('macro', True)
             self.make_dangerous()
         if len(doc.features.embedded_controls) > 0:
-            self.add_log_details('activex', True)
+            self.set_property('activex', True)
             self.make_dangerous()
         if len(doc.features.embedded_objects) > 0:
             # Exploited by CVE-2014-4114 (OLE)
-            self.add_log_details('embedded_obj', True)
+            self.set_property('embedded_obj', True)
             self.make_dangerous()
         if len(doc.features.embedded_packages) > 0:
-            self.add_log_details('embedded_pack', True)
+            self.set_property('embedded_pack', True)
             self.make_dangerous()
 
     def _libreoffice(self):
         """Processes a libreoffice file."""
-        self.add_log_details('processing_type', 'libreoffice')
+        self.set_property('processing_type', 'libreoffice')
         # As long as there ar no way to do a sanity check on the files => dangerous
         try:
             lodoc = zipfile.ZipFile(self.src_path, 'r')
         except:
             # TODO: are there specific exceptions we should catch here? Or is anything ok
-            self.add_log_details('invalid', True)
+            self.set_property('invalid', True)
             self.make_dangerous()
         for f in lodoc.infolist():
             fname = f.filename.lower()
             if fname.startswith('script') or fname.startswith('basic') or \
                     fname.startswith('object') or fname.endswith('.bin'):
-                self.add_log_details('macro', True)
+                self.set_property('macro', True)
                 self.make_dangerous()
 
     def _pdf(self):
         """Processes a PDF file."""
-        self.add_log_details('processing_type', 'pdf')
+        self.set_property('processing_type', 'pdf')
         xmlDoc = PDFiD(self.src_path)
         oPDFiD = cPDFiD(xmlDoc, True)
         # TODO: are there other characteristics which should be dangerous?
         if oPDFiD.encrypt.count > 0:
-            self.add_log_details('encrypted', True)
+            self.set_property('encrypted', True)
             self.make_dangerous()
         if oPDFiD.js.count > 0 or oPDFiD.javascript.count > 0:
-            self.add_log_details('javascript', True)
+            self.set_property('javascript', True)
             self.make_dangerous()
         if oPDFiD.aa.count > 0 or oPDFiD.openaction.count > 0:
-            self.add_log_details('openaction', True)
+            self.set_property('openaction', True)
             self.make_dangerous()
         if oPDFiD.richmedia.count > 0:
-            self.add_log_details('flash', True)
+            self.set_property('flash', True)
             self.make_dangerous()
         if oPDFiD.launch.count > 0:
-            self.add_log_details('launch', True)
+            self.set_property('launch', True)
             self.make_dangerous()
 
     def _archive(self):
@@ -375,7 +372,7 @@ class File(FileBase):
         temporary directory and self.process_dir is called on that directory.
         The recursive archive depth is increased to protect against archive
         bombs."""
-        self.add_log_details('processing_type', 'archive')
+        self.set_property('processing_type', 'archive')
         self.is_recursive = True
         # self.log_string += 'Archive extracted, processing content.'
 
@@ -422,7 +419,7 @@ class File(FileBase):
 
                 with open(metadata_file_path, 'w+') as metadata_file:
                     metadata_file.write("Key: {}\tValue: {}\n".format(tag, printable))
-        self.add_log_details('metadata', 'exif')
+        self.set_property('metadata', 'exif')
         img.close()
         return True
 
@@ -435,7 +432,7 @@ class File(FileBase):
                 if tag not in ('icc_profile'):
                     with open(metadata_file_path, 'w+') as metadata_file:
                         metadata_file.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
-            self.add_log_details('metadata', 'png')
+            self.set_property('metadata', 'png')
             img.close()
         # Catch decompression bombs
         except Exception as e:
@@ -467,7 +464,7 @@ class File(FileBase):
 
     def _media_processing(self):
         """Generic way to process all media files."""
-        self.add_log_details('processing_type', 'media')
+        self.set_property('processing_type', 'media')
 
     def image(self):
         """Processes an image.
@@ -493,7 +490,7 @@ class File(FileBase):
             print(e)
             self.make_dangerous()
         self.log_string += 'Image file'
-        self.add_log_details('processing_type', 'image')
+        self.set_property('processing_type', 'image')
 
 
 class KittenGroomerFileCheck(KittenGroomerBase):
@@ -554,7 +551,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def _handle_archivebomb(self, file):
         file.make_dangerous()
-        file.add_log_details('Archive Bomb', True)
+        file.set_property('Archive Bomb', True)
         self.logger.log.warning('ARCHIVE BOMB.')
         self.logger.log.warning('The content of the archive contains recursively other archives.')
         self.logger.log.warning('This is a bad sign so the archive is not extracted to the destination key.')

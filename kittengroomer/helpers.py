@@ -41,15 +41,18 @@ class FileBase(object):
         """Initialized with the source path and expected destination path."""
         self.src_path = src_path
         self.dst_path = dst_path
-        # TODO: rename this to file_properties (and change in other groomers)
-        self.log_details = {'filepath': self.src_path}
+        self.filename = os.path.basename(self.src_path)
         self.log_string = ''
+        self.logger = logger
         self.extension = self._determine_extension()
         self.mimetype = self._determine_mimetype()
         if self.mimetype:
             self.main_type, self.sub_type = self._split_subtypes(self.mimetype)
-        self.logger = logger
-        self.filename = os.path.basename(self.src_path)
+        self._file_props = {'filepath': self.src_path,
+                            'filename': self.filename,
+                            'maintype': self.main_type,
+                            'subtype': self.sub_type,
+                            'extension': self.extension}
 
     def _determine_extension(self):
         _, ext = os.path.splitext(self.src_path)
@@ -68,8 +71,8 @@ class FileBase(object):
                 # Note: magic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
                 # FIXME: The encoding of the file is broken (possibly UTF-16)
+                # LOG: log this error
                 mt = None
-                self.log_details.update({'UnicodeError': e})
             try:
                 mimetype = mt.decode("utf-8")
             except:
@@ -84,50 +87,50 @@ class FileBase(object):
         return main_type, sub_type
 
     def has_mimetype(self):
-        """
-        Returns True if file has a full mimetype, else False.
-
-        Returns False + updates log if self.main_type or self.sub_type
-        are not set.
-        """
+        """Returns True if file has a full mimetype, else False."""
         if not self.main_type or not self.sub_type:
-            self.log_details.update({'broken_mime': True})
+            # LOG: log this as an error
+            # self._file_props.update({'broken_mime': True})
             return False
-        return True
+        else:
+            return True
 
     def has_extension(self):
-        """
-        Returns True if self.extension is set, else False.
-
-        Returns False + updates self.log_details if self.extension is not set.
-        """
-        if self.extension == '':
-            self.log_details.update({'no_extension': True})
+        """Returns True if self.extension is set, else False."""
+        if self.extension is None:
+            # TODO: move this props updating to some other method
+            # self.set_property('no_extension', True)
             return False
-        return True
+        else:
+            return True
 
     def is_dangerous(self):
-        """Returns True if self.log_details contains 'dangerous'."""
-        return ('dangerous' in self.log_details)
+        """True if file has been marked 'dangerous' else False."""
+        return ('dangerous' in self._file_props)
 
     def is_unknown(self):
-        """Returns True if self.log_details contains 'unknown'."""
-        return ('unknown' in self.log_details)
+        """True if file has been marked 'unknown' else False."""
+        return ('unknown' in self._file_props)
 
     def is_binary(self):
-        """returns True if self.log_details contains 'binary'."""
-        return ('binary' in self.log_details)
+        """True if file has been marked 'binary' else False."""
+        return ('binary' in self._file_props)
 
     def is_symlink(self):
         """Returns True and updates log if file is a symlink."""
         if self.has_mimetype() and self.main_type == 'inode' and self.sub_type == 'symlink':
-            self.log_details.update({'symlink': os.readlink(self.src_path)})
+            # TODO: move this props updating somewhere else
+            # self.set_property('symlink', os.readlink(self.src_path))
             return True
-        return False
+        else:
+            return False
 
-    def add_log_details(self, key, value):
-        """Takes a key + a value and adds them to self.log_details."""
-        self.log_details[key] = value
+    def set_property(self, prop_string, value):
+        """Takes a property + a value and adds them to self._file_props."""
+        self._file_props[prop_string] = value
+
+    def get_property(self, file_prop):
+        return self._file_props.get(file_prop, None)
 
     def make_dangerous(self):
         """
@@ -138,7 +141,7 @@ class FileBase(object):
         """
         if self.is_dangerous():
             return
-        self.log_details['dangerous'] = True
+        self.set_property('dangerous', True)
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, 'DANGEROUS_{}_DANGEROUS'.format(filename))
 
@@ -146,7 +149,7 @@ class FileBase(object):
         """Marks a file as an unknown type and prepends UNKNOWN to filename."""
         if self.is_dangerous() or self.is_binary():
             return
-        self.log_details['unknown'] = True
+        self.set_property('unknown', True)
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, 'UNKNOWN_{}'.format(filename))
 
@@ -154,15 +157,17 @@ class FileBase(object):
         """Marks a file as a binary and appends .bin to filename."""
         if self.is_dangerous():
             return
-        self.log_details['binary'] = True
+        self.set_property('binary', True)
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, '{}.bin'.format(filename))
 
     def force_ext(self, ext):
-        """If dst_path does not end in ext, appends the ext and updates log."""
+        """If dst_path does not end in ext, changes it and edits _file_props."""
         if not self.dst_path.endswith(ext):
-            self.log_details['force_ext'] = True
+            self.set_property('force_ext', True)
             self.dst_path += ext
+        if not self._file_props['extension'] == ext:
+            self.set_property('extension', ext)
 
     def create_metadata_file(self, ext):
         """Create a separate file to hold this file's metadata."""
@@ -187,8 +192,9 @@ class FileBase(object):
 class GroomerLogger(object):
     """Groomer logging interface"""
 
-    def __init__(self, root_dir, debug=False):
-        self.log_dir_path = os.path.join(root_dir, 'logs')
+    def __init__(self, root_dir_path, debug=False):
+        self.root_dir = root_dir_path
+        self.log_dir_path = os.path.join(root_dir_path, 'logs')
         if os.path.exists(self.log_dir_path):
             shutil.rmtree(self.log_dir_path)
         os.makedirs(self.log_dir_path)
@@ -252,21 +258,25 @@ class KittenGroomerBase(object):
 
     def _safe_rmtree(self, directory):
         """Remove a directory tree if it exists."""
+        # TODO: should be a public method
         if os.path.exists(directory):
             shutil.rmtree(directory)
 
     def _safe_remove(self, filepath):
         """Remove a file if it exists."""
+        # TODO: should be a public method
         if os.path.exists(filepath):
             os.remove(filepath)
 
     def _safe_mkdir(self, directory):
         """Make a directory if it does not exist."""
+        # TODO: should be a public method
         if not os.path.exists(directory):
             os.makedirs(directory)
 
     def _safe_copy(self, src=None, dst=None):
         """Copy a file and create directory if needed."""
+        # TODO: should be a public method
         if src is None:
             src = self.cur_file.src_path
         if dst is None:

@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from kittengroomer import FileBase, KittenGroomerBase, GroomerLog
+from kittengroomer import FileBase, KittenGroomerBase, GroomerLogger
 from kittengroomer.helpers import ImplementationRequired
 
 skip = pytest.mark.skip
@@ -95,13 +95,10 @@ class TestFileBase:
 
     def test_init(self, generic_conf_file):
         file = generic_conf_file
-        assert file.log_details
-        assert file.log_details['filepath'] == file.src_path
-        assert file.extension == '.conf'
-        copied_log = file.log_details.copy()
-        file.log_details = ''
-        # assert file.log_details == copied_log     # this fails for now, we need to make log_details undeletable
-        # we should probably check for more extensions here
+        assert file.get_property('filepath') == file.src_path
+        assert file.get_property('extension') == '.conf'
+        # TODO: should we make log_details undeletable?
+        # TODO: we should probably check for more extensions here
 
     def test_extension_uppercase(self, tmpdir):
         file_path = tmpdir.join('TEST.TXT')
@@ -129,13 +126,13 @@ class TestFileBase:
 
     def test_has_extension(self, temp_file, temp_file_no_ext):
         assert temp_file.has_extension() is True
+        print(temp_file_no_ext.extension)
         assert temp_file_no_ext.has_extension() is False
 
-    def test_add_log_details(self, generic_conf_file):
-        generic_conf_file.add_log_details('test', True)
-        assert generic_conf_file.log_details['test'] is True
-        with pytest.raises(KeyError):
-            assert generic_conf_file.log_details['wrong'] is False
+    def test_set_property(self, generic_conf_file):
+        generic_conf_file.set_property('test', True)
+        assert generic_conf_file.get_property('test') is True
+        assert generic_conf_file.get_property('wrong') is None
 
     def test_marked_dangerous(self, file_marked_all_parameterized):
         file_marked_all_parameterized.make_dangerous()
@@ -164,52 +161,54 @@ class TestFileBase:
         assert symlink.is_symlink() is True
 
     def test_generic_make_unknown(self, generic_conf_file):
-        assert generic_conf_file.log_details.get('unknown') is None
+        assert generic_conf_file.is_unknown() is False
         generic_conf_file.make_unknown()
-        assert generic_conf_file.log_details.get('unknown') is True
+        assert generic_conf_file.is_unknown()
         # given a FileBase object with no marking, should do the right things
 
     def test_marked_make_unknown(self, file_marked_all_parameterized):
         file = file_marked_all_parameterized
-        if file.log_details.get('unknown'):
+        if file.is_unknown():
             file.make_unknown()
-            assert file.log_details.get('unknown') is True
+            assert file.is_unknown()
         else:
-            assert file.log_details.get('unknown') is None
+            assert file.is_unknown() is False
             file.make_unknown()
-            assert file.log_details.get('unknown') is None
+            assert file.is_unknown() is False
         # given a FileBase object with an unrecognized marking, should ???
 
     def test_generic_make_binary(self, generic_conf_file):
-        assert generic_conf_file.log_details.get('binary') is None
+        assert generic_conf_file.is_binary() is False
         generic_conf_file.make_binary()
-        assert generic_conf_file.log_details.get('binary') is True
+        assert generic_conf_file.is_binary() is True
 
     def test_marked_make_binary(self, file_marked_all_parameterized):
         file = file_marked_all_parameterized
-        if file.log_details.get('dangerous'):
+        if file.is_dangerous():
             file.make_binary()
-            assert file.log_details.get('binary') is None
+            assert file.is_binary() is False
+            assert file.get_property('binary') is None
         else:
             file.make_binary()
-            assert file.log_details.get('binary') is True
+            assert file.is_binary()
+            assert file.get_property('binary') is True
 
     def test_force_ext_change(self, generic_conf_file):
         assert generic_conf_file.has_extension()
-        assert generic_conf_file.extension == '.conf'
+        assert generic_conf_file.get_property('extension') == '.conf'
         assert os.path.splitext(generic_conf_file.dst_path)[1] == '.conf'
         generic_conf_file.force_ext('.txt')
         assert os.path.splitext(generic_conf_file.dst_path)[1] == '.txt'
-        assert generic_conf_file.log_details.get('force_ext') is True
-        # should make a file's extension change
+        assert generic_conf_file.get_property('force_ext') is True
+        assert generic_conf_file.get_property('extension') == '.txt'
         # should be able to handle weird paths
 
     def test_force_ext_correct(self, generic_conf_file):
         assert generic_conf_file.has_extension()
-        assert generic_conf_file.extension == '.conf'
+        assert generic_conf_file.get_property('extension') == '.conf'
         generic_conf_file.force_ext('.conf')
         assert os.path.splitext(generic_conf_file.dst_path)[1] == '.conf'
-        assert generic_conf_file.log_details.get('force_ext') is None
+        assert generic_conf_file.get_property('force_ext') is None
         # shouldn't change a file's extension if it already is right
 
     def test_create_metadata_file(self, temp_file):
@@ -224,9 +223,13 @@ class TestFileBase:
 
 
 class TestLogger:
-    @xfail
-    def test_tree(self, tmpdir):
-        GroomerLog.tree(tmpdir)
+
+    @fixture
+    def generic_logger(self, tmpdir):
+        return GroomerLogger(tmpdir.strpath)
+
+    def test_tree(self, generic_logger):
+        generic_logger.tree(generic_logger.root_dir)
 
 
 class TestKittenGroomerBase:
