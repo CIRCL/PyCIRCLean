@@ -53,7 +53,10 @@ class FileBase(object):
 
     def _determine_extension(self):
         _, ext = os.path.splitext(self.src_path)
-        return ext.lower()
+        ext = ext.lower()
+        if ext == '':
+            ext = None
+        return ext
 
     def _determine_mimetype(self):
         if os.path.islink(self.src_path):

@@ -130,7 +130,6 @@ class TestFileBase:
     def test_has_extension(self, temp_file, temp_file_no_ext):
         assert temp_file.has_extension() is True
         assert temp_file_no_ext.has_extension() is False
-        assert temp_file_no_ext.log_details.get('no_extension') is True
 
     def test_add_log_details(self, generic_conf_file):
         generic_conf_file.add_log_details('test', True)
