@@ -264,7 +264,7 @@ class TestKittenGroomerBase:
         filedest = testdir.join('test.txt')
         simple_groomer = KittenGroomerBase(tmpdir.strpath, testdir.strpath)
         simple_groomer.cur_file = FileBase(file.strpath, filedest.strpath)
-        assert simple_groomer._safe_copy() is True
+        assert simple_groomer.safe_copy() is True
         #check that it handles weird file path inputs
 
     def test_list_all_files(self, tmpdir):

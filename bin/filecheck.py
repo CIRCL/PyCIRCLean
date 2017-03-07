@@ -523,10 +523,10 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             self.process_archive(file)
         else:
             # TODO: Make a File attribute for should be copied True/False and check it
-            self._safe_copy()
+            self.safe_copy()
         file.write_log()
         if hasattr(file, "tempdir_path"):
-            self._safe_rmtree(file.tempdir_path)
+            self.safe_rmtree(file.tempdir_path)
 
     def process_archive(self, file):
         """Unpacks an archive using 7zip and processes contents.
@@ -546,7 +546,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             # LOG: check that tree is working correctly here
             self.logger.tree(tempdir_path)
             self.process_dir(tempdir_path, file.dst_path)
-            self._safe_rmtree(tempdir_path)
+            self.safe_rmtree(tempdir_path)
         self.recursive_archive_depth -= 1
 
     def _handle_archivebomb(self, file):

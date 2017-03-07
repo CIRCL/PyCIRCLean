@@ -256,34 +256,30 @@ class KittenGroomerBase(object):
         self.cur_file = None
         self.logger = GroomerLogger(self.dst_root_dir, debug)
 
-    def _safe_rmtree(self, directory):
+    def safe_rmtree(self, directory):
         """Remove a directory tree if it exists."""
-        # TODO: should be a public method
         if os.path.exists(directory):
             shutil.rmtree(directory)
 
-    def _safe_remove(self, filepath):
+    def safe_remove(self, filepath):
         """Remove a file if it exists."""
-        # TODO: should be a public method
         if os.path.exists(filepath):
             os.remove(filepath)
 
-    def _safe_mkdir(self, directory):
+    def safe_mkdir(self, directory):
         """Make a directory if it does not exist."""
-        # TODO: should be a public method
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    def _safe_copy(self, src=None, dst=None):
+    def safe_copy(self, src=None, dst=None):
         """Copy a file and create directory if needed."""
-        # TODO: should be a public method
         if src is None:
             src = self.cur_file.src_path
         if dst is None:
             dst = self.cur_file.dst_path
         try:
             dst_path, filename = os.path.split(dst)
-            self._safe_mkdir(dst_path)
+            self.safe_mkdir(dst_path)
             shutil.copy(src, dst)
             return True
         except Exception as e:
