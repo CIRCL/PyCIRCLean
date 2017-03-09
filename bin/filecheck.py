@@ -499,7 +499,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         if file.is_recursive:
             self.process_archive(file)
         elif file.should_copy:
-            self.safe_copy(file.src_path, file.dst_path)
+            file.safe_copy()
             file.set_property('copied', True)
         file.write_log()
         if hasattr(file, 'tempdir_path'):

@@ -201,6 +201,20 @@ class FileBase(object):
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, '{}.bin'.format(filename))
 
+    def safe_copy(self, src=None, dst=None):
+        """Copy a file and create directory if needed."""
+        if src is None:
+            src = self.src_path
+        if dst is None:
+            dst = self.dst_path
+        try:
+            dst_path, filename = os.path.split(dst)
+            if not os.path.exists(dst_path):
+                os.makedirs(dst_path)
+            shutil.copy(src, dst)
+        except Exception as e:
+            self.add_error(e, '')
+
     def force_ext(self, ext):
         """If dst_path does not end in ext, changes it and edits _file_props."""
         if not self.dst_path.endswith(ext):
@@ -281,9 +295,6 @@ class GroomerLogger(object):
         # return a sublog for the file
         pass
 
-    def add_event(self, event, log_level):
-        pass
-
 
 class KittenGroomerBase(object):
     """Base object responsible for copy/sanitization process."""
@@ -310,19 +321,6 @@ class KittenGroomerBase(object):
         """Make a directory if it does not exist."""
         if not os.path.exists(directory):
             os.makedirs(directory)
-
-    def safe_copy(self, src=None, dst=None):
-        """Copy a file and create directory if needed."""
-        if src is None:
-            src = self.cur_file.src_path
-        if dst is None:
-            dst = self.cur_file.dst_path
-        try:
-            dst_path, filename = os.path.split(dst)
-            self.safe_mkdir(dst_path)
-            shutil.copy(src, dst)
-        except Exception as e:
-            self.add_error(e, '')
 
     def list_all_files(self, directory):
         """Generator yielding path to all of the files in a directory tree."""
