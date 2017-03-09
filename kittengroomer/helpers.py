@@ -44,15 +44,26 @@ class FileBase(object):
         self.filename = os.path.basename(self.src_path)
         self.log_string = ''
         self.logger = logger
+        self.symlink = None
         self.extension = self._determine_extension()
         self.mimetype = self._determine_mimetype()
+        self.should_copy = True
         if self.mimetype:
             self.main_type, self.sub_type = self._split_subtypes(self.mimetype)
-        self._file_props = {'filepath': self.src_path,
-                            'filename': self.filename,
-                            'maintype': self.main_type,
-                            'subtype': self.sub_type,
-                            'extension': self.extension}
+        self._file_props = {
+            'filepath': self.src_path,
+            'filename': self.filename,
+            'maintype': self.main_type,
+            'subtype': self.sub_type,
+            'extension': self.extension,
+            'file_size': self.size,
+            'safety_category': None,
+            'symlink': self.symlink,
+            'copied': False,
+            'file_string_set': set(),
+            'errors': {},
+            'user_defined': {}
+        }
 
     def _determine_extension(self):
         _, ext = os.path.splitext(self.src_path)
@@ -65,13 +76,14 @@ class FileBase(object):
         if os.path.islink(self.src_path):
             # magic will throw an IOError on a broken symlink
             mimetype = 'inode/symlink'
+            self.symlink = os.readlink(self.src_path)
         else:
             try:
                 mt = magic.from_file(self.src_path, mime=True)
                 # Note: magic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
                 # FIXME: The encoding of the file is broken (possibly UTF-16)
-                # LOG: log this error
+                self.add_error(e, '')
                 mt = None
             try:
                 mimetype = mt.decode("utf-8")
@@ -86,10 +98,14 @@ class FileBase(object):
             main_type, sub_type = None, None
         return main_type, sub_type
 
+    @property
+    def size(self):
+        return os.path.getsize(self.src_path)
+
     def has_mimetype(self):
         """Returns True if file has a full mimetype, else False."""
         if not self.main_type or not self.sub_type:
-            # LOG: log this as an error
+            # LOG: log this as an error, move somewhere else?
             # self._file_props.update({'broken_mime': True})
             return False
         else:
@@ -98,7 +114,7 @@ class FileBase(object):
     def has_extension(self):
         """Returns True if self.extension is set, else False."""
         if self.extension is None:
-            # TODO: move this props updating to some other method
+            # TODO: do we actually want to have a seperate prop for no extension?
             # self.set_property('no_extension', True)
             return False
         else:
@@ -106,33 +122,46 @@ class FileBase(object):
 
     def is_dangerous(self):
         """True if file has been marked 'dangerous' else False."""
-        return ('dangerous' in self._file_props)
+        return self._file_props['safety_category'] is 'dangerous'
 
     def is_unknown(self):
         """True if file has been marked 'unknown' else False."""
-        return ('unknown' in self._file_props)
+        return self._file_props['safety_category'] is 'unknown'
 
     def is_binary(self):
         """True if file has been marked 'binary' else False."""
-        return ('binary' in self._file_props)
+        return self._file_props['safety_category'] is 'binary'
 
     def is_symlink(self):
         """Returns True and updates log if file is a symlink."""
-        if self.has_mimetype() and self.main_type == 'inode' and self.sub_type == 'symlink':
-            # TODO: move this props updating somewhere else
-            # self.set_property('symlink', os.readlink(self.src_path))
-            return True
-        else:
+        if self._file_props['symlink'] is None:
             return False
+        else:
+            return True
 
     def set_property(self, prop_string, value):
         """Takes a property + a value and adds them to self._file_props."""
-        self._file_props[prop_string] = value
+        if prop_string in self._file_props.keys():
+            self._file_props[prop_string] = value
+        else:
+            self._file_props['user_defined'][prop_string] = value
 
     def get_property(self, file_prop):
-        return self._file_props.get(file_prop, None)
+        # FIXME: needs to be refactored
+        if file_prop in self._file_props:
+            return self._file_props[file_prop]
+        elif file_prop in self._file_props['user_defined']:
+            return self._file_props['user_defined'][file_prop]
+        else:
+            return None
 
-    def make_dangerous(self):
+    def add_error(self, error, info):
+        self._file_props['errors'].update({error: info})
+
+    def add_file_string(self, file_string):
+        self._file_props['file_string_set'].add(file_string)
+
+    def make_dangerous(self, reason_string=None):
         """
         Marks a file as dangerous.
 
@@ -141,7 +170,8 @@ class FileBase(object):
         """
         if self.is_dangerous():
             return
-        self.set_property('dangerous', True)
+        self.set_property('safety_category', 'dangerous')
+        # LOG: store reason string
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, 'DANGEROUS_{}_DANGEROUS'.format(filename))
 
@@ -149,7 +179,7 @@ class FileBase(object):
         """Marks a file as an unknown type and prepends UNKNOWN to filename."""
         if self.is_dangerous() or self.is_binary():
             return
-        self.set_property('unknown', True)
+        self.set_property('safety_category', 'unknown')
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, 'UNKNOWN_{}'.format(filename))
 
@@ -157,7 +187,7 @@ class FileBase(object):
         """Marks a file as a binary and appends .bin to filename."""
         if self.is_dangerous():
             return
-        self.set_property('binary', True)
+        self.set_property('safety_category', 'binary')
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, '{}.bin'.format(filename))
 
@@ -185,7 +215,7 @@ class FileBase(object):
                 self.metadata_file_path = self.dst_path + ext
                 return self.metadata_file_path
         except KittenGroomerError as e:
-            # LOG: Write to log file
+            self.add_error(e, '')
             return False
 
 
@@ -281,11 +311,8 @@ class KittenGroomerBase(object):
             dst_path, filename = os.path.split(dst)
             self.safe_mkdir(dst_path)
             shutil.copy(src, dst)
-            return True
         except Exception as e:
-            # LOG: Logfile
-            print(e)
-            return False
+            self.add_error(e, '')
 
     def list_all_files(self, directory):
         """Generator yielding path to all of the files in a directory tree."""

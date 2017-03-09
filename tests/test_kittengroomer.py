@@ -30,7 +30,7 @@ class TestFileBase:
         return FileBase(source_file, dest_file)
 
     @fixture
-    def symlink(self, tmpdir):
+    def symlink_file(self, tmpdir):
         file_path = tmpdir.join('test.txt')
         file_path.write('testing')
         file_path = file_path.strpath
@@ -65,7 +65,7 @@ class TestFileBase:
 
     @fixture
     def file_marked_binary(self, generic_conf_file):
-        generic_conf_file.mark_binary()
+        generic_conf_file.make_binary()
         return generic_conf_file
 
     @fixture(params=[
@@ -81,24 +81,17 @@ class TestFileBase:
     # What should FileBase do if it's given a path that isn't a file (doesn't exist or is a dir)? Currently magic throws an exception
     # We should probably catch everytime that happens and tell the user explicitly happened (and maybe put it in the log)
 
-    def test_create(self):
-        file = FileBase('tests/src_valid/blah.conf', '/tests/dst/blah.conf')
-
     def test_create_broken(self, tmpdir):
         with pytest.raises(TypeError):
-            file_no_args = FileBase()
+            FileBase()
         with pytest.raises(FileNotFoundError):
-            file_empty_args = FileBase('', '')
+            FileBase('', '')
         with pytest.raises(IsADirectoryError):
-            file_directory = FileBase(tmpdir.strpath, tmpdir.strpath)
-        # are there other cases here? path to a file that doesn't exist? permissions?
+            FileBase(tmpdir.strpath, tmpdir.strpath)
+        # TODO: are there other cases here? path to a file that doesn't exist? permissions?
 
     def test_init(self, generic_conf_file):
-        file = generic_conf_file
-        assert file.get_property('filepath') == file.src_path
-        assert file.get_property('extension') == '.conf'
-        # TODO: should we make log_details undeletable?
-        # TODO: we should probably check for more extensions here
+        generic_conf_file
 
     def test_extension_uppercase(self, tmpdir):
         file_path = tmpdir.join('TEST.TXT')
@@ -108,10 +101,10 @@ class TestFileBase:
         assert file.extension == '.txt'
 
     def test_mimetypes(self, generic_conf_file):
-        assert generic_conf_file.has_mimetype()
         assert generic_conf_file.mimetype == 'text/plain'
         assert generic_conf_file.main_type == 'text'
         assert generic_conf_file.sub_type == 'plain'
+        assert generic_conf_file.has_mimetype()
         # Need to test something without a mimetype
         # Need to test something that's a directory
         # Need to test something that causes the unicode exception
@@ -151,14 +144,14 @@ class TestFileBase:
         file_path = file_path.strpath
         symlink_path = tmpdir.join('symlinked.txt')
         symlink_path = symlink_path.strpath
-        file_symlink = os.symlink(file_path, symlink_path)
+        os.symlink(file_path, symlink_path)
         file = FileBase(file_path, file_path)
         symlink = FileBase(symlink_path, symlink_path)
         assert file.is_symlink() is False
         assert symlink.is_symlink() is True
 
-    def test_has_symlink_fixture(self, symlink):
-        assert symlink.is_symlink() is True
+    def test_has_symlink_fixture(self, symlink_file):
+        assert symlink_file.is_symlink() is True
 
     def test_generic_make_unknown(self, generic_conf_file):
         assert generic_conf_file.is_unknown() is False
@@ -187,11 +180,9 @@ class TestFileBase:
         if file.is_dangerous():
             file.make_binary()
             assert file.is_binary() is False
-            assert file.get_property('binary') is None
         else:
             file.make_binary()
             assert file.is_binary()
-            assert file.get_property('binary') is True
 
     def test_force_ext_change(self, generic_conf_file):
         assert generic_conf_file.has_extension()
@@ -254,7 +245,6 @@ class TestKittenGroomerBase:
         debug_groomer = KittenGroomerBase(source_directory,
                                           dest_directory,
                                           debug=True)
-        # we should maybe protect access to self.current_file in some way?
 
     def test_safe_copy(self, tmpdir):
         file = tmpdir.join('test.txt')
@@ -264,8 +254,8 @@ class TestKittenGroomerBase:
         filedest = testdir.join('test.txt')
         simple_groomer = KittenGroomerBase(tmpdir.strpath, testdir.strpath)
         simple_groomer.cur_file = FileBase(file.strpath, filedest.strpath)
-        assert simple_groomer.safe_copy() is True
-        #check that it handles weird file path inputs
+        simple_groomer.safe_copy()
+        # check that safe copy can handle weird file path inputs
 
     def test_list_all_files(self, tmpdir):
         file = tmpdir.join('test.txt')
@@ -276,7 +266,3 @@ class TestKittenGroomerBase:
         files = simple_groomer.list_all_files(simple_groomer.src_root_dir)
         assert file.strpath in files
         assert testdir.strpath not in files
-
-    def test_processdir(self, generic_groomer):
-        with pytest.raises(ImplementationRequired):
-            generic_groomer.processdir(None, None)

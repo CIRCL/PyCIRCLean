@@ -43,6 +43,9 @@ class TestIntegration:
         test_description = "filecheck_valid"
         save_logs(groomer, test_description)
 
+    def test_processdir(self):
+        pass
+
 
 class TestFileHandling:
     def test_autorun(self):
