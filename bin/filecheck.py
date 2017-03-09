@@ -162,8 +162,10 @@ class File(FileBase):
 
     def check(self):
         self._check_dangerous()
-        self._check_extension()
-        self._check_mimetype()
+        if self.has_extension():
+            self._check_extension()
+        if self.has_mimetype():
+            self._check_mimetype()
         if not self.is_dangerous():
             self.mime_processing_options.get(self.main_type, self.unknown)()
 

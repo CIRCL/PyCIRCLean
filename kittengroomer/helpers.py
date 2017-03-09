@@ -61,10 +61,14 @@ class FileBase(object):
         self.set_property('extension', self.extension)
         self.mimetype = self._determine_mimetype()
         self.should_copy = True
+        self.main_type = None
+        self.sub_type = None
         if self.mimetype:
             self.main_type, self.sub_type = self._split_subtypes(self.mimetype)
-        self.set_property('maintype', self.main_type)
-        self.set_property('subtype', self.sub_type)
+            if self.main_type:
+                self.set_property('maintype', self.main_type)
+            if self.sub_type:
+                self.set_property('subtype', self.sub_type)
 
     def _determine_extension(self):
         _, ext = os.path.splitext(self.src_path)
@@ -102,7 +106,11 @@ class FileBase(object):
 
     @property
     def size(self):
-        return os.path.getsize(self.src_path)
+        try:
+            size = os.path.getsize(self.src_path)
+        except FileNotFoundError:
+            size = 0
+        return size
 
     def has_mimetype(self):
         """Returns True if file has a full mimetype, else False."""
