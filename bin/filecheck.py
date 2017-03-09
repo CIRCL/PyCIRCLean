@@ -180,12 +180,6 @@ class File(FileBase):
         """Print the logs related to the current file being processed."""
         # LOG: move to helpers.py GroomerLogger and modify
         tmp_log = self.logger.log.fields(**self._file_props)
-        if self.is_dangerous():
-            tmp_log.warning(self.log_string)
-        elif self.is_unknown() or self.is_binary():
-            tmp_log.info(self.log_string)
-        else:
-            tmp_log.debug(self.log_string)
 
     @property
     def has_metadata(self):

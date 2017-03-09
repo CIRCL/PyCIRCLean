@@ -42,28 +42,29 @@ class FileBase(object):
         self.src_path = src_path
         self.dst_path = dst_path
         self.filename = os.path.basename(self.src_path)
-        self.log_string = ''
         self.logger = logger
-        self.symlink = None
-        self.extension = self._determine_extension()
-        self.mimetype = self._determine_mimetype()
-        self.should_copy = True
-        if self.mimetype:
-            self.main_type, self.sub_type = self._split_subtypes(self.mimetype)
         self._file_props = {
             'filepath': self.src_path,
             'filename': self.filename,
-            'maintype': self.main_type,
-            'subtype': self.sub_type,
-            'extension': self.extension,
             'file_size': self.size,
+            'maintype': None,
+            'subtype': None,
+            'extension': None,
             'safety_category': None,
-            'symlink': self.symlink,
+            'symlink': False,
             'copied': False,
             'file_string_set': set(),
             'errors': {},
             'user_defined': {}
         }
+        self.extension = self._determine_extension()
+        self.set_property('extension', self.extension)
+        self.mimetype = self._determine_mimetype()
+        self.should_copy = True
+        if self.mimetype:
+            self.main_type, self.sub_type = self._split_subtypes(self.mimetype)
+        self.set_property('maintype', self.main_type)
+        self.set_property('subtype', self.sub_type)
 
     def _determine_extension(self):
         _, ext = os.path.splitext(self.src_path)
@@ -76,13 +77,14 @@ class FileBase(object):
         if os.path.islink(self.src_path):
             # magic will throw an IOError on a broken symlink
             mimetype = 'inode/symlink'
-            self.symlink = os.readlink(self.src_path)
+            self.set_property('symlink', os.readlink(self.src_path))
         else:
             try:
                 mt = magic.from_file(self.src_path, mime=True)
                 # Note: magic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
                 # FIXME: The encoding of the file is broken (possibly UTF-16)
+                # One of the Travis files will trigger this.
                 self.add_error(e, '')
                 mt = None
             try:
@@ -134,7 +136,7 @@ class FileBase(object):
 
     def is_symlink(self):
         """Returns True and updates log if file is a symlink."""
-        if self._file_props['symlink'] is None:
+        if self._file_props['symlink'] is False:
             return False
         else:
             return True
