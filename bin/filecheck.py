@@ -205,18 +205,22 @@ class File(FileBase):
             self.add_file_string('Symlink to {}'.format(symlink_path))
         else:
             self.add_file_string('Inode file')
+        self.should_copy = False
 
     def unknown(self):
         """Main type should never be unknown."""
         self.add_file_string('Unknown file')
+        self.should_copy = False
 
     def example(self):
         """Used in examples, should never be returned by libmagic."""
         self.add_file_string('Example file')
+        self.should_copy = False
 
     def multipart(self):
         """Used in web apps, should never be returned by libmagic"""
         self.add_file_string('Multipart file')
+        self.should_copy = False
 
     # ##### Treated as malicious, no reason to have it on a USB key ######
     def message(self):

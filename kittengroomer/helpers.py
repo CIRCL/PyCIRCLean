@@ -321,6 +321,7 @@ class KittenGroomerBase(object):
             dst_path, filename = os.path.split(dst)
             self.safe_mkdir(dst_path)
             shutil.copy(src, dst)
+            self.set_property('copied', True)
         except Exception as e:
             self.add_error(e, '')
 
