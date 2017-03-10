@@ -8,7 +8,7 @@
 \begin{frame}[fragile]{Overview}
     \begin{itemize}
         \item Aims to be used in dedicated security applications to sanitize documents from hostile to trusted environments.
-        \item Generic way to handle large colections of files
+        \item Generic way to handle large collections of files
         \item Generate audit logs
         \item Comes with many helpers
         \item Defensive programming
@@ -18,7 +18,7 @@
 \begin{frame}[fragile]{Implementation}
     \begin{itemize}
         \item Copies files from a directory (source) to an other one (destination)
-        \item Computes hashes (sha1) of all the files in the source
+        \item Computes hashes (sha256) of all the files in the source
         \item Creates a directory tree on the destination directory
         \item Gets the mime type of each file
    \end{itemize}
@@ -28,7 +28,7 @@
     \begin{itemize}
         \item Every processing is logged
         \item Medatata (filetype, size, name, extension, ...) are kept
-        \item Any error occuring during the processing is stored
+        \item Any error occurring during the processing is stored
         \item WiP: generating a human readable report (Markdown, HTML)
    \end{itemize}
 \end{frame}
@@ -37,7 +37,7 @@
     \begin{itemize}
         \item Discard known extensions with active content
         \item Verifies if the extension corresponds to the mimetype (polyglot files)
-        \item Force extension on suposedly text files
+        \item Force extension on supposedly text files
         \item Discards windows executables
         \item Discard Office (Libreoffice and Windows Office) document with active content
         \item Discard PDFs with active content
@@ -64,11 +64,11 @@
 
 \begin{frame}[fragile]{Implement your own module - FileBase}
     \begin{itemize}
-        \item The default conctructors gets the mime type of the file and initialize the log of the file
+        \item The default constructors gets the mime type of the file and initialize the log of the file
         \item Surcharge the constructor accordingly to your needs
         \item Has helpers to get and set information on the file being processed
         \item Can force the extension of the file when copied
-        \item All thoses functions have to be used in order to handle the files accordingly to your requirements
+        \item All those functions have to be used in order to handle the files accordingly to your requirements
    \end{itemize}
 \end{frame}
 
@@ -83,7 +83,7 @@
 
 \begin{frame}[fragile]{Implement your own module - GroomerLogger}
     \begin{itemize}
-        \item The default constructor initialize the logfiles
+        \item The default constructor initialize the log files
         \item Creates a tree representation of the content, computes the hashes
         \item Stores the logs for each processed file
    \end{itemize}
@@ -117,7 +117,7 @@
    \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Defensive programing - Remediations}
+\begin{frame}[fragile]{Defensive programming - Remediations}
     \begin{itemize}
         \item Bare Debian for Raspberry
         \item Few dependencies
