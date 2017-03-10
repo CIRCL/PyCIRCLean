@@ -11,6 +11,7 @@
         \item Generic way to handle large colections of files
         \item Generate audit logs
         \item Comes with many helpers
+        \item Defensive programming
    \end{itemize}
 \end{frame}
 
@@ -23,16 +24,16 @@
    \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Existing modules}
+\begin{frame}[fragile]{Logging and reporting}
     \begin{itemize}
-        \item bin/filecheck.py: Search for active content in the source documents
-        \item bin/generic.py: Converts documents if possible
-        \item bin/specific.py: Only copy a specific extension if the mimetype matches
-        \item bin/pier9.py: Only copy specific extensions (3D softwares)
+        \item Every processing is logged
+        \item Medatata (filetype, size, name, extension, ...) are kept
+        \item Any error occuring during the processing is stored
+        \item WiP: generating a human readable report (Markdown, HTML)
    \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{File Check}
+\begin{frame}[fragile]{Action of the main script}
     \begin{itemize}
         \item Discard known extensions with active content
         \item Verifies if the extension corresponds to the mimetype (polyglot files)
@@ -45,7 +46,7 @@
    \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{File Check}
+\begin{frame}[fragile]{Plus / Minus}
     \begin{itemize}
         \item Plus
         \begin{itemize}
@@ -57,50 +58,6 @@
         \begin{itemize}
             \item Does not block a 0 day in a non-active content
             \item Medium level of false positive (non-malicious active content)
-        \end{itemize}
-   \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Generic}
-    \begin{itemize}
-        \item Verifies if the extension corresponds to the mimetype (polyglot files)
-        \item Converts to PDF and then to HTML all documents supported by libreoffice
-        \item Converts to HTML all PDF files
-        \item Discards windows executables
-        \item Unpack archives and process content
-   \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Generic}
-    \begin{itemize}
-        \item Plus
-        \begin{itemize}
-            \item Very hard to have anything malicious in the output of the converted documents
-        \end{itemize}
-        \item Minus
-        \begin{itemize}
-            \item Slow
-            \item Opens the documents to convert (may run malicious code)
-            \item Many external dependencies
-            \item Unreliable: fails on 20\% of the documents
-        \end{itemize}
-    \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Specific and Pier9}
-    \begin{itemize}
-        \item Dedicated to a very specific use
-        \item Whitelist on extension and/or MimeType
-        \item Plus
-        \begin{itemize}
-            \item Pure python
-            \item Very fast
-            \item Most secure
-        \end{itemize}
-        \item Minus
-        \begin{itemize}
-            \item Only works in a specific case
-            \item Many false positive
         \end{itemize}
    \end{itemize}
 \end{frame}
@@ -117,9 +74,57 @@
 
 \begin{frame}[fragile]{Implement your own module - KittenGroomerBase}
     \begin{itemize}
-        \item The default constructor cleans the destination directory, starts the general logging and logs the content of the source directory
+        \item The default constructor cleans the destination directory
+        \item Starts the general logging
+        \item Iterate through all the files on the src key
         \item Has helpers to handle safely the file management
-        \item Writes the logs files
    \end{itemize}
 \end{frame}
+
+\begin{frame}[fragile]{Implement your own module - GroomerLogger}
+    \begin{itemize}
+        \item The default constructor initialize the logfiles
+        \item Creates a tree representation of the content, computes the hashes
+        \item Stores the logs for each processed file
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Hardware implementation - RaspberryPi}
+    \begin{itemize}
+        \item Standalone device
+        \item Easy to carry around
+        \item Not used for anything else
+        \item Cheap and easy to setup
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Security considerations}
+    \begin{itemize}
+        \item Assuming the content might be malicious
+        \item Parsing is very vulnerable to exploits
+        \item Unpacking archives and recursion need to stop (halting problem)
+        \item KISS, default features and ease to update
+        \item Distrust everything (your code, and other people's code)
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Defensive programing - Questions}
+    \begin{itemize}
+        \item How can an attacker interact with the code? With the device?
+        \item What are the most critical part of the project?
+        \item How to handle unexpected behavior?
+        \item What happen if there is an unpatched vulnerability?
+   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Defensive programing - Remediations}
+    \begin{itemize}
+        \item Bare Debian for Raspberry
+        \item Few dependencies
+        \item Image read only
+        \item Code runs as user
+        \item Small code base
+   \end{itemize}
+\end{frame}
+
 
