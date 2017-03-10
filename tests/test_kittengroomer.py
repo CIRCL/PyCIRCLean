@@ -2,14 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
 import pytest
 
 from kittengroomer import FileBase, KittenGroomerBase
 from kittengroomer.helpers import ImplementationRequired
 
-PY3 = sys.version_info.major == 3
 skip = pytest.mark.skip
 xfail = pytest.mark.xfail
 fixture = pytest.fixture
@@ -21,7 +19,7 @@ class TestFileBase:
 
     @fixture
     def source_file(self):
-        return 'tests/src_simple/blah.conf'
+        return 'tests/src_valid/blah.conf'
 
     @fixture
     def dest_file(self):
@@ -84,23 +82,15 @@ class TestFileBase:
     # We should probably catch everytime that happens and tell the user explicitly happened (and maybe put it in the log)
 
     def test_create(self):
-        file = FileBase('tests/src_simple/blah.conf', '/tests/dst/blah.conf')
+        file = FileBase('tests/src_valid/blah.conf', '/tests/dst/blah.conf')
 
     def test_create_broken(self, tmpdir):
         with pytest.raises(TypeError):
             file_no_args = FileBase()
-        if PY3:
-            with pytest.raises(FileNotFoundError):
-                file_empty_args = FileBase('', '')
-        else:
-            with pytest.raises(IOError):
-                file_empty_args = FileBase('', '')
-        if PY3:
-            with pytest.raises(IsADirectoryError):
-                file_directory = FileBase(tmpdir.strpath, tmpdir.strpath)
-        else:
-            with pytest.raises(IOError):
-                file_directory = FileBase(tmpdir.strpath, tmpdir.strpath)
+        with pytest.raises(FileNotFoundError):
+            file_empty_args = FileBase('', '')
+        with pytest.raises(IsADirectoryError):
+            file_directory = FileBase(tmpdir.strpath, tmpdir.strpath)
         # are there other cases here? path to a file that doesn't exist? permissions?
 
     def test_init(self, generic_conf_file):
@@ -112,6 +102,13 @@ class TestFileBase:
         file.log_details = ''
         # assert file.log_details == copied_log     # this fails for now, we need to make log_details undeletable
         # we should probably check for more extensions here
+
+    def test_extension_uppercase(self, tmpdir):
+        file_path = tmpdir.join('TEST.TXT')
+        file_path.write('testing')
+        file_path = file_path.strpath
+        file = FileBase(file_path, file_path)
+        assert file.extension == '.txt'
 
     def test_mimetypes(self, generic_conf_file):
         assert generic_conf_file.has_mimetype()
@@ -221,7 +218,7 @@ class TestKittenGroomerBase:
 
     @fixture
     def source_directory(self):
-        return 'tests/src_complex'
+        return 'tests/src_invalid'
 
     @fixture
     def dest_directory(self):
