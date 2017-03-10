@@ -112,6 +112,7 @@ class FileBase(object):
             size = 0
         return size
 
+    @property
     def has_mimetype(self):
         """Returns True if file has a full mimetype, else False."""
         if not self.main_type or not self.sub_type:
@@ -121,6 +122,7 @@ class FileBase(object):
         else:
             return True
 
+    @property
     def has_extension(self):
         """Returns True if self.extension is set, else False."""
         if self.extension is None:
@@ -130,18 +132,22 @@ class FileBase(object):
         else:
             return True
 
+    @property
     def is_dangerous(self):
         """True if file has been marked 'dangerous' else False."""
         return self._file_props['safety_category'] is 'dangerous'
 
+    @property
     def is_unknown(self):
         """True if file has been marked 'unknown' else False."""
         return self._file_props['safety_category'] is 'unknown'
 
+    @property
     def is_binary(self):
         """True if file has been marked 'binary' else False."""
         return self._file_props['safety_category'] is 'binary'
 
+    @property
     def is_symlink(self):
         """Returns True and updates log if file is a symlink."""
         if self._file_props['symlink'] is False:
@@ -178,7 +184,7 @@ class FileBase(object):
         Prepends and appends DANGEROUS to the destination file name
         to help prevent double-click of death.
         """
-        if self.is_dangerous():
+        if self.is_dangerous:
             return
         self.set_property('safety_category', 'dangerous')
         # LOG: store reason string
@@ -187,7 +193,7 @@ class FileBase(object):
 
     def make_unknown(self):
         """Marks a file as an unknown type and prepends UNKNOWN to filename."""
-        if self.is_dangerous() or self.is_binary():
+        if self.is_dangerous or self.is_binary:
             return
         self.set_property('safety_category', 'unknown')
         path, filename = os.path.split(self.dst_path)
@@ -195,7 +201,7 @@ class FileBase(object):
 
     def make_binary(self):
         """Marks a file as a binary and appends .bin to filename."""
-        if self.is_dangerous():
+        if self.is_dangerous:
             return
         self.set_property('safety_category', 'binary')
         path, filename = os.path.split(self.dst_path)
@@ -241,6 +247,10 @@ class FileBase(object):
         except KittenGroomerError as e:
             self.add_error(e, '')
             return False
+
+    def write_log(self):
+        """Print the logs related to the current file being processed."""
+        tmp_log = self.logger.log.fields(**self._file_props)
 
 
 class GroomerLogger(object):
@@ -291,7 +301,6 @@ class GroomerLogger(object):
         return s.hexdigest()
 
     def add_file(self, file):
-        # File object will add itself?
         # return a sublog for the file
         pass
 

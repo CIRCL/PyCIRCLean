@@ -120,9 +120,9 @@ class File(FileBase):
         }
 
     def _check_dangerous(self):
-        if not self.has_mimetype():
+        if not self.has_mimetype:
             self.make_dangerous('no mimetype')
-        if not self.has_extension():
+        if not self.has_extension:
             self.make_dangerous('no extension')
         if self.extension in Config.malicious_exts:
             self.make_dangerous('malicious_extension')
@@ -156,17 +156,17 @@ class File(FileBase):
         expected_extensions = mimetypes.guess_all_extensions(mimetype,
                                                              strict=False)
         if expected_extensions:
-            if self.has_extension() and self.extension not in expected_extensions:
+            if self.has_extension and self.extension not in expected_extensions:
                 # LOG: improve this string
                 self.make_dangerous('expected extensions')
 
     def check(self):
         self._check_dangerous()
-        if self.has_extension():
+        if self.has_extension:
             self._check_extension()
-        if self.has_mimetype():
+        if self.has_mimetype:
             self._check_mimetype()
-        if not self.is_dangerous():
+        if not self.is_dangerous:
             self.mime_processing_options.get(self.main_type, self.unknown)()
 
     # ##### Helper functions #####
@@ -177,11 +177,6 @@ class File(FileBase):
             for subtype in list_of_subtypes:
                 dict_to_return[subtype] = method
         return dict_to_return
-
-    def write_log(self):
-        """Print the logs related to the current file being processed."""
-        # LOG: move to helpers.py GroomerLogger and modify
-        tmp_log = self.logger.log.fields(**self._file_props)
 
     @property
     def has_metadata(self):
@@ -200,7 +195,7 @@ class File(FileBase):
     # ##### Discarded mimetypes, reason in the docstring ######
     def inode(self):
         """Empty file or symlink."""
-        if self.is_symlink():
+        if self.is_symlink:
             symlink_path = self.get_property('symlink')
             self.add_file_string('Symlink to {}'.format(symlink_path))
         else:
@@ -479,19 +474,19 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def process_dir(self, src_dir, dst_dir):
         """Main function coordinating file processing."""
-        # LOG: we probably want to move this write_log elsewhere:
+        # LOG: what's the purpose of this write log?:
         # if self.recursive_archive_depth > 0:
         #     self.write_log()
-        # TODO: Can we clean up the way we handle relative_path?
+        # We're writing the log here because...
+        # How exactly does the workflow work with an archive?
         for srcpath in self.list_all_files(src_dir):
             dstpath = srcpath.replace(src_dir, dst_dir)
-            relative_path = srcpath.replace(src_dir + '/', '')
+            # TODO: Can we clean up the way we handle relative_path?
+            # Relative path is here so that when we print files in the log it
+            # shows only the file's path. Should we just pass it to the logger
+            # when we create it? Or let the logger figure it out?
+            # relative_path = srcpath.replace(src_dir + '/', '')
             self.cur_file = File(srcpath, dstpath, self.logger)
-            # LOG: move this logging code elsewhere
-            self.logger.log.info('Processing {} ({}/{})',
-                                 relative_path,
-                                 self.cur_file.main_type,
-                                 self.cur_file.sub_type)
             self.process_file(self.cur_file)
 
     def process_file(self, file):

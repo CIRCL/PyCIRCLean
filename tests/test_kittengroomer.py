@@ -104,23 +104,23 @@ class TestFileBase:
         assert generic_conf_file.mimetype == 'text/plain'
         assert generic_conf_file.main_type == 'text'
         assert generic_conf_file.sub_type == 'plain'
-        assert generic_conf_file.has_mimetype()
+        assert generic_conf_file.has_mimetype
         # Need to test something without a mimetype
         # Need to test something that's a directory
         # Need to test something that causes the unicode exception
 
     def test_has_mimetype_no_main_type(self, generic_conf_file):
         generic_conf_file.main_type = ''
-        assert generic_conf_file.has_mimetype() is False
+        assert generic_conf_file.has_mimetype is False
 
     def test_has_mimetype_no_sub_type(self, generic_conf_file):
         generic_conf_file.sub_type = ''
-        assert generic_conf_file.has_mimetype() is False
+        assert generic_conf_file.has_mimetype is False
 
     def test_has_extension(self, temp_file, temp_file_no_ext):
-        assert temp_file.has_extension() is True
+        assert temp_file.has_extension is True
         print(temp_file_no_ext.extension)
-        assert temp_file_no_ext.has_extension() is False
+        assert temp_file_no_ext.has_extension is False
 
     def test_set_property(self, generic_conf_file):
         generic_conf_file.set_property('test', True)
@@ -129,14 +129,14 @@ class TestFileBase:
 
     def test_marked_dangerous(self, file_marked_all_parameterized):
         file_marked_all_parameterized.make_dangerous()
-        assert file_marked_all_parameterized.is_dangerous() is True
+        assert file_marked_all_parameterized.is_dangerous is True
         # Should work regardless of weird paths??
         # Should check file path alteration behavior as well
 
     def test_generic_dangerous(self, generic_conf_file):
-        assert generic_conf_file.is_dangerous() is False
+        assert generic_conf_file.is_dangerous is False
         generic_conf_file.make_dangerous()
-        assert generic_conf_file.is_dangerous() is True
+        assert generic_conf_file.is_dangerous is True
 
     def test_has_symlink(self, tmpdir):
         file_path = tmpdir.join('test.txt')
@@ -147,45 +147,45 @@ class TestFileBase:
         os.symlink(file_path, symlink_path)
         file = FileBase(file_path, file_path)
         symlink = FileBase(symlink_path, symlink_path)
-        assert file.is_symlink() is False
-        assert symlink.is_symlink() is True
+        assert file.is_symlink is False
+        assert symlink.is_symlink is True
 
     def test_has_symlink_fixture(self, symlink_file):
-        assert symlink_file.is_symlink() is True
+        assert symlink_file.is_symlink is True
 
     def test_generic_make_unknown(self, generic_conf_file):
-        assert generic_conf_file.is_unknown() is False
+        assert generic_conf_file.is_unknown is False
         generic_conf_file.make_unknown()
-        assert generic_conf_file.is_unknown()
+        assert generic_conf_file.is_unknown
         # given a FileBase object with no marking, should do the right things
 
     def test_marked_make_unknown(self, file_marked_all_parameterized):
         file = file_marked_all_parameterized
-        if file.is_unknown():
+        if file.is_unknown:
             file.make_unknown()
-            assert file.is_unknown()
+            assert file.is_unknown
         else:
-            assert file.is_unknown() is False
+            assert file.is_unknown is False
             file.make_unknown()
-            assert file.is_unknown() is False
+            assert file.is_unknown is False
         # given a FileBase object with an unrecognized marking, should ???
 
     def test_generic_make_binary(self, generic_conf_file):
-        assert generic_conf_file.is_binary() is False
+        assert generic_conf_file.is_binary is False
         generic_conf_file.make_binary()
-        assert generic_conf_file.is_binary() is True
+        assert generic_conf_file.is_binary
 
     def test_marked_make_binary(self, file_marked_all_parameterized):
         file = file_marked_all_parameterized
-        if file.is_dangerous():
+        if file.is_dangerous:
             file.make_binary()
-            assert file.is_binary() is False
+            assert file.is_binary is False
         else:
             file.make_binary()
-            assert file.is_binary()
+            assert file.is_binary
 
     def test_force_ext_change(self, generic_conf_file):
-        assert generic_conf_file.has_extension()
+        assert generic_conf_file.has_extension
         assert generic_conf_file.get_property('extension') == '.conf'
         assert os.path.splitext(generic_conf_file.dst_path)[1] == '.conf'
         generic_conf_file.force_ext('.txt')
@@ -195,7 +195,7 @@ class TestFileBase:
         # should be able to handle weird paths
 
     def test_force_ext_correct(self, generic_conf_file):
-        assert generic_conf_file.has_extension()
+        assert generic_conf_file.has_extension
         assert generic_conf_file.get_property('extension') == '.conf'
         generic_conf_file.force_ext('.conf')
         assert os.path.splitext(generic_conf_file.dst_path)[1] == '.conf'
@@ -211,6 +211,10 @@ class TestFileBase:
         assert temp_file.create_metadata_file('') is False
         # if metadata file already exists
         # if there is no metadata to write should this work?
+
+    def test_safe_copy(self, generic_conf_file):
+        generic_conf_file.safe_copy()
+        # check that safe copy can handle weird file path inputs
 
 
 class TestLogger:
@@ -245,17 +249,6 @@ class TestKittenGroomerBase:
         debug_groomer = KittenGroomerBase(source_directory,
                                           dest_directory,
                                           debug=True)
-
-    def test_safe_copy(self, tmpdir):
-        file = tmpdir.join('test.txt')
-        file.write('testing')
-        testdir = tmpdir.join('testdir')
-        os.mkdir(testdir.strpath)
-        filedest = testdir.join('test.txt')
-        simple_groomer = KittenGroomerBase(tmpdir.strpath, testdir.strpath)
-        simple_groomer.cur_file = FileBase(file.strpath, filedest.strpath)
-        simple_groomer.safe_copy()
-        # check that safe copy can handle weird file path inputs
 
     def test_list_all_files(self, tmpdir):
         file = tmpdir.join('test.txt')
