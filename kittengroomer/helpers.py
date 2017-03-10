@@ -186,8 +186,8 @@ class KittenGroomerBase(object):
             self.log_debug_out = os.devnull
 
     def _computehash(self, path):
-        """Returns a sha1 hash of a file at a given path."""
-        s = hashlib.sha1()
+        """Returns a sha256 hash of a file at a given path."""
+        s = hashlib.sha256()
         with open(path, 'rb') as f:
             while True:
                 buf = f.read(0x100000)
