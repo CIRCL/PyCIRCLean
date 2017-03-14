@@ -388,6 +388,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         if oPDFiD.launch.count > 0:
             self.cur_file.add_log_details('launch', True)
             self.cur_file.make_dangerous()
+        self._safe_copy()
 
     def _archive(self):
         """Processes an archive using 7zip. The archive is extracted to a
