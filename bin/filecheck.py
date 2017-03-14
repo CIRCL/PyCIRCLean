@@ -477,6 +477,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
     def process_dir(self, src_dir, dst_dir):
         """Main function coordinating file processing."""
+        self.logger.tree(src_dir)
         for srcpath in self.list_all_files(src_dir):
             dstpath = srcpath.replace(src_dir, dst_dir)
             # TODO: Can we clean up the way we handle relative_path?
@@ -509,12 +510,12 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             file.make_dangerous('Archive bomb')
         else:
             tempdir_path = file.make_tempdir()
+            # TODO: double check we are properly escaping file.src_path
+            # otherwise we are running unvalidated user input directly in the shell
             command_str = '{} -p1 x "{}" -o"{}" -bd -aoa'
             unpack_command = command_str.format(SEVENZ_PATH,
                                                 file.src_path, tempdir_path)
             self._run_process(unpack_command)
-            # LOG: check that tree is working correctly here
-            self.logger.tree(tempdir_path)
             self.process_dir(tempdir_path, file.dst_path)
             self.safe_rmtree(tempdir_path)
         self.recursive_archive_depth -= 1
