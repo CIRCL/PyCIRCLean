@@ -88,7 +88,7 @@ class FileBase(object):
                 # Note: magic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
                 # FIXME: The encoding of the file is broken (possibly UTF-16)
-                # One of the Travis files will trigger this.
+                # Note: one of the Travis files will trigger this exception
                 self.add_error(e, '')
                 mt = None
             try:
@@ -115,9 +115,9 @@ class FileBase(object):
     @property
     def has_mimetype(self):
         """Returns True if file has a full mimetype, else False."""
+        # TODO: broken mimetype checks should be done somewhere else.
+        # Should the check be by default or should we let the API consumer write it?
         if not self.main_type or not self.sub_type:
-            # LOG: log this as an error, move somewhere else?
-            # self._file_props.update({'broken_mime': True})
             return False
         else:
             return True
@@ -126,8 +126,6 @@ class FileBase(object):
     def has_extension(self):
         """Returns True if self.extension is set, else False."""
         if self.extension is None:
-            # TODO: do we actually want to have a seperate prop for no extension?
-            # self.set_property('no_extension', True)
             return False
         else:
             return True
@@ -163,7 +161,7 @@ class FileBase(object):
             self._file_props['user_defined'][prop_string] = value
 
     def get_property(self, file_prop):
-        # FIXME: needs to be refactored
+        # TODO: could probably be refactored
         if file_prop in self._file_props:
             return self._file_props[file_prop]
         elif file_prop in self._file_props['user_defined']:
@@ -187,7 +185,7 @@ class FileBase(object):
         if self.is_dangerous:
             return
         self.set_property('safety_category', 'dangerous')
-        # LOG: store reason string
+        # LOG: store reason string somewhere and do something with it
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, 'DANGEROUS_{}_DANGEROUS'.format(filename))
 
@@ -250,11 +248,12 @@ class FileBase(object):
 
     def write_log(self):
         """Print the logs related to the current file being processed."""
-        tmp_log = self.logger.log.fields(**self._file_props)
+        file_log = self.logger.add_file(self)
+        file_log.fields(**self._file_props)
 
 
 class GroomerLogger(object):
-    """Groomer logging interface"""
+    """Groomer logging interface."""
 
     def __init__(self, root_dir_path, debug=False):
         self.root_dir = root_dir_path
@@ -301,8 +300,7 @@ class GroomerLogger(object):
         return s.hexdigest()
 
     def add_file(self, file):
-        # return a sublog for the file
-        pass
+        return self.log.name('file.src_path')
 
 
 class KittenGroomerBase(object):
