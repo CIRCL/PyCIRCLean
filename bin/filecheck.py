@@ -23,6 +23,8 @@ SEVENZ_PATH = '/usr/bin/7z'
 
 
 class Config:
+    """Configuration information for Filecheck."""
+
     # Application subtypes (mimetype: 'application/<subtype>')
     mimes_ooxml = ['vnd.openxmlformats-officedocument.']
     mimes_office = ['msword', 'vnd.ms-']
@@ -180,12 +182,13 @@ class File(FileBase):
 
     @property
     def has_metadata(self):
+        """True if filetype typically contains metadata, else False."""
         if self.mimetype in Config.mimes_metadata:
             return True
         return False
 
     def make_tempdir(self):
-        """Make a temporary directory."""
+        """Make a temporary directory at self.tempdir_path."""
         self.tempdir_path = self.dst_path + '_temp'
         if not os.path.exists(self.tempdir_path):
             os.makedirs(self.tempdir_path)
@@ -246,7 +249,7 @@ class File(FileBase):
         self.force_ext('.txt')
 
     def application(self):
-        """Processes an application specific file according to its subtype."""
+        """Process an application specific file according to its subtype."""
         for subtype, method in self.app_subtype_methods.items():
             if subtype in self.sub_type:
                 # TODO: should we change the logic so we don't iterate through all of the subtype methods?
@@ -258,13 +261,13 @@ class File(FileBase):
         self._unknown_app()
 
     def _executables(self):
-        """Processes an executable file."""
+        """Process an executable file."""
         # LOG: change the processing_type property to some other name or include in file_string
         self.set_property('processing_type', 'executable')
         self.make_dangerous('executable')
 
     def _winoffice(self):
-        """Processes a winoffice file using olefile/oletools."""
+        """Process a winoffice file using olefile/oletools."""
         # LOG: processing_type property
         self.set_property('processing_type', 'WinOffice')
         oid = oletools.oleid.OleID(self.src_path)  # First assume a valid file
@@ -297,7 +300,7 @@ class File(FileBase):
                     self.make_dangerous('flash')
 
     def _ooxml(self):
-        """Processes an ooxml file."""
+        """Process an ooxml file."""
         # LOG: processing_type property
         self.set_property('processing_type', 'ooxml')
         try:
@@ -318,7 +321,7 @@ class File(FileBase):
             self.make_dangerous('embedded pack')
 
     def _libreoffice(self):
-        """Processes a libreoffice file."""
+        """Process a libreoffice file."""
         self.set_property('processing_type', 'libreoffice')
         # As long as there is no way to do a sanity check on the files => dangerous
         try:
@@ -333,7 +336,7 @@ class File(FileBase):
                 self.make_dangerous('macro')
 
     def _pdf(self):
-        """Processes a PDF file."""
+        """Process a PDF file."""
         # LOG: processing_type property
         self.set_property('processing_type', 'pdf')
         xmlDoc = PDFiD(self.src_path)
@@ -351,26 +354,30 @@ class File(FileBase):
             self.make_dangerous('launch')
 
     def _archive(self):
-        """Processes an archive using 7zip. The archive is extracted to a
-        temporary directory and self.process_dir is called on that directory.
-        The recursive archive depth is increased to protect against archive
-        bombs."""
+        """
+        Process an archive using 7zip.
+
+        The archive is extracted to a temporary directory and self.process_dir
+        is called on that directory. The recursive archive depth is increased
+        to protect against archive bombs.
+        """
         # LOG: change this to something archive specific
         self.set_property('processing_type', 'archive')
         self.should_copy = False
         self.is_recursive = True
 
     def _unknown_app(self):
-        """Processes an unknown file."""
+        """Process an unknown file."""
         self.make_unknown()
 
     def _binary_app(self):
-        """Processses an unknown binary file."""
+        """Process an unknown binary file."""
         self.make_binary()
 
     #######################
     # Metadata extractors
     def _metadata_exif(self, metadata_file_path):
+        """Read exif metadata from a jpg or tiff file using exifread."""
         # TODO: this method is kind of long, can we shorten it somehow?
         img = open(self.src_path, 'rb')
         tags = None
@@ -401,6 +408,7 @@ class File(FileBase):
         return True
 
     def _metadata_png(self, metadata_file_path):
+        """Extract metadata from a png file using PIL/Pillow."""
         warnings.simplefilter('error', Image.DecompressionBombWarning)
         try:
             img = Image.open(self.src_path)
@@ -420,6 +428,7 @@ class File(FileBase):
             return False
 
     def extract_metadata(self):
+        """Create metadata file and call correct metadata extraction method."""
         metadata_file_path = self.create_metadata_file(".metadata.txt")
         mt = self.mimetype
         metadata_processing_method = self.metadata_mimetype_methods.get(mt)
@@ -430,12 +439,12 @@ class File(FileBase):
     #######################
     # ##### Media - audio and video aren't converted ######
     def audio(self):
-        """Processes an audio file."""
+        """Process an audio file."""
         self.log_string += 'Audio file'
         self._media_processing()
 
     def video(self):
-        """Processes a video."""
+        """Process a video."""
         self.log_string += 'Video file'
         self._media_processing()
 
@@ -444,11 +453,14 @@ class File(FileBase):
         self.set_property('processing_type', 'media')
 
     def image(self):
-        """Processes an image.
+        """
+        Process an image.
 
-        Extracts metadata to dest key if metadata is present. Creates a
-        temporary directory on dest key, opens the using PIL.Image,saves it to
-        the temporary directory, and copies it to the destination."""
+        Extracts metadata to dest key using self.extract_metada() if metadata
+        is present. Creates a temporary directory on dest key, opens the image
+        using PIL.Image, saves it to the temporary directory, and copies it to
+        the destination.
+        """
         # TODO: make sure this method works for png, gif, tiff
         if self.has_metadata:
             self.extract_metadata()
@@ -476,7 +488,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.max_recursive_depth = max_recursive_depth
 
     def process_dir(self, src_dir, dst_dir):
-        """Main function coordinating file processing."""
+        """Process a directory on the source key."""
         self.logger.tree(src_dir)
         for srcpath in self.list_all_files(src_dir):
             dstpath = srcpath.replace(src_dir, dst_dir)
@@ -489,6 +501,12 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             self.process_file(self.cur_file)
 
     def process_file(self, file):
+        """
+        Process an individual file.
+
+        Check the file, handle archives using self.process_archive, copy
+        the file to the destionation key, and clean up temporary directory.
+        """
         file.check()
         if file.is_recursive:
             self.process_archive(file)
@@ -500,10 +518,12 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             self.safe_rmtree(file.tempdir_path)
 
     def process_archive(self, file):
-        """Unpacks an archive using 7zip and processes contents.
+        """
+        Unpack an archive using 7zip and process contents using process_dir.
 
         Should be given a Kittengroomer file object whose src_path points
-        to an archive."""
+        to an archive.
+        """
         self.recursive_archive_depth += 1
         # LOG: write_log or somehow log the archive file here
         if self.recursive_archive_depth >= self.max_recursive_depth:

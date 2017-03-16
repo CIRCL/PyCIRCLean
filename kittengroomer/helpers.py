@@ -32,13 +32,18 @@ class ImplementationRequired(KittenGroomerError):
 
 class FileBase(object):
     """
-    Base object for individual files in the source directory. Contains file
-    attributes and various helper methods. Subclass and add attributes
-    or methods relevant to a given implementation.
+    Base object for individual files in the source directory.
+
+    Contains file attributes and various helper methods.
     """
 
     def __init__(self, src_path, dst_path, logger=None):
-        """Initialized with the source path and expected destination path."""
+        """
+        Initialized with the source path and expected destination path.
+
+        self.logger should be a logging object with an add_file method.
+        Create various properties and determine the file's mimetype.
+        """
         self.src_path = src_path
         self.dst_path = dst_path
         self.filename = os.path.basename(self.src_path)
@@ -106,6 +111,7 @@ class FileBase(object):
 
     @property
     def size(self):
+        """Filesize in bytes as an int, 0 if file does not exist."""
         try:
             size = os.path.getsize(self.src_path)
         except FileNotFoundError:
@@ -114,7 +120,7 @@ class FileBase(object):
 
     @property
     def has_mimetype(self):
-        """Returns True if file has a full mimetype, else False."""
+        """True if file has a main and sub mimetype, else False."""
         # TODO: broken mimetype checks should be done somewhere else.
         # Should the check be by default or should we let the API consumer write it?
         if not self.main_type or not self.sub_type:
@@ -124,7 +130,7 @@ class FileBase(object):
 
     @property
     def has_extension(self):
-        """Returns True if self.extension is set, else False."""
+        """True if self.extension is set, else False."""
         if self.extension is None:
             return False
         else:
@@ -132,35 +138,42 @@ class FileBase(object):
 
     @property
     def is_dangerous(self):
-        """True if file has been marked 'dangerous' else False."""
+        """True if file has been marked 'dangerous', else False."""
         return self._file_props['safety_category'] is 'dangerous'
 
     @property
     def is_unknown(self):
-        """True if file has been marked 'unknown' else False."""
+        """True if file has been marked 'unknown', else False."""
         return self._file_props['safety_category'] is 'unknown'
 
     @property
     def is_binary(self):
-        """True if file has been marked 'binary' else False."""
+        """True if file has been marked 'binary', else False."""
         return self._file_props['safety_category'] is 'binary'
 
     @property
     def is_symlink(self):
-        """Returns True and updates log if file is a symlink."""
+        """True  if file is a symlink, else False."""
         if self._file_props['symlink'] is False:
             return False
         else:
             return True
 
     def set_property(self, prop_string, value):
-        """Takes a property + a value and adds them to self._file_props."""
+        """
+        Take a property and a value and add them to self._file_props.
+
+        If prop_string is already in _file_props, set prop_string to value.
+        If prop_string not in _file_props, set prop_string to value in
+        _file_props['user_defined'].
+        """
         if prop_string in self._file_props.keys():
             self._file_props[prop_string] = value
         else:
             self._file_props['user_defined'][prop_string] = value
 
     def get_property(self, file_prop):
+        """Get the value for a property in _file_props."""
         # TODO: could probably be refactored
         if file_prop in self._file_props:
             return self._file_props[file_prop]
@@ -170,16 +183,18 @@ class FileBase(object):
             return None
 
     def add_error(self, error, info):
+        """Add an error: info pair to _file_props['errors']."""
         self._file_props['errors'].update({error: info})
 
     def add_file_string(self, file_string):
+        """Add a file descriptor string to _file_props."""
         self._file_props['file_string_set'].add(file_string)
 
     def make_dangerous(self, reason_string=None):
         """
-        Marks a file as dangerous.
+        Mark file as dangerous.
 
-        Prepends and appends DANGEROUS to the destination file name
+        Prepend and append DANGEROUS to the destination file name
         to help prevent double-click of death.
         """
         if self.is_dangerous:
@@ -190,7 +205,7 @@ class FileBase(object):
         self.dst_path = os.path.join(path, 'DANGEROUS_{}_DANGEROUS'.format(filename))
 
     def make_unknown(self):
-        """Marks a file as an unknown type and prepends UNKNOWN to filename."""
+        """Mark file as an unknown type and prepend UNKNOWN to filename."""
         if self.is_dangerous or self.is_binary:
             return
         self.set_property('safety_category', 'unknown')
@@ -198,7 +213,7 @@ class FileBase(object):
         self.dst_path = os.path.join(path, 'UNKNOWN_{}'.format(filename))
 
     def make_binary(self):
-        """Marks a file as a binary and appends .bin to filename."""
+        """Mark file as a binary and append .bin to filename."""
         if self.is_dangerous:
             return
         self.set_property('safety_category', 'binary')
@@ -206,7 +221,7 @@ class FileBase(object):
         self.dst_path = os.path.join(path, '{}.bin'.format(filename))
 
     def safe_copy(self, src=None, dst=None):
-        """Copy a file and create directory if needed."""
+        """Copy file and create destination directories if needed."""
         if src is None:
             src = self.src_path
         if dst is None:
@@ -220,7 +235,7 @@ class FileBase(object):
             self.add_error(e, '')
 
     def force_ext(self, ext):
-        """If dst_path does not end in ext, changes it and edits _file_props."""
+        """If dst_path does not end in ext, change it and edit _file_props."""
         if not self.dst_path.endswith(ext):
             self.set_property('force_ext', True)
             self.dst_path += ext
@@ -228,7 +243,7 @@ class FileBase(object):
             self.set_property('extension', ext)
 
     def create_metadata_file(self, ext):
-        """Create a separate file to hold this file's metadata."""
+        """Create a separate file to hold metadata from this file."""
         try:
             # make sure we aren't overwriting anything
             if os.path.exists(self.src_path + ext):
@@ -247,7 +262,7 @@ class FileBase(object):
             return False
 
     def write_log(self):
-        """Print the logs related to the current file being processed."""
+        """Write logs from file to self.logger."""
         file_log = self.logger.add_file(self)
         file_log.fields(**self._file_props)
 
@@ -273,7 +288,7 @@ class GroomerLogger(object):
             self.log_debug_out = os.devnull
 
     def tree(self, base_dir, padding='   '):
-        """Writes a graphical tree to the log for a given directory."""
+        """Write a graphical tree to the log for `base_dir`."""
         with open(self.log_content, 'ab') as lf:
             lf.write(bytes('#' * 80 + '\n', 'UTF-8'))
             lf.write(bytes('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir)).encode()), 'utf8'))
@@ -289,7 +304,7 @@ class GroomerLogger(object):
                     lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)).encode(errors='ignore'))
 
     def _computehash(self, path):
-        """Returns a sha256 hash of a file at a given path."""
+        """Return a sha256 hash of a file at a given path."""
         s = hashlib.sha256()
         with open(path, 'rb') as f:
             while True:
@@ -300,6 +315,7 @@ class GroomerLogger(object):
         return s.hexdigest()
 
     def add_file(self, file):
+        """Add a file to the log."""
         return self.log.name('file.src_path')
 
 
@@ -340,9 +356,7 @@ class KittenGroomerBase(object):
 
     # TODO: feels like this function doesn't need to exist if we move main()
     def processdir(self, src_dir, dst_dir):
-        """
-        Implement this function in your subclass to define file processing behavior.
-        """
+        """Implement this function to define file processing behavior."""
         raise ImplementationRequired('Please implement processdir.')
 
 
