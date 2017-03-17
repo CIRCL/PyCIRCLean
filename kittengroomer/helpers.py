@@ -272,10 +272,7 @@ class GroomerLogger(object):
 
     def __init__(self, root_dir_path, debug=False):
         self.root_dir = root_dir_path
-        self.log_dir_path = os.path.join(root_dir_path, 'logs')
-        if os.path.exists(self.log_dir_path):
-            shutil.rmtree(self.log_dir_path)
-        os.makedirs(self.log_dir_path)
+        self.log_dir_path = self._make_log_dir(root_dir_path)
         self.log_processing = os.path.join(self.log_dir_path, 'processing.log')
         self.log_content = os.path.join(self.log_dir_path, 'content.log')
         twiggy.quick_setup(file=self.log_processing)
@@ -286,6 +283,13 @@ class GroomerLogger(object):
         else:
             self.log_debug_err = os.devnull
             self.log_debug_out = os.devnull
+
+    def _make_log_dir(self, root_dir_path):
+        log_dir_path = os.path.join(root_dir_path, 'logs')
+        if os.path.exists(log_dir_path):
+            shutil.rmtree(log_dir_path)
+        os.makedirs(log_dir_path)
+        return log_dir_path
 
     def tree(self, base_dir, padding='   '):
         """Write a graphical tree to the log for `base_dir`."""
