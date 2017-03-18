@@ -130,11 +130,14 @@ class File(FileBase):
             self.make_dangerous('malicious_extension')
 
     def _check_extension(self):
-        """Guesses the file's mimetype based on its extension. If the file's
-        mimetype (as determined by libmagic) is contained in the mimetype
-        module's list of valid mimetypes and the expected mimetype based on its
-        extension differs from the mimetype determined by libmagic, then it
-        marks the file as dangerous."""
+        """
+        Guess the file's mimetype based on its extension.
+
+        If the file's mimetype (as determined by libmagic) is contained in
+        the `mimetype` module's list of valid mimetypes and the expected
+        mimetype based on its extension differs from the mimetype determined
+        by libmagic, then mark the file as dangerous.
+        """
         if self.extension in Config.override_ext:
             expected_mimetype = Config.override_ext[self.extension]
         else:
@@ -148,9 +151,12 @@ class File(FileBase):
             self.make_dangerous('expected_mimetype')
 
     def _check_mimetype(self):
-        """Takes the mimetype (as determined by libmagic) and determines
-        whether the list of extensions that are normally associated with
-        that extension contains the file's actual extension."""
+        """
+        Compare mimetype (as determined by libmagic) to extension.
+
+        Determine whether the extension that are normally associated with
+        the mimetype include the file's actual extension.
+        """
         if self.mimetype in Config.aliases:
             mimetype = Config.aliases[self.mimetype]
         else:
@@ -162,8 +168,19 @@ class File(FileBase):
                 # LOG: improve this string
                 self.make_dangerous('expected extensions')
 
+    def _check_filename(self):
+        if self.filename[0] is '.':
+            # handle dotfiles
+            pass
+        right_to_left_override = u"\u202E"
+        if right_to_left_override in self.filename:
+            self.make_dangerous('Filename contains dangerous character')
+            self.dst_path = self.dst_path.replace(right_to_left_override, '')
+            # TODO: change self.filename and'filename' property?
+
     def check(self):
         self._check_dangerous()
+        self._check_filename()
         if self.has_extension:
             self._check_extension()
         if self.has_mimetype:
