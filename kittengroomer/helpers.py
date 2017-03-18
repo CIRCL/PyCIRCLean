@@ -14,7 +14,7 @@ import shutil
 import argparse
 
 import magic
-import twiggy
+# import twiggy
 
 
 class KittenGroomerError(Exception):
@@ -41,7 +41,6 @@ class FileBase(object):
         """
         Initialized with the source path and expected destination path.
 
-        self.logger should be a logging object with an add_file method.
         Create various properties and determine the file's mimetype.
         """
         self.src_path = src_path
@@ -181,6 +180,10 @@ class FileBase(object):
         else:
             return None
 
+    def get_all_props(self):
+        """Return a dict containing all stored properties of this file."""
+        return self._file_props
+
     def add_error(self, error, info):
         """Add an error: info pair to _file_props['errors']."""
         self._file_props['errors'].update({error: info})
@@ -267,10 +270,9 @@ class GroomerLogger(object):
     def __init__(self, root_dir_path, debug=False):
         self.root_dir = root_dir_path
         self.log_dir_path = self._make_log_dir(root_dir_path)
-        self.log_processing = os.path.join(self.log_dir_path, 'processing.log')
-        self.log_content = os.path.join(self.log_dir_path, 'content.log')
-        twiggy.quick_setup(file=self.log_processing)
-        self.log = twiggy.log.name('files')
+        self.log_path = os.path.join(self.log_dir_path, 'log.txt')
+        # twiggy.quick_setup(file=self.log_processing)
+        # self.log = twiggy.log.name('files')
         if debug:
             self.log_debug_err = os.path.join(self.log_dir_path, 'debug_stderr.log')
             self.log_debug_out = os.path.join(self.log_dir_path, 'debug_stdout.log')
@@ -287,7 +289,7 @@ class GroomerLogger(object):
 
     def tree(self, base_dir, padding='   '):
         """Write a graphical tree to the log for `base_dir`."""
-        with open(self.log_content, 'ab') as lf:
+        with open(self.log_path, 'ab') as lf:
             lf.write(bytes('#' * 80 + '\n', 'UTF-8'))
             lf.write(bytes('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir)).encode()), 'utf8'))
             padding += '|  '
@@ -312,8 +314,8 @@ class GroomerLogger(object):
                 s.update(buf)
         return s.hexdigest()
 
-    def add_file(self, file):
-        """Add a file to the log."""
+    def add_file(self, file_props):
+        """Add a file to the log. Takes a dict of file properties."""
         pass
 
 

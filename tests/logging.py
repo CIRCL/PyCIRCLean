@@ -6,7 +6,7 @@ def save_logs(groomer, test_description):
     test_log_path = 'tests/test_logs/{}.log'.format(test_description)
     with open(test_log_path, 'w+') as test_log:
         test_log.write(divider.format('TEST LOG'))
-        with open(groomer.logger.log_processing, 'r') as logfile:
+        with open(groomer.logger.log_path, 'r') as logfile:
             log = logfile.read()
             test_log.write(log)
         if os.path.exists(groomer.logger.log_debug_err):

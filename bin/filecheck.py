@@ -190,7 +190,8 @@ class File(FileBase):
             self.mime_processing_options.get(self.main_type, self.unknown)()
 
     def write_log(self):
-        pass
+        props = self.get_all_props()
+        self.logger.add_file(props)
 
     # ##### Helper functions #####
     def _make_method_dict(self, list_of_tuples):
@@ -441,8 +442,7 @@ class File(FileBase):
             # LOG: handle metadata
             self.set_property('metadata', 'png')
             img.close()
-        # Catch decompression bombs
-        except Exception as e:
+        except Exception as e:  # Catch decompression bombs
             # TODO: only catch DecompressionBombWarnings here?
             self.add_error(e, "Caught exception processing metadata for {}".format(self.src_path))
             self.make_dangerous('exception processing metadata')
@@ -548,7 +548,6 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         to an archive.
         """
         self.recursive_archive_depth += 1
-        # LOG: write_log or somehow log the archive file here
         if self.recursive_archive_depth >= self.max_recursive_depth:
             file.make_dangerous('Archive bomb')
         else:
