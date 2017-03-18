@@ -9,14 +9,13 @@ def save_logs(groomer, test_description):
         with open(groomer.logger.log_processing, 'r') as logfile:
             log = logfile.read()
             test_log.write(log)
-        if groomer.debug:
-            if os.path.exists(groomer.logger.log_debug_err):
-                test_log.write(divider.format('ERR LOG'))
-                with open(groomer.logger.log_debug_err, 'r') as debug_err:
-                    err = debug_err.read()
-                    test_log.write(err)
-            if os.path.exists(groomer.logger.log_debug_out):
-                test_log.write(divider.format('OUT LOG'))
-                with open(groomer.logger.log_debug_out, 'r') as debug_out:
-                    out = debug_out.read()
-                    test_log.write(out)
+        if os.path.exists(groomer.logger.log_debug_err):
+            test_log.write(divider.format('ERR LOG'))
+            with open(groomer.logger.log_debug_err, 'r') as debug_err:
+                err = debug_err.read()
+                test_log.write(err)
+        if os.path.exists(groomer.logger.log_debug_out):
+            test_log.write(divider.format('OUT LOG'))
+            with open(groomer.logger.log_debug_out, 'r') as debug_out:
+                out = debug_out.read()
+                test_log.write(out)

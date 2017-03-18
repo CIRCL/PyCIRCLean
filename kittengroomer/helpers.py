@@ -37,7 +37,7 @@ class FileBase(object):
     Contains file attributes and various helper methods.
     """
 
-    def __init__(self, src_path, dst_path, logger=None):
+    def __init__(self, src_path, dst_path):
         """
         Initialized with the source path and expected destination path.
 
@@ -47,7 +47,6 @@ class FileBase(object):
         self.src_path = src_path
         self.dst_path = dst_path
         self.filename = os.path.basename(self.src_path)
-        self.logger = logger
         self._file_props = {
             'filepath': self.src_path,
             'filename': self.filename,
@@ -261,11 +260,6 @@ class FileBase(object):
             self.add_error(e, '')
             return False
 
-    def write_log(self):
-        """Write logs from file to self.logger."""
-        file_log = self.logger.add_file(self)
-        file_log.fields(**self._file_props)
-
 
 class GroomerLogger(object):
     """Groomer logging interface."""
@@ -320,19 +314,16 @@ class GroomerLogger(object):
 
     def add_file(self, file):
         """Add a file to the log."""
-        return self.log.name('file.src_path')
+        pass
 
 
 class KittenGroomerBase(object):
     """Base object responsible for copy/sanitization process."""
 
-    def __init__(self, src_root_dir, dst_root_dir, debug=False):
+    def __init__(self, src_root_dir, dst_root_dir):
         """Initialized with path to source and dest directories."""
         self.src_root_dir = src_root_dir
         self.dst_root_dir = dst_root_dir
-        self.debug = debug
-        self.cur_file = None
-        self.logger = GroomerLogger(self.dst_root_dir, debug)
 
     def safe_rmtree(self, directory):
         """Remove a directory tree if it exists."""

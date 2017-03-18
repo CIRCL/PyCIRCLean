@@ -16,7 +16,7 @@ from PIL import Image
 # from PIL import PngImagePlugin
 from pdfid import PDFiD, cPDFiD
 
-from kittengroomer import FileBase, KittenGroomerBase
+from kittengroomer import FileBase, KittenGroomerBase, GroomerLogger
 
 
 SEVENZ_PATH = '/usr/bin/7z'
@@ -86,8 +86,9 @@ class Config:
 class File(FileBase):
 
     def __init__(self, src_path, dst_path, logger):
-        super(File, self).__init__(src_path, dst_path, logger)
+        super(File, self).__init__(src_path, dst_path)
         self.is_recursive = False
+        self.logger = logger
 
         subtypes_apps = [
             (Config.mimes_office, self._winoffice),
@@ -170,7 +171,7 @@ class File(FileBase):
 
     def _check_filename(self):
         if self.filename[0] is '.':
-            # handle dotfiles
+            # TODO: handle dotfiles?
             pass
         right_to_left_override = u"\u202E"
         if right_to_left_override in self.filename:
@@ -187,6 +188,9 @@ class File(FileBase):
             self._check_mimetype()
         if not self.is_dangerous:
             self.mime_processing_options.get(self.main_type, self.unknown)()
+
+    def write_log(self):
+        pass
 
     # ##### Helper functions #####
     def _make_method_dict(self, list_of_tuples):
@@ -500,9 +504,11 @@ class File(FileBase):
 class KittenGroomerFileCheck(KittenGroomerBase):
 
     def __init__(self, root_src, root_dst, max_recursive_depth=2, debug=False):
-        super(KittenGroomerFileCheck, self).__init__(root_src, root_dst, debug)
+        super(KittenGroomerFileCheck, self).__init__(root_src, root_dst)
         self.recursive_archive_depth = 0
         self.max_recursive_depth = max_recursive_depth
+        self.cur_file = None
+        self.logger = GroomerLogger(self.dst_root_dir, debug)
 
     def process_dir(self, src_dir, dst_dir):
         """Process a directory on the source key."""

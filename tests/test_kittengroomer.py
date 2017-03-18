@@ -6,7 +6,6 @@ import os
 import pytest
 
 from kittengroomer import FileBase, KittenGroomerBase, GroomerLogger
-from kittengroomer.helpers import ImplementationRequired
 
 skip = pytest.mark.skip
 xfail = pytest.mark.xfail
@@ -245,10 +244,7 @@ class TestKittenGroomerBase:
         assert generic_groomer
 
     def test_instantiation(self, source_directory, dest_directory):
-        groomer = KittenGroomerBase(source_directory, dest_directory)
-        debug_groomer = KittenGroomerBase(source_directory,
-                                          dest_directory,
-                                          debug=True)
+        KittenGroomerBase(source_directory, dest_directory)
 
     def test_list_all_files(self, tmpdir):
         file = tmpdir.join('test.txt')
