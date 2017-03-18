@@ -326,10 +326,10 @@ class GroomerLogger(object):
 class KittenGroomerBase(object):
     """Base object responsible for copy/sanitization process."""
 
-    def __init__(self, root_src, root_dst, debug=False):
+    def __init__(self, src_root_dir, dst_root_dir, debug=False):
         """Initialized with path to source and dest directories."""
-        self.src_root_dir = root_src
-        self.dst_root_dir = root_dst
+        self.src_root_dir = src_root_dir
+        self.dst_root_dir = dst_root_dir
         self.debug = debug
         self.cur_file = None
         self.logger = GroomerLogger(self.dst_root_dir, debug)
