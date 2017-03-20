@@ -159,24 +159,27 @@ class FileBase(object):
 
     def set_property(self, prop_string, value):
         """
-        Take a property and a value and add them to self._file_props.
+        Take a property and a value and add them to the file's property dict.
 
-        If prop_string is already in _file_props, set prop_string to value.
-        If prop_string not in _file_props, set prop_string to value in
-        _file_props['user_defined'].
+        If `prop_string` is part of the file property API, set it to `value`.
+        Otherwise, add `prop_string`: `value` to `user_defined` properties.
         """
         if prop_string in self._file_props.keys():
             self._file_props[prop_string] = value
         else:
             self._file_props['user_defined'][prop_string] = value
 
-    def get_property(self, file_prop):
-        """Get the value for a property in _file_props."""
+    def get_property(self, prop_string):
+        """
+        Get the value for a property stored on the file.
+
+        Returns `None` if `prop_string` cannot be found on the file.
+        """
         # TODO: could probably be refactored
-        if file_prop in self._file_props:
-            return self._file_props[file_prop]
-        elif file_prop in self._file_props['user_defined']:
-            return self._file_props['user_defined'][file_prop]
+        if prop_string in self._file_props:
+            return self._file_props[prop_string]
+        elif prop_string in self._file_props['user_defined']:
+            return self._file_props['user_defined'][prop_string]
         else:
             return None
 
@@ -184,12 +187,12 @@ class FileBase(object):
         """Return a dict containing all stored properties of this file."""
         return self._file_props
 
-    def add_error(self, error, info):
-        """Add an error: info pair to _file_props['errors']."""
-        self._file_props['errors'].update({error: info})
+    def add_error(self, error, info_string):
+        """Add an `error`: `info_string` pair to the file."""
+        self._file_props['errors'].update({error: info_string})
 
     def add_file_string(self, file_string):
-        """Add a file descriptor string to _file_props."""
+        """Add a file descriptor string to the file."""
         self._file_props['file_string_set'].add(file_string)
 
     def make_dangerous(self, reason_string=None):
@@ -237,45 +240,57 @@ class FileBase(object):
             self.add_error(e, '')
 
     def force_ext(self, ext):
-        """If dst_path does not end in ext, change it and edit _file_props."""
+        """If dst_path does not end in ext, append .ext to it."""
+        ext = self._check_leading_dot(ext)
         if not self.dst_path.endswith(ext):
-            self.set_property('force_ext', True)
+            # LOG: do we want to log that the extension was changed as below?
+            # self.set_property('force_ext', True)
             self.dst_path += ext
         if not self._file_props['extension'] == ext:
             self.set_property('extension', ext)
 
     def create_metadata_file(self, ext):
-        """Create a separate file to hold metadata from this file."""
+        """
+        Create a separate file to hold extracted metadata.
+
+        The string `ext` will be used as the extension for the metadata file.
+        """
+        ext = self._check_leading_dot(ext)
         try:
-            # make sure we aren't overwriting anything
             if os.path.exists(self.src_path + ext):
-                raise KittenGroomerError("Cannot create split metadata file for \"" +
-                                         self.dst_path + "\", type '" +
-                                         ext + "': File exists.")
+                err_str = ("Could not create metadata file for \"" +
+                           self.filename +
+                           "\": a file with that path already exists.")
+                raise KittenGroomerError(err_str)
             else:
                 dst_dir_path, filename = os.path.split(self.dst_path)
                 if not os.path.exists(dst_dir_path):
                     os.makedirs(dst_dir_path)
-                # TODO: Check extension for leading "."
                 self.metadata_file_path = self.dst_path + ext
                 return self.metadata_file_path
         except KittenGroomerError as e:
             self.add_error(e, '')
             return False
 
+    def _check_leading_dot(self, ext):
+        if len(ext) > 0:
+            if not ext.startswith('.'):
+                return '.' + ext
+        return ext
+
 
 class GroomerLogger(object):
     """Groomer logging interface."""
 
     def __init__(self, root_dir_path, debug=False):
-        self.root_dir = root_dir_path
-        self.log_dir_path = self._make_log_dir(root_dir_path)
-        self.log_path = os.path.join(self.log_dir_path, 'log.txt')
+        self._root_dir_path = root_dir_path
+        self._log_dir_path = self._make_log_dir(root_dir_path)
+        self.log_path = os.path.join(self._log_dir_path, 'log.txt')
         # twiggy.quick_setup(file=self.log_processing)
         # self.log = twiggy.log.name('files')
         if debug:
-            self.log_debug_err = os.path.join(self.log_dir_path, 'debug_stderr.log')
-            self.log_debug_out = os.path.join(self.log_dir_path, 'debug_stdout.log')
+            self.log_debug_err = os.path.join(self._log_dir_path, 'debug_stderr.log')
+            self.log_debug_out = os.path.join(self._log_dir_path, 'debug_stdout.log')
         else:
             self.log_debug_err = os.devnull
             self.log_debug_out = os.devnull
@@ -322,29 +337,29 @@ class GroomerLogger(object):
 class KittenGroomerBase(object):
     """Base object responsible for copy/sanitization process."""
 
-    def __init__(self, src_root_dir, dst_root_dir):
+    def __init__(self, src_root_path, dst_root_path):
         """Initialized with path to source and dest directories."""
-        self.src_root_dir = src_root_dir
-        self.dst_root_dir = dst_root_dir
+        self.src_root_path = src_root_path
+        self.dst_root_path = dst_root_path
 
-    def safe_rmtree(self, directory):
+    def safe_rmtree(self, directory_path):
         """Remove a directory tree if it exists."""
-        if os.path.exists(directory):
-            shutil.rmtree(directory)
+        if os.path.exists(directory_path):
+            shutil.rmtree(directory_path)
 
-    def safe_remove(self, filepath):
-        """Remove a file if it exists."""
-        if os.path.exists(filepath):
-            os.remove(filepath)
+    def safe_remove(self, file_path):
+        """Remove file at file_path if it exists."""
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
-    def safe_mkdir(self, directory):
+    def safe_mkdir(self, directory_path):
         """Make a directory if it does not exist."""
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
 
-    def list_all_files(self, directory):
+    def list_all_files(self, directory_path):
         """Generator yielding path to all of the files in a directory tree."""
-        for root, dirs, files in os.walk(directory):
+        for root, dirs, files in os.walk(directory_path):
             for filename in files:
                 filepath = os.path.join(root, filename)
                 yield filepath

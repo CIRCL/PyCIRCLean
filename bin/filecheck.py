@@ -508,7 +508,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.recursive_archive_depth = 0
         self.max_recursive_depth = max_recursive_depth
         self.cur_file = None
-        self.logger = GroomerLogger(self.dst_root_dir, debug)
+        self.logger = GroomerLogger(self.dst_root_path, debug)
 
     def process_dir(self, src_dir, dst_dir):
         """Process a directory on the source key."""
@@ -573,7 +573,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         return True
 
     def run(self):
-        self.process_dir(self.src_root_dir, self.dst_root_dir)
+        self.process_dir(self.src_root_path, self.dst_root_path)
 
 
 def main(kg_implementation, description):
