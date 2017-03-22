@@ -222,35 +222,35 @@ class File(FileBase):
         """Empty file or symlink."""
         if self.is_symlink:
             symlink_path = self.get_property('symlink')
-            self.add_file_string('Symlink to {}'.format(symlink_path))
+            self.add_description('Symlink to {}'.format(symlink_path))
         else:
-            self.add_file_string('Inode file')
+            self.add_description('Inode file')
         self.should_copy = False
 
     def unknown(self):
         """Main type should never be unknown."""
-        self.add_file_string('Unknown file')
+        self.add_description('Unknown file')
         self.should_copy = False
 
     def example(self):
         """Used in examples, should never be returned by libmagic."""
-        self.add_file_string('Example file')
+        self.add_description('Example file')
         self.should_copy = False
 
     def multipart(self):
         """Used in web apps, should never be returned by libmagic"""
-        self.add_file_string('Multipart file')
+        self.add_description('Multipart file')
         self.should_copy = False
 
     # ##### Treated as malicious, no reason to have it on a USB key ######
     def message(self):
         """Process a message file."""
-        self.add_file_string('Message file')
+        self.add_description('Message file')
         self.make_dangerous('Message file')
 
     def model(self):
         """Process a model file."""
-        self.add_file_string('Model file')
+        self.add_description('Model file')
         self.make_dangerous('Model file')
 
     # ##### Files that will be converted ######
@@ -258,16 +258,16 @@ class File(FileBase):
         """Process an rtf, ooxml, or plaintext file."""
         for mt in Config.mimes_rtf:
             if mt in self.sub_type:
-                self.add_file_string('Rich Text file')
+                self.add_description('Rich Text file')
                 # TODO: need a way to convert it to plain text
                 self.force_ext('.txt')
                 return
         for mt in Config.mimes_ooxml:
             if mt in self.sub_type:
-                self.add_file_string('OOXML File')
+                self.add_description('OOXML File')
                 self._ooxml()
                 return
-        self.add_file_string('Text file')
+        self.add_description('Text file')
         self.force_ext('.txt')
 
     def application(self):
@@ -277,9 +277,9 @@ class File(FileBase):
                 # TODO: should we change the logic so we don't iterate through all of the subtype methods?
                 # TODO: should these methods return a value?
                 method()
-                self.add_file_string('Application file')
+                self.add_description('Application file')
                 return
-        self.add_file_string('Unknown Application file')
+        self.add_description('Unknown Application file')
         self._unknown_app()
 
     def _executables(self):
@@ -497,7 +497,7 @@ class File(FileBase):
             # TODO: change this from all Exceptions to specific DecompressionBombWarning
             self.add_error(e, "Caught exception (possible decompression bomb?) while translating file {}.".format(self.src_path))
             self.make_dangerous()
-        self.add_file_string('Image file')
+        self.add_description('Image file')
         self.set_property('processing_type', 'image')
 
 
