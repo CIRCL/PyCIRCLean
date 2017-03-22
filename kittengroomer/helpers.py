@@ -292,6 +292,7 @@ class GroomerLogger(object):
     def __init__(self, root_dir_path, debug=False):
         self._root_dir_path = root_dir_path
         self._log_dir_path = self._make_log_dir(root_dir_path)
+        # LOG: rename logfile to something more descriptive
         self.log_path = os.path.join(self._log_dir_path, 'log.txt')
         # twiggy.quick_setup(file=self.log_processing)
         # self.log = twiggy.log.name('files')
@@ -311,7 +312,7 @@ class GroomerLogger(object):
 
     def tree(self, base_dir, padding='   '):
         """Write a graphical tree to the log for `base_dir`."""
-        with open(self.log_path, 'ab') as lf:
+        with open(self.log_path, mode='ab') as lf:
             lf.write(bytes('#' * 80 + '\n', 'UTF-8'))
             lf.write(bytes('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir)).encode()), 'utf8'))
             padding += '|  '
@@ -336,9 +337,21 @@ class GroomerLogger(object):
                 s.update(buf)
         return s.hexdigest()
 
+    def _write_file_to_disk(self, file_string):
+        with open(self.log_path, mode='a', encoding='utf-8') as lf:
+            lf.write(file_string)
+
     def add_file(self, file_props):
         """Add a file to the log. Takes a dict of file properties."""
-        pass
+        props = file_props
+        description_string = ', '.join(props['description_string'])
+        file_string = "{}: {}/{}, {}: {}\n".format(props['filename'],
+                                                   props['maintype'],
+                                                   props['subtype'],
+                                                   props['safety_category'],
+                                                   description_string
+                                                   )
+        self._write_file_to_disk(file_string)
 
 
 class KittenGroomerBase(object):
