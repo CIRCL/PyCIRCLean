@@ -56,7 +56,7 @@ class FileBase(object):
             'safety_category': None,
             'symlink': False,
             'copied': False,
-            'file_string_set': set(),
+            'description_string': [],  # array of descriptions to be joined
             'errors': {},
             'user_defined': {}
         }
@@ -164,7 +164,10 @@ class FileBase(object):
         If `prop_string` is part of the file property API, set it to `value`.
         Otherwise, add `prop_string`: `value` to `user_defined` properties.
         """
-        if prop_string in self._file_props.keys():
+        if prop_string is 'description_string':
+            if prop_string not in self._file_props['description_string']:
+                self._file_props['description_string'].append(value)
+        elif prop_string in self._file_props.keys():
             self._file_props[prop_string] = value
         else:
             self._file_props['user_defined'][prop_string] = value
@@ -175,7 +178,6 @@ class FileBase(object):
 
         Returns `None` if `prop_string` cannot be found on the file.
         """
-        # TODO: could probably be refactored
         if prop_string in self._file_props:
             return self._file_props[prop_string]
         elif prop_string in self._file_props['user_defined']:
@@ -191,9 +193,13 @@ class FileBase(object):
         """Add an `error`: `info_string` pair to the file."""
         self._file_props['errors'].update({error: info_string})
 
-    def add_file_string(self, file_string):
-        """Add a file descriptor string to the file."""
-        self._file_props['file_string_set'].add(file_string)
+    def add_description(self, description_string):
+        """
+        Add a description string to the file.
+
+        If `description_string` is already present, will prevent duplicates.
+        """
+        self.set_property('description_string', description_string)
 
     def make_dangerous(self, reason_string=None):
         """
@@ -203,9 +209,10 @@ class FileBase(object):
         to help prevent double-click of death.
         """
         if self.is_dangerous:
+            self.set_property('description_string', reason_string)
             return
         self.set_property('safety_category', 'dangerous')
-        # LOG: store reason string somewhere and do something with it
+        self.set_property('description_string', reason_string)
         path, filename = os.path.split(self.dst_path)
         self.dst_path = os.path.join(path, 'DANGEROUS_{}_DANGEROUS'.format(filename))
 
