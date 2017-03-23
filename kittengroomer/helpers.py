@@ -312,19 +312,23 @@ class GroomerLogger(object):
 
     def tree(self, base_dir, padding='   '):
         """Write a graphical tree to the log for `base_dir`."""
-        with open(self.log_path, mode='ab') as lf:
-            lf.write(bytes('#' * 80 + '\n', 'UTF-8'))
-            lf.write(bytes('{}+- {}/\n'.format(padding, os.path.basename(os.path.abspath(base_dir)).encode()), 'utf8'))
+        horizontal_divider = '#' * 80 + '\n'
+        with open(self.log_path, mode='a', encoding='utf-8') as lf:
+            lf.write(horizontal_divider)
+            base_dir_name = os.path.basename(os.path.abspath(base_dir))
+            lf.write('{}+- {}/\n'.format(padding, base_dir_name))
             padding += '|  '
+            # TODO: make sure this gets all sub directories and use scandir()
             files = sorted(os.listdir(base_dir))
             for f in files:
                 curpath = os.path.join(base_dir, f)
                 if os.path.islink(curpath):
-                    lf.write('{}+-- {}\t- Symbolic link to {}\n'.format(padding, f, os.readlink(curpath)).encode(errors='ignore'))
+                    lf.write('{}+-- {}\t- Symbolic link to {}\n'.format(padding, f, os.readlink(curpath)))
                 elif os.path.isdir(curpath):
                     self.tree(curpath, padding)
                 elif os.path.isfile(curpath):
-                    lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)).encode(errors='ignore'))
+                    lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)))
+            lf.write(horizontal_divider)
 
     def _computehash(self, path):
         """Return a sha256 hash of a file at a given path."""
@@ -345,12 +349,13 @@ class GroomerLogger(object):
         """Add a file to the log. Takes a dict of file properties."""
         props = file_props
         description_string = ', '.join(props['description_string'])
-        file_string = "{}: {}/{}, {}: {}\n".format(props['filename'],
-                                                   props['maintype'],
-                                                   props['subtype'],
-                                                   props['safety_category'],
-                                                   description_string
-                                                   )
+        file_string = "  *  {}: {}/{}, {}: {}\n".format(
+            props['filename'],
+            props['maintype'],
+            props['subtype'],
+            props['safety_category'],
+            description_string
+        )
         self._write_file_to_disk(file_string)
 
 
