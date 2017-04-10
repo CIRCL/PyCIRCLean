@@ -3,8 +3,8 @@
 
 """
 Contains the base objects for use when creating a sanitizer using
-PyCIRCLean. Subclass FileBase and KittenGroomerBase to implement your
-desired behavior.
+PyCIRCLean. Subclass or import from FileBase/KittenGroomerBase and implement
+your desired behavior.
 """
 
 
@@ -87,9 +87,9 @@ class FileBase(object):
         else:
             try:
                 mt = magic.from_file(self.src_path, mime=True)
-                # Note: magic will always return something, even if it's just 'data'
+                # Note: libmagic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
-                # FIXME: The encoding of the file is broken (possibly UTF-16)
+                # FIXME: The encoding of the file that triggers this is broken (possibly it's UTF-16 and Python expects utf8)
                 # Note: one of the Travis files will trigger this exception
                 self.add_error(e, '')
                 mt = None
@@ -118,8 +118,6 @@ class FileBase(object):
     @property
     def has_mimetype(self):
         """True if file has a main and sub mimetype, else False."""
-        # TODO: broken mimetype checks should be done somewhere else.
-        # Should the check be by default or should we let the API consumer write it?
         if not self.main_type or not self.sub_type:
             return False
         else:
@@ -326,19 +324,20 @@ class KittenGroomerBase(object):
     def list_all_files(self, directory_path):
         """Generator yielding path to all of the files in a directory tree."""
         for root, dirs, files in os.walk(directory_path):
+            # files is a list anyway so we don't get much from using a generator here
             for filename in files:
                 filepath = os.path.join(root, filename)
                 yield filepath
 
     #######################
 
-    # TODO: feels like this function doesn't need to exist if we move main()
+    # TODO: if we move main() we can get rid of this as well
     def processdir(self, src_dir, dst_dir):
         """Implement this function to define file processing behavior."""
         raise ImplementationRequired('Please implement processdir.')
 
 
-# TODO: Maybe this shouldn't exist? It should probably get moved to filecheck since this isn't really API code
+# TODO: Should this get moved to filecheck? It isn't really API code and somebody can implement it themselves
 def main(kg_implementation, description='Call a KittenGroomer implementation to process files present in the source directory and copy them to the destination directory.'):
     parser = argparse.ArgumentParser(prog='KittenGroomer', description=description)
     parser.add_argument('-s', '--source', type=str, help='Source directory')
