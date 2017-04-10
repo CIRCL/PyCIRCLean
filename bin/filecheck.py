@@ -13,6 +13,7 @@ import officedissector
 import warnings
 import exifread
 from PIL import Image
+# TODO: why do we have this import? How does filecheck handle pngs?
 # from PIL import PngImagePlugin
 from pdfid import PDFiD, cPDFiD
 
@@ -124,11 +125,11 @@ class File(FileBase):
 
     def _check_dangerous(self):
         if not self.has_mimetype:
-            self.make_dangerous('no mimetype')
+            self.make_dangerous('File has no mimetype')
         if not self.has_extension:
-            self.make_dangerous('no extension')
+            self.make_dangerous('File has no extension')
         if self.extension in Config.malicious_exts:
-            self.make_dangerous('malicious_extension')
+            self.make_dangerous('Extension identifies file as potentially dangerous')
 
     def _check_extension(self):
         """
@@ -148,8 +149,7 @@ class File(FileBase):
                 expected_mimetype = Config.aliases[expected_mimetype]
         is_known_extension = self.extension in mimetypes.types_map.keys()
         if is_known_extension and expected_mimetype != self.mimetype:
-            # LOG: improve this string
-            self.make_dangerous('expected_mimetype')
+            self.make_dangerous('Mimetype does not match expected mimetype for this extension')
 
     def _check_mimetype(self):
         """
@@ -166,18 +166,17 @@ class File(FileBase):
                                                              strict=False)
         if expected_extensions:
             if self.has_extension and self.extension not in expected_extensions:
-                # LOG: improve this string
-                self.make_dangerous('expected extensions')
+                self.make_dangerous('Extension does not match expected extensions for this mimetype')
 
     def _check_filename(self):
         if self.filename[0] is '.':
-            # TODO: handle dotfiles?
+            # TODO: handle dotfiles here
             pass
         right_to_left_override = u"\u202E"
         if right_to_left_override in self.filename:
             self.make_dangerous('Filename contains dangerous character')
             self.dst_path = self.dst_path.replace(right_to_left_override, '')
-            # TODO: change self.filename and'filename' property?
+            # TODO: change self.filename and'filename' property? Or should those reflect the values on the source key
 
     def check(self):
         self._check_dangerous()
@@ -222,14 +221,14 @@ class File(FileBase):
         """Empty file or symlink."""
         if self.is_symlink:
             symlink_path = self.get_property('symlink')
-            self.add_description('Symlink to {}'.format(symlink_path))
+            self.add_description('File is a symlink to {}'.format(symlink_path))
         else:
-            self.add_description('Inode file')
+            self.add_description('File is an inode (empty file)')
         self.should_copy = False
 
     def unknown(self):
         """Main type should never be unknown."""
-        self.add_description('Unknown file')
+        self.add_description('Unknown mimetype')
         self.should_copy = False
 
     def example(self):
@@ -239,35 +238,33 @@ class File(FileBase):
 
     def multipart(self):
         """Used in web apps, should never be returned by libmagic"""
-        self.add_description('Multipart file')
+        self.add_description('Multipart file - usually found in web apps')
         self.should_copy = False
 
     # ##### Treated as malicious, no reason to have it on a USB key ######
     def message(self):
         """Process a message file."""
-        self.add_description('Message file')
-        self.make_dangerous('Message file')
+        self.make_dangerous('Message file - should not be found on USB key')
 
     def model(self):
         """Process a model file."""
-        self.add_description('Model file')
-        self.make_dangerous('Model file')
+        self.make_dangerous('Model file - should not be found on USB key')
 
     # ##### Files that will be converted ######
     def text(self):
         """Process an rtf, ooxml, or plaintext file."""
         for mt in Config.mimes_rtf:
             if mt in self.sub_type:
-                self.add_description('Rich Text file')
+                self.add_description('Rich Text (rtf) file')
                 # TODO: need a way to convert it to plain text
                 self.force_ext('.txt')
                 return
         for mt in Config.mimes_ooxml:
             if mt in self.sub_type:
-                self.add_description('OOXML File')
+                self.add_description('OOXML (openoffice) file')
                 self._ooxml()
                 return
-        self.add_description('Text file')
+        self.add_description('Plain text file')
         self.force_ext('.txt')
 
     def application(self):
@@ -277,103 +274,98 @@ class File(FileBase):
                 # TODO: should we change the logic so we don't iterate through all of the subtype methods?
                 # TODO: should these methods return a value?
                 method()
-                self.add_description('Application file')
                 return
-        self.add_description('Unknown Application file')
         self._unknown_app()
 
     def _executables(self):
         """Process an executable file."""
         # LOG: change the processing_type property to some other name or include in file_string
-        self.set_property('processing_type', 'executable')
-        self.make_dangerous('executable')
+        self.make_dangerous('Executable file')
 
     def _winoffice(self):
         """Process a winoffice file using olefile/oletools."""
-        # LOG: processing_type property
-        self.set_property('processing_type', 'WinOffice')
         oid = oletools.oleid.OleID(self.src_path)  # First assume a valid file
         if not olefile.isOleFile(self.src_path):
             # Manual processing, may already count as suspicious
             try:
                 ole = olefile.OleFileIO(self.src_path, raise_defects=olefile.DEFECT_INCORRECT)
             except:
-                self.make_dangerous('not parsable')
+                self.make_dangerous('Unparsable WinOffice file')
             if ole.parsing_issues:
-                self.make_dangerous('parsing issues')
+                self.make_dangerous('Parsing issues with WinOffice file')
             else:
                 if ole.exists('macros/vba') or ole.exists('Macros') \
                         or ole.exists('_VBA_PROJECT_CUR') or ole.exists('VBA'):
-                    self.make_dangerous('macro')
+                    self.make_dangerous('WinOffice file containing a macro')
         else:
             indicators = oid.check()
             # Encrypted can be set by multiple checks on the script
             if oid.encrypted.value:
-                self.make_dangerous('encrypted')
+                self.make_dangerous('Encrypted WinOffice file')
             if oid.macros.value or oid.ole.exists('macros/vba') or oid.ole.exists('Macros') \
                     or oid.ole.exists('_VBA_PROJECT_CUR') or oid.ole.exists('VBA'):
-                self.make_dangerous('macro')
+                self.make_dangerous('WinOffice file containing a macro')
             for i in indicators:
                 if i.id == 'ObjectPool' and i.value:
-                    # TODO: Is it suspicious?
+                    # TODO: is having an ObjectPool suspicious?
                     # LOG: user defined property
-                    self.set_property('objpool', True)
+                    self.add_description('WinOffice file containing an object pool')
                 elif i.id == 'flash' and i.value:
-                    self.make_dangerous('flash')
+                    self.make_dangerous('WinOffice file with embedded flash')
+        self.add_description('WinOffice file')
 
     def _ooxml(self):
         """Process an ooxml file."""
-        # LOG: processing_type property
-        self.set_property('processing_type', 'ooxml')
         try:
             doc = officedissector.doc.Document(self.src_path)
         except Exception:
-            self.make_dangerous('invalid ooxml file')
+            self.make_dangerous('Invalid ooxml file')
             return
         # There are probably other potentially malicious features:
         # fonts, custom props, custom XML
         if doc.is_macro_enabled or len(doc.features.macros) > 0:
-            self.make_dangerous('macro')
+            self.make_dangerous('Ooxml file containing macro')
         if len(doc.features.embedded_controls) > 0:
-            self.make_dangerous('activex')
+            self.make_dangerous('Ooxml file with activex')
         if len(doc.features.embedded_objects) > 0:
             # Exploited by CVE-2014-4114 (OLE)
-            self.make_dangerous('embedded obj')
+            self.make_dangerous('Ooxml file with embedded objects')
         if len(doc.features.embedded_packages) > 0:
-            self.make_dangerous('embedded pack')
+            self.make_dangerous('Ooxml file with embedded packages')
 
     def _libreoffice(self):
         """Process a libreoffice file."""
-        self.set_property('processing_type', 'libreoffice')
         # As long as there is no way to do a sanity check on the files => dangerous
         try:
             lodoc = zipfile.ZipFile(self.src_path, 'r')
         except:
-            # TODO: are there specific exceptions we should catch here? Or is anything ok
-            self.make_dangerous('invalid libreoffice file')
+            # TODO: are there specific exceptions we should catch here? Or should it be everything
+            self.make_dangerous('Invalid libreoffice file')
         for f in lodoc.infolist():
             fname = f.filename.lower()
             if fname.startswith('script') or fname.startswith('basic') or \
                     fname.startswith('object') or fname.endswith('.bin'):
-                self.make_dangerous('macro')
+                self.make_dangerous('Libreoffice file containing executable code')
+        if not self.is_dangerous:
+            self.add_description('Libreoffice file')
 
     def _pdf(self):
         """Process a PDF file."""
-        # LOG: processing_type property
-        self.set_property('processing_type', 'pdf')
         xmlDoc = PDFiD(self.src_path)
         oPDFiD = cPDFiD(xmlDoc, True)
-        # TODO: are there other characteristics which should be dangerous?
+        # TODO: are there other pdf characteristics which should be dangerous?
         if oPDFiD.encrypt.count > 0:
-            self.make_dangerous('encrypted pdf')
+            self.make_dangerous('Encrypted pdf')
         if oPDFiD.js.count > 0 or oPDFiD.javascript.count > 0:
-            self.make_dangerous('pdf with javascript')
+            self.make_dangerous('Pdf with embedded javascript')
         if oPDFiD.aa.count > 0 or oPDFiD.openaction.count > 0:
-            self.make_dangerous('openaction')
+            self.make_dangerous('Pdf with openaction(s)')
         if oPDFiD.richmedia.count > 0:
-            self.make_dangerous('flash')
+            self.make_dangerous('Pdf containing flash')
         if oPDFiD.launch.count > 0:
-            self.make_dangerous('launch')
+            self.make_dangerous('Pdf with launch action(s)')
+        if not self.is_dangerous:
+            self.add_description('Pdf file')
 
     def _archive(self):
         """
@@ -383,24 +375,26 @@ class File(FileBase):
         is called on that directory. The recursive archive depth is increased
         to protect against archive bombs.
         """
-        # LOG: change this to something archive specific
-        self.set_property('processing_type', 'archive')
+        # TODO: change this to something archive type specific instead of generic 'Archive'
+        self.add_description('Archive')
         self.should_copy = False
         self.is_recursive = True
 
     def _unknown_app(self):
         """Process an unknown file."""
+        self.add_description('Unknown application file')
         self.make_unknown()
 
     def _binary_app(self):
         """Process an unknown binary file."""
+        self.add_description('Unknown binary file')
         self.make_binary()
 
     #######################
     # Metadata extractors
     def _metadata_exif(self, metadata_file_path):
         """Read exif metadata from a jpg or tiff file using exifread."""
-        # TODO: this method is kind of long, can we shorten it somehow?
+        # TODO: can we shorten this method somehow?
         img = open(self.src_path, 'rb')
         tags = None
         try:
@@ -424,7 +418,7 @@ class File(FileBase):
                     tag_string = str(tag_value)
                 with open(metadata_file_path, 'w+') as metadata_file:
                     metadata_file.write("Key: {}\tValue: {}\n".format(tag, tag_string))
-        # LOG: how do we want to log metadata?
+        # TODO: how do we want to log metadata?
         self.set_property('metadata', 'exif')
         img.close()
         return True
@@ -461,17 +455,17 @@ class File(FileBase):
     # ##### Media - audio and video aren't converted ######
     def audio(self):
         """Process an audio file."""
-        self.log_string += 'Audio file'
+        self.add_description('Audio file')
         self._media_processing()
 
     def video(self):
         """Process a video."""
-        self.log_string += 'Video file'
+        self.add_description('Video file')
         self._media_processing()
 
     def _media_processing(self):
         """Generic way to process all media files."""
-        self.set_property('processing_type', 'media')
+        self.add_description('Media file')
 
     def image(self):
         """
