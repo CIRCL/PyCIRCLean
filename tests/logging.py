@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 
 def save_logs(groomer, test_description):
@@ -6,6 +7,9 @@ def save_logs(groomer, test_description):
     test_log_path = 'tests/test_logs/{}.log'.format(test_description)
     with open(test_log_path, 'w+') as test_log:
         test_log.write(divider.format('TEST LOG'))
+        test_log.write(str(datetime.now().time()) + '\n')
+        test_log.write(test_description + '\n')
+        test_log.write('-' * 20 + '\n')
         with open(groomer.logger.log_path, 'r') as logfile:
             log = logfile.read()
             test_log.write(log)
