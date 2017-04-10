@@ -576,12 +576,12 @@ class GroomerLogger(object):
         return path_depth
 
     def _write_line_to_log(self, line, indentation_depth):
-        # TODO: should we use fsencode and fsdecode here instead of just bytestrings?
         padding = b'   '
         padding += b'|  ' * indentation_depth
+        line_bytes = os.fsencode(line)
         with open(self.log_path, mode='ab') as lf:
             lf.write(padding)
-            lf.write(bytes(line, encoding='utf-8'))
+            lf.write(line_bytes)
             lf.write(b'\n')
 
 
