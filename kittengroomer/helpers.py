@@ -14,7 +14,6 @@ import shutil
 import argparse
 
 import magic
-# import twiggy
 
 
 class KittenGroomerError(Exception):
@@ -286,52 +285,11 @@ class FileBase(object):
         return ext
 
 
-class GroomerLogger(object):
-    """Groomer logging interface."""
+class Logging(object):
 
-    def __init__(self, root_dir_path, debug=False):
-        self._root_dir_path = root_dir_path
-        self._log_dir_path = self._make_log_dir(root_dir_path)
-        # LOG: rename logfile to something more descriptive
-        self.log_path = os.path.join(self._log_dir_path, 'log.txt')
-        # twiggy.quick_setup(file=self.log_processing)
-        # self.log = twiggy.log.name('files')
-        if debug:
-            self.log_debug_err = os.path.join(self._log_dir_path, 'debug_stderr.log')
-            self.log_debug_out = os.path.join(self._log_dir_path, 'debug_stdout.log')
-        else:
-            self.log_debug_err = os.devnull
-            self.log_debug_out = os.devnull
-
-    def _make_log_dir(self, root_dir_path):
-        log_dir_path = os.path.join(root_dir_path, 'logs')
-        if os.path.exists(log_dir_path):
-            shutil.rmtree(log_dir_path)
-        os.makedirs(log_dir_path)
-        return log_dir_path
-
-    def tree(self, base_dir, padding='   '):
-        """Write a graphical tree to the log for `base_dir`."""
-        horizontal_divider = '#' * 80 + '\n'
-        with open(self.log_path, mode='a', encoding='utf-8') as lf:
-            lf.write(horizontal_divider)
-            base_dir_name = os.path.basename(os.path.abspath(base_dir))
-            lf.write('{}+- {}/\n'.format(padding, base_dir_name))
-            padding += '|  '
-            # TODO: make sure this gets all sub directories and use scandir()
-            files = sorted(os.listdir(base_dir))
-            for f in files:
-                curpath = os.path.join(base_dir, f)
-                if os.path.islink(curpath):
-                    lf.write('{}+-- {}\t- Symbolic link to {}\n'.format(padding, f, os.readlink(curpath)))
-                elif os.path.isdir(curpath):
-                    self.tree(curpath, padding)
-                elif os.path.isfile(curpath):
-                    lf.write('{}+-- {}\t- {}\n'.format(padding, f, self._computehash(curpath)))
-            lf.write(horizontal_divider)
-
-    def _computehash(self, path):
-        """Return a sha256 hash of a file at a given path."""
+    @staticmethod
+    def computehash(path):
+        """Return the sha256 hash of a file at a given path."""
         s = hashlib.sha256()
         with open(path, 'rb') as f:
             while True:
@@ -340,23 +298,6 @@ class GroomerLogger(object):
                     break
                 s.update(buf)
         return s.hexdigest()
-
-    def _write_file_to_disk(self, file_string):
-        with open(self.log_path, mode='a', encoding='utf-8') as lf:
-            lf.write(file_string)
-
-    def add_file(self, file_props):
-        """Add a file to the log. Takes a dict of file properties."""
-        props = file_props
-        description_string = ', '.join(props['description_string'])
-        file_string = "  *  {}: {}/{}, {}: {}\n".format(
-            props['filename'],
-            props['maintype'],
-            props['subtype'],
-            props['safety_category'],
-            description_string
-        )
-        self._write_file_to_disk(file_string)
 
 
 class KittenGroomerBase(object):

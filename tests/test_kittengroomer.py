@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from kittengroomer import FileBase, KittenGroomerBase, GroomerLogger
+from kittengroomer import FileBase, KittenGroomerBase
 
 skip = pytest.mark.skip
 xfail = pytest.mark.xfail
@@ -216,12 +216,7 @@ class TestFileBase:
 
 class TestLogger:
 
-    @fixture
-    def generic_logger(self, tmpdir):
-        return GroomerLogger(tmpdir.strpath)
-
-    def test_tree(self, generic_logger, tmpdir):
-        generic_logger.tree(tmpdir.strpath)
+    pass
 
 
 class TestKittenGroomerBase:

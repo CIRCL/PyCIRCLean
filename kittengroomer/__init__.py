@@ -1,4 +1,4 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .helpers import FileBase, KittenGroomerBase, GroomerLogger, main
+from .helpers import FileBase, KittenGroomerBase, Logging, main
