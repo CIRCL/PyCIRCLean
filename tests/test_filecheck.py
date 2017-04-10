@@ -13,50 +13,42 @@ try:
 except ImportError:
     NODEPS = True
 
+fixture = pytest.fixture
+skip = pytest.mark.skip
 skipif_nodeps = pytest.mark.skipif(NODEPS,
                                    reason="Dependencies aren't installed")
 
 
 @skipif_nodeps
-class TestIntegration:
+class TestSystem:
 
-    @pytest.fixture
-    def src_valid_path(self):
-        return os.path.join(os.getcwd(), 'tests/src_valid')
+    @fixture
+    def valid_groomer(self):
+        src_path = os.path.join(os.getcwd(), 'tests/src_valid')
+        dst_path = self.make_dst_dir_path(src_path)
+        return KittenGroomerFileCheck(src_path, dst_path, debug=True)
 
-    @pytest.fixture
-    def src_invalid_path(self):
-        return os.path.join(os.getcwd(), 'tests/src_invalid')
-
-    @pytest.fixture
-    def dst(self):
-        return os.path.join(os.getcwd(), 'tests/dst')
-
-    def test_filecheck_src_invalid(self, src_invalid_path):
-        dst_path = self.make_dst_dir_path(src_invalid_path)
-        groomer = KittenGroomerFileCheck(src_invalid_path, dst_path, debug=True)
-        groomer.run()
-        test_description = "filecheck_invalid"
-        save_logs(groomer, test_description)
-
-    def test_filecheck_2(self, src_valid_path):
-        dst_path = self.make_dst_dir_path(src_valid_path)
-        groomer = KittenGroomerFileCheck(src_valid_path, dst_path, debug=True)
-        groomer.run()
-        test_description = "filecheck_valid"
-        save_logs(groomer, test_description)
-
-    def test_processdir(self):
-        pass
-
-    def test_handle_archives(self):
-        pass
+    @fixture
+    def invalid_groomer(self):
+        src_path = os.path.join(os.getcwd(), 'tests/src_invalid')
+        dst_path = self.make_dst_dir_path(src_path)
+        return KittenGroomerFileCheck(src_path, dst_path, debug=True)
 
     def make_dst_dir_path(self, src_dir_path):
         dst_path = src_dir_path + '_dst'
         shutil.rmtree(dst_path, ignore_errors=True)
         os.makedirs(dst_path, exist_ok=True)
         return dst_path
+
+    def test_filecheck_src_valid(self, valid_groomer):
+        valid_groomer.run()
+        test_description = "filecheck_valid"
+        save_logs(valid_groomer, test_description)
+
+    def test_filecheck_src_invalid(self, invalid_groomer):
+        invalid_groomer.run()
+        test_description = "filecheck_invalid"
+        save_logs(invalid_groomer, test_description)
 
 
 class TestFileHandling:
