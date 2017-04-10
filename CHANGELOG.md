@@ -1,6 +1,15 @@
 Changelog
 =========
 
+2.2.0 (in progress)
+---
+New features:
+-
+
+Fixes:
+-
+
+
 2.1.0
 ---
 

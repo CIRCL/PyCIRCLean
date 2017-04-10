@@ -23,5 +23,5 @@ setup(
         'Topic :: Communications :: File Sharing',
         'Topic :: Security',
     ],
-    install_requires=['twiggy', 'python-magic'],
+    install_requires=['python-magic'],
 )
