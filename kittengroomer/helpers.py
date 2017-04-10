@@ -303,8 +303,8 @@ class KittenGroomerBase(object):
 
     def __init__(self, src_root_path, dst_root_path):
         """Initialized with path to source and dest directories."""
-        self.src_root_path = src_root_path
-        self.dst_root_path = dst_root_path
+        self.src_root_path = os.path.abspath(src_root_path)
+        self.dst_root_path = os.path.abspath(dst_root_path)
 
     def safe_rmtree(self, directory_path):
         """Remove a directory tree if it exists."""
