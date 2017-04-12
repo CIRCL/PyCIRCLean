@@ -10,16 +10,16 @@ def save_logs(groomer, test_description):
         test_log.write(str(datetime.now().time()) + '\n')
         test_log.write(test_description + '\n')
         test_log.write('-' * 20 + '\n')
-        with open(groomer.logger.log_path, 'r') as logfile:
+        with open(groomer.logger.log_path, 'rb') as logfile:
             log = logfile.read()
             test_log.write(log)
         if os.path.exists(groomer.logger.log_debug_err):
             test_log.write(divider.format('ERR LOG'))
-            with open(groomer.logger.log_debug_err, 'r') as debug_err:
+            with open(groomer.logger.log_debug_err, 'rb') as debug_err:
                 err = debug_err.read()
                 test_log.write(err)
         if os.path.exists(groomer.logger.log_debug_out):
             test_log.write(divider.format('OUT LOG'))
-            with open(groomer.logger.log_debug_out, 'r') as debug_out:
+            with open(groomer.logger.log_debug_out, 'rb') as debug_out:
                 out = debug_out.read()
                 test_log.write(out)
