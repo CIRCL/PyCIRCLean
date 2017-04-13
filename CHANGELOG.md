@@ -1,6 +1,19 @@
 Changelog
 =========
 
+2.2.0 (in progress)
+---
+New features:
+- Filecheck.py configuration information is now conveniently held in a Config
+object instead of in globals
+- New easier to read text-based logger (removed twiggy dependency)
+- Various filetypes in filecheck.py now have improved descriptions for log
+- Improved the interface for adding file descriptions to files
+
+Fixes:
+-
+
+
 2.1.0
 ---
 

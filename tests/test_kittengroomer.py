@@ -5,8 +5,7 @@ import os
 
 import pytest
 
-from kittengroomer import FileBase, KittenGroomerBase, GroomerLogger
-from kittengroomer.helpers import ImplementationRequired
+from kittengroomer import FileBase, KittenGroomerBase
 
 skip = pytest.mark.skip
 xfail = pytest.mark.xfail
@@ -190,7 +189,6 @@ class TestFileBase:
         assert os.path.splitext(generic_conf_file.dst_path)[1] == '.conf'
         generic_conf_file.force_ext('.txt')
         assert os.path.splitext(generic_conf_file.dst_path)[1] == '.txt'
-        assert generic_conf_file.get_property('force_ext') is True
         assert generic_conf_file.get_property('extension') == '.txt'
         # should be able to handle weird paths
 
@@ -203,7 +201,6 @@ class TestFileBase:
         # shouldn't change a file's extension if it already is right
 
     def test_create_metadata_file(self, temp_file):
-        # Try making a metadata file
         metadata_file_path = temp_file.create_metadata_file('.metadata.txt')
         with open(metadata_file_path, 'w+') as metadata_file:
             metadata_file.write('Have some metadata!')
@@ -219,12 +216,7 @@ class TestFileBase:
 
 class TestLogger:
 
-    @fixture
-    def generic_logger(self, tmpdir):
-        return GroomerLogger(tmpdir.strpath)
-
-    def test_tree(self, generic_logger):
-        generic_logger.tree(generic_logger.root_dir)
+    pass
 
 
 class TestKittenGroomerBase:
@@ -245,10 +237,7 @@ class TestKittenGroomerBase:
         assert generic_groomer
 
     def test_instantiation(self, source_directory, dest_directory):
-        groomer = KittenGroomerBase(source_directory, dest_directory)
-        debug_groomer = KittenGroomerBase(source_directory,
-                                          dest_directory,
-                                          debug=True)
+        KittenGroomerBase(source_directory, dest_directory)
 
     def test_list_all_files(self, tmpdir):
         file = tmpdir.join('test.txt')
@@ -256,6 +245,6 @@ class TestKittenGroomerBase:
         testdir = tmpdir.join('testdir')
         os.mkdir(testdir.strpath)
         simple_groomer = KittenGroomerBase(tmpdir.strpath, tmpdir.strpath)
-        files = simple_groomer.list_all_files(simple_groomer.src_root_dir)
+        files = simple_groomer.list_all_files(simple_groomer.src_root_path)
         assert file.strpath in files
         assert testdir.strpath not in files
