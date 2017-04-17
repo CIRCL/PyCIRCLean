@@ -589,8 +589,11 @@ class GroomerLogger(object):
             st=file_props['subtype'],
             desc=description_category,
             desc_str=description_string,
-            # errs=''  # TODO: add errors in human readable form here
         )
+        # TODO: work in progress, finish adding Errors and check that they appear properly
+        # if file_props['errors']:
+        #     error_string = ', '.join([str(key) for key in file_props['errors']])
+        #     file_string.append(' Errors: ' + error_string)
         if in_tempdir:
             depth -= 1
         self._write_line_to_log(file_string, depth)
