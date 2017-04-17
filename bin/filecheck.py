@@ -122,7 +122,7 @@ class File(FileBase):
 
     def __init__(self, src_path, dst_path, logger):
         super(File, self).__init__(src_path, dst_path)
-        self.is_recursive = False
+        self.is_archive = False
         self.logger = logger
         self.tempdir_path = self.dst_path + '_temp'
 
@@ -229,7 +229,7 @@ class File(FileBase):
 
     def write_log(self):
         props = self.get_all_props()
-        if not self.is_recursive:
+        if not self.is_archive:
             if os.path.exists(self.tempdir_path):
                 # Hack to make images appear at the correct tree depth in log
                 self.logger.add_file(self.src_path, props, in_tempdir=True)
@@ -423,7 +423,7 @@ class File(FileBase):
         # TODO: change this to something archive type specific instead of generic 'Archive'
         self.add_description('Archive')
         self.should_copy = False
-        self.is_recursive = True
+        self.is_archive = True
 
     def _unknown_app(self):
         """Process an unknown file."""
@@ -654,8 +654,8 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         if file.should_copy:
             file.safe_copy()
             file.set_property('copied', True)
-        file.write_log()
-        if file.is_recursive:
+            file.write_log()
+        if file.is_archive:
             self.process_archive(file)
         # TODO: Can probably handle cleaning up the tempdir better
         if hasattr(file, 'tempdir_path'):
@@ -700,7 +700,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             full_path = os.path.join(root_dir_path, path)
             if os.path.isdir(full_path):
                 queue.append(full_path)
-                queue += self.list_files_dirs(full_path)  # if path is a dir, recurse through its contents
+                queue += self.list_files_dirs(full_path)
             elif os.path.isfile(full_path):
                 queue.append(full_path)
         return queue
