@@ -119,6 +119,12 @@ class Config:
 
 
 class File(FileBase):
+    """
+    Main file object
+
+    Created for each file that is processed by KittenGroomer. Contains all
+    filetype-specific processing methods.
+    """
 
     def __init__(self, src_path, dst_path, logger):
         super(File, self).__init__(src_path, dst_path)
@@ -204,6 +210,12 @@ class File(FileBase):
                 self.make_dangerous('Extension does not match expected extensions for this mimetype')
 
     def _check_filename(self):
+        """
+        Verify the filename
+
+        If the filename contains any dangerous or specific characters, handle
+        them appropriately.
+        """
         if self.filename[0] is '.':
             # TODO: handle dotfiles here
             pass
@@ -214,6 +226,11 @@ class File(FileBase):
             # TODO: change self.filename and'filename' property? Or should those reflect the values on the source key
 
     def check(self):
+        """
+        Main file processing method
+
+        Delegates to various helper methods including filetype-specific checks.
+        """
         if self.main_type in Config.ignored_mimes:
             self.should_copy = False
             self.mime_processing_options.get(self.main_type, self.unknown)()
@@ -228,6 +245,7 @@ class File(FileBase):
                 self.mime_processing_options.get(self.main_type, self.unknown)()
 
     def write_log(self):
+        """Pass information about the file to self.logger"""
         props = self.get_all_props()
         if not self.is_archive:
             if os.path.exists(self.tempdir_path):
@@ -557,7 +575,7 @@ class GroomerLogger(object):
             self.log_debug_out = os.devnull
 
     def _make_log_dir(self, root_dir_path):
-        """Make the directory in the dest dir that will hold the logs"""
+        """Create the directory in the dest dir that will hold the logs"""
         log_dir_path = os.path.join(root_dir_path, 'logs')
         if os.path.exists(log_dir_path):
             shutil.rmtree(log_dir_path)
@@ -565,6 +583,7 @@ class GroomerLogger(object):
         return log_dir_path
 
     def _add_root_dir(self, root_path):
+        """Add the root directory to the log"""
         dirname = os.path.split(root_path)[1] + '/'
         with open(self.log_path, mode='ab') as lf:
             lf.write(bytes(dirname, 'utf-8'))
@@ -599,12 +618,14 @@ class GroomerLogger(object):
         self._write_line_to_log(file_string, depth)
 
     def add_dir(self, dir_path):
+        """Add a directory to the log"""
         path_depth = self._get_path_depth(dir_path)
         dirname = os.path.split(dir_path)[1] + '/'
         log_line = '+- ' + dirname
         self._write_line_to_log(log_line, path_depth)
 
     def _format_file_size(self, size):
+        """Returns a string with the file size and appropriate unit"""
         file_size = size
         for unit in ('B', 'KB', 'MB', 'GB'):
             if file_size < 1024:
@@ -614,6 +635,7 @@ class GroomerLogger(object):
         return str(int(file_size)) + 'GB'
 
     def _get_path_depth(self, path):
+        """Returns the relative path depth compared to root directory"""
         if self._dst_root_path in path:
             base_path = self._dst_root_path
         elif self._src_root_path in path:
@@ -623,6 +645,11 @@ class GroomerLogger(object):
         return path_depth
 
     def _write_line_to_log(self, line, indentation_depth):
+        """
+        Write a line to the log
+
+        Pad the line according to the `indentation_depth`.
+        """
         padding = b'   '
         padding += b'|  ' * indentation_depth
         line_bytes = os.fsencode(line)
@@ -703,6 +730,11 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         return True
 
     def list_files_dirs(self, root_dir_path):
+        """
+        Returns a list of all files and directories
+
+        Performs a depth-first traversal of the file tree.
+        """
         queue = []
         for path in sorted(os.listdir(root_dir_path), key=lambda x: str.lower(x)):
             full_path = os.path.join(root_dir_path, path)
