@@ -572,26 +572,22 @@ class GroomerLogger(object):
 
     def add_file(self, file_path, file_props, in_tempdir=False):
         """Add a file to the log. Takes a dict of file properties."""
-        # TODO: fix var names in this method
-        # TODO: handle symlinks better: symlink_string = '{}+-- {}\t- Symbolic link to {}\n'.format(padding, f, os.readlink(curpath))
-        props = file_props
         depth = self._get_path_depth(file_path)
-        description_string = ', '.join(props['description_string'])
+        description_string = ', '.join(file_props['description_string'])
         file_hash = Logging.computehash(file_path)[:6]
-        if props['safety_category'] is None:
-            descr_cat = "Normal"
+        if file_props['safety_category'] is None:
+            description_category = "Normal"
         else:
-            descr_cat = props['safety_category'].capitalize()
-        # TODO: make size adjust to MB/GB for large files
-        size = str(props['file_size']) + 'B'
-        file_template = "+- {name} ({sha_hash}): {size}, {mt}/{st}. {desc}: {desc_str}"
+            description_category = file_props['safety_category'].capitalize()
+        size_string = self._format_file_size(file_props['file_size'])
+        file_template = "+- {name} ({sha_hash}): {size}, type: {mt}/{st}. {desc}: {desc_str}"
         file_string = file_template.format(
-            name=props['filename'],
+            name=file_props['filename'],
             sha_hash=file_hash,
-            size=size,
-            mt=props['maintype'],
-            st=props['subtype'],
-            desc=descr_cat,
+            size=size_string,
+            mt=file_props['maintype'],
+            st=file_props['subtype'],
+            desc=description_category,
             desc_str=description_string,
             # errs=''  # TODO: add errors in human readable form here
         )
@@ -604,6 +600,15 @@ class GroomerLogger(object):
         dirname = os.path.split(dir_path)[1] + '/'
         log_line = '+- ' + dirname
         self._write_line_to_log(log_line, path_depth)
+
+    def _format_file_size(self, size):
+        file_size = size
+        for unit in ('B', 'KB', 'MB', 'GB'):
+            if file_size < 1024:
+                return str(int(file_size)) + unit
+            else:
+                file_size = file_size / 1024
+        return str(int(file_size)) + 'GB'
 
     def _get_path_depth(self, path):
         if self._dst_root_path in path:
