@@ -223,7 +223,8 @@ class File(FileBase):
         if right_to_left_override in self.filename:
             self.make_dangerous('Filename contains dangerous character')
             self.dst_path = self.dst_path.replace(right_to_left_override, '')
-            # TODO: change self.filename and'filename' property? Or should those reflect the values on the source key
+            self.filename = self.filename.replace(right_to_left_override, '')
+            self.set_property('filename', self.filename)
 
     def check(self):
         """
