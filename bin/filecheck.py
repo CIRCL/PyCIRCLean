@@ -14,8 +14,6 @@ import officedissector
 import warnings
 import exifread
 from PIL import Image
-# TODO: why do we have this import? How does filecheck handle pngs?
-# from PIL import PngImagePlugin
 from pdfid import PDFiD, cPDFiD
 
 from kittengroomer import FileBase, KittenGroomerBase, Logging
