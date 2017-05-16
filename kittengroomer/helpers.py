@@ -331,13 +331,11 @@ class KittenGroomerBase(object):
 
     #######################
 
-    # TODO: if we move main() we can get rid of this as well
     def processdir(self, src_dir, dst_dir):
         """Implement this function to define file processing behavior."""
         raise ImplementationRequired('Please implement processdir.')
 
 
-# TODO: Should this get moved to filecheck? It isn't really API code and somebody can implement it themselves
 def main(kg_implementation, description='Call a KittenGroomer implementation to process files present in the source directory and copy them to the destination directory.'):
     parser = argparse.ArgumentParser(prog='KittenGroomer', description=description)
     parser.add_argument('-s', '--source', type=str, help='Source directory')
