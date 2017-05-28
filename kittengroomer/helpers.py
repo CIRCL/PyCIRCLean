@@ -162,7 +162,7 @@ class FileBase(object):
         Otherwise, add `prop_string`: `value` to `user_defined` properties.
         """
         if prop_string is 'description_string':
-            if prop_string not in self._file_props['description_string']:
+            if value not in self._file_props['description_string']:
                 self._file_props['description_string'].append(value)
         elif prop_string in self._file_props.keys():
             self._file_props[prop_string] = value
