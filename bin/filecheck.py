@@ -370,6 +370,8 @@ class File(FileBase):
             self.make_dangerous('Pdf containing flash')
         if oPDFiD.launch.count > 0:
             self.make_dangerous('Pdf with launch action(s)')
+        if oPDFiD.xfa.count > 0:
+            self.make_dangerous('Pdf with XFA structures')
         if not self.is_dangerous:
             self.add_description('Pdf file')
 
