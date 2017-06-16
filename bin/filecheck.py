@@ -84,6 +84,8 @@ class Config:
     # It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
     override_ext = {'.gz': 'application/gzip'}
 
+    ignored_mimes = ['inode', 'model', 'multipart', 'example']
+
 
 class File(FileBase):
 
@@ -181,14 +183,18 @@ class File(FileBase):
             # TODO: change self.filename and'filename' property? Or should those reflect the values on the source key
 
     def check(self):
-        self._check_dangerous()
-        self._check_filename()
-        if self.has_extension:
-            self._check_extension()
-        if self.has_mimetype:
-            self._check_mimetype()
-        if not self.is_dangerous:
+        if self.main_type in Config.ignored_mimes:
+            self.should_copy = False
             self.mime_processing_options.get(self.main_type, self.unknown)()
+        else:
+            self._check_dangerous()
+            self._check_filename()
+            if self.has_extension:
+                self._check_extension()
+            if self.has_mimetype:
+                self._check_mimetype()
+            if not self.is_dangerous:
+                self.mime_processing_options.get(self.main_type, self.unknown)()
 
     def write_log(self):
         props = self.get_all_props()
@@ -230,22 +236,18 @@ class File(FileBase):
             self.add_description('File is a symlink to {}'.format(symlink_path))
         else:
             self.add_description('File is an inode (empty file)')
-        self.should_copy = False
 
     def unknown(self):
         """Main type should never be unknown."""
         self.add_description('Unknown mimetype')
-        self.should_copy = False
 
     def example(self):
         """Used in examples, should never be returned by libmagic."""
         self.add_description('Example file')
-        self.should_copy = False
 
     def multipart(self):
         """Used in web apps, should never be returned by libmagic"""
         self.add_description('Multipart file - usually found in web apps')
-        self.should_copy = False
 
     # ##### Treated as malicious, no reason to have it on a USB key ######
     def message(self):
@@ -338,6 +340,8 @@ class File(FileBase):
             self.make_dangerous('Ooxml file with embedded objects')
         if len(doc.features.embedded_packages) > 0:
             self.make_dangerous('Ooxml file with embedded packages')
+        if not self.is_dangerous:
+            self.add_description('OOXML file')
 
     def _libreoffice(self):
         """Process a libreoffice file."""
@@ -617,7 +621,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         if file.should_copy:
             file.safe_copy()
             file.set_property('copied', True)
-            file.write_log()
+        file.write_log()
         if file.is_recursive:
             self.process_archive(file)
         # TODO: Can probably handle cleaning up the tempdir better
