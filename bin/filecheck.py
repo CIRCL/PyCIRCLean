@@ -407,6 +407,8 @@ class File(FileBase):
             self.make_dangerous('Pdf with launch action(s)')
         if oPDFiD.xfa.count > 0:
             self.make_dangerous('Pdf with XFA structures')
+        if oPDFiD.objstm.count > 0:
+            self.make_dangerous('Pdf with ObjectStream structures')
         if not self.is_dangerous:
             self.add_description('Pdf file')
 
