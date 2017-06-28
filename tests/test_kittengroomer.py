@@ -13,12 +13,12 @@ fixture = pytest.fixture
 
 
 # FileBase
-
+@xfail
 class TestFileBase:
 
     @fixture
     def source_file(self):
-        return 'tests/src_valid/blah.conf'
+        return 'tests/normal/blah.conf'
 
     @fixture
     def dest_file(self):
@@ -214,16 +214,11 @@ class TestFileBase:
         # check that safe copy can handle weird file path inputs
 
 
-class TestLogger:
-
-    pass
-
-
 class TestKittenGroomerBase:
 
     @fixture
     def source_directory(self):
-        return 'tests/src_invalid'
+        return 'tests/dangerous'
 
     @fixture
     def dest_directory(self):

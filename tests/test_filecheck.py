@@ -24,13 +24,13 @@ class TestSystem:
 
     @fixture
     def valid_groomer(self):
-        src_path = os.path.join(os.getcwd(), 'tests/src_valid')
+        src_path = os.path.join(os.getcwd(), 'tests/normal')
         dst_path = self.make_dst_dir_path(src_path)
         return KittenGroomerFileCheck(src_path, dst_path, debug=True)
 
     @fixture
     def invalid_groomer(self):
-        src_path = os.path.join(os.getcwd(), 'tests/src_invalid')
+        src_path = os.path.join(os.getcwd(), 'tests/dangerous')
         dst_path = self.make_dst_dir_path(src_path)
         return KittenGroomerFileCheck(src_path, dst_path, debug=True)
 
