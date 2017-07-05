@@ -26,3 +26,13 @@ def save_logs(groomer, test_description):
             with open(groomer.logger.log_debug_out, 'rb') as debug_out:
                 out = debug_out.read()
                 test_log.write(out)
+
+
+class SampleFile():
+    def __init__(self, path, expect_dangerous):
+        self.path = path
+        self.expect_dangerous = expect_dangerous
+
+    def parse_expect(self, expect_path):
+        # parse expect here, add to own params
+        pass
