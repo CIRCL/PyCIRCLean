@@ -1,5 +1,8 @@
 import os
+
 from datetime import datetime
+
+import yaml
 
 
 def save_logs(groomer, test_description):
@@ -33,6 +36,17 @@ class SampleFile():
         self.path = path
         self.expect_dangerous = expect_dangerous
 
-    def parse_expect(self, expect_path):
-        # parse expect here, add to own params
-        pass
+    @property
+    def expect_path(self):
+        return self.path + '.expect'
+
+    @property
+    def has_expect_file(self):
+        return os.path.isfile(self.expect_path)
+
+    def parse_expect(self):
+        with open(self.expect_path, 'r') as expect_file:
+            self.expect_dict = yaml.safe_load(expect_file)
+        self.expect_dangerous = self.expect_dict['expect_dangerous']
+        self.groomer_needed = self.expect_dict['groomer_needed']
+        self.expected_mimetype = self.expect_dict['expected_mimetype']
