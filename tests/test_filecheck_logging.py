@@ -1,8 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
+import datetime
 
-from datetime import datetime
-
-import yaml
+import pytest
 
 
 def save_logs(groomer, test_description):
@@ -29,24 +31,3 @@ def save_logs(groomer, test_description):
             with open(groomer.logger.log_debug_out, 'rb') as debug_out:
                 out = debug_out.read()
                 test_log.write(out)
-
-
-class SampleFile():
-    def __init__(self, path, expect_dangerous):
-        self.path = path
-        self.expect_dangerous = expect_dangerous
-
-    @property
-    def expect_path(self):
-        return self.path + '.expect'
-
-    @property
-    def has_expect_file(self):
-        return os.path.isfile(self.expect_path)
-
-    def parse_expect(self):
-        with open(self.expect_path, 'r') as expect_file:
-            self.expect_dict = yaml.safe_load(expect_file)
-        self.expect_dangerous = self.expect_dict['expect_dangerous']
-        self.groomer_needed = self.expect_dict['groomer_needed']
-        self.expected_mimetype = self.expect_dict['expected_mimetype']

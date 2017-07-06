@@ -4,23 +4,46 @@
 import os
 
 import pytest
+import yaml
 
-from tests.utils import SampleFile
 try:
     from bin.filecheck import KittenGroomerFileCheck, File, GroomerLogger
     NODEPS = False
 except ImportError:
     NODEPS = True
+pytestmark = pytest.mark.skipif(NODEPS, reason="Dependencies aren't installed")
 
 
 fixture = pytest.fixture
 skip = pytest.mark.skip
 parametrize = pytest.mark.parametrize
-pytestmark = pytest.mark.skipif(NODEPS, reason="Dependencies aren't installed")
 
 
 NORMAL_FILES_PATH = 'tests/normal/'
 DANGEROUS_FILES_PATH = 'tests/dangerous/'
+CATALOG_PATH = 'tests/file_catalog.yaml'
+
+
+class SampleFile():
+    def __init__(self, path, expect_dangerous):
+        self.path = path
+        self.expect_dangerous = expect_dangerous
+        self.filename = os.path.basename(self.path)
+
+    @property
+    def expect_path(self):
+        return self.path + '.expect'
+
+    @property
+    def has_expect_file(self):
+        return os.path.isfile(self.expect_path)
+
+    def parse_expect(self):
+        with open(self.expect_path, 'r') as expect_file:
+            self.expect_dict = yaml.safe_load(expect_file)
+        self.expect_dangerous = self.expect_dict['expect_dangerous']
+        self.groomer_needed = self.expect_dict['groomer_needed']
+        self.expected_mimetype = self.expect_dict['expected_mimetype']
 
 
 def gather_sample_files():
@@ -45,17 +68,11 @@ def list_files(dir_path):
 
 def construct_sample_files(file_paths, expect_dangerous):
     """Construct a list of a sample files from list `file_paths`."""
-    complex_exts = {'.gif', '.jpg', '.png', '.svg', '.rar', '.zip'}
     files = []
     for path in file_paths:
         newfile = SampleFile(path, expect_dangerous)
         if newfile.has_expect_file:
             newfile.parse_expect()
-        _, extension = os.path.splitext(path)
-        if extension in complex_exts:
-            newfile.groomer_needed = True
-        else:
-            newfile.groomer_needed = False
         files.append(newfile)
     return files
 
@@ -64,33 +81,30 @@ def get_filename(sample_file):
     return os.path.basename(sample_file.path)
 
 
+@fixture(scope='session')
+def dest_dir_path(tmpdir_factory):
+    return tmpdir_factory.mktemp('dest').strpath
+
+
+@fixture
+def groomer(dest_dir_path):
+    dummy_src_path = os.getcwd()
+    return KittenGroomerFileCheck(dummy_src_path, dest_dir_path, debug=True)
+
+
+@fixture
+def logger(dest_dir_path):
+    return GroomerLogger()
+
+
 @parametrize(
     argnames="sample_file",
     argvalues=gather_sample_files(),
     ids=get_filename)
-def test_sample_files(sample_file, groomer, tmpdir):
-    # make groomer (from ? to tmpdir)
-    # make file (from file.strpath to tmpdir)
-    # run groomer.process_file on it
-    # do asserts
-    if not sample_file.groomer_needed:
-        file = File(sample_file.path, tmpdir.strpath, GroomerLogger)
-        file.check()
-        assert file.is_dangerous is sample_file.expect_dangerous
-    if sample_file.groomer_needed:
-        pass
-        # TODO: make a groomer and process the sample file here
+def test_sample_files(sample_file, groomer, dest_dir_path):
+    file_dest_path = dest_dir_path + sample_file.filename
+    file = File(sample_file.path, file_dest_path, groomer.logger)
+    groomer.process_file(file)
+    assert file.is_dangerous is sample_file.expect_dangerous
     if sample_file.has_expect_file:
         assert file.mimetype == sample_file.expected_mimetype
-
-
-@pytest.fixture
-def dest_dir(tmpdir_factory):
-    return tmpdir_factory.mktemp('dest')
-
-
-@fixture
-def groomer(tmpdir):
-    dummy_src_path = os.getcwd()
-    dest_dir = tmpdir.strpath
-    return KittenGroomerFileCheck(dummy_src_path, dest_dir, debug=True)
