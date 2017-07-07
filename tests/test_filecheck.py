@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import unittest.mock as mock
 
 import pytest
 import yaml
@@ -25,56 +26,64 @@ CATALOG_PATH = 'tests/file_catalog.yaml'
 
 
 class SampleFile():
-    def __init__(self, path, expect_dangerous):
+    def __init__(self, path, exp_dangerous):
         self.path = path
-        self.expect_dangerous = expect_dangerous
-        self.filename = os.path.basename(self.path)
-
-    @property
-    def expect_path(self):
-        return self.path + '.expect'
-
-    @property
-    def has_expect_file(self):
-        return os.path.isfile(self.expect_path)
-
-    def parse_expect(self):
-        with open(self.expect_path, 'r') as expect_file:
-            self.expect_dict = yaml.safe_load(expect_file)
-        self.expect_dangerous = self.expect_dict['expect_dangerous']
-        self.groomer_needed = self.expect_dict['groomer_needed']
-        self.expected_mimetype = self.expect_dict['expected_mimetype']
+        self.filename = os.path.basename(path)
+        self.exp_dangerous = exp_dangerous
 
 
 def gather_sample_files():
-    normal_paths = list_files(NORMAL_FILES_PATH)
-    dangerous_paths = list_files(DANGEROUS_FILES_PATH)
-    normal_files = construct_sample_files(normal_paths, expect_dangerous=False)
-    dangerous_files = construct_sample_files(dangerous_paths, expect_dangerous=True)
-    return normal_files + dangerous_files
+    file_catalog = read_file_catalog()
+    normal_catalog = file_catalog['normal']
+    dangerous_catalog = file_catalog['dangerous']
+    sample_files = create_sample_files(
+        normal_catalog,
+        NORMAL_FILES_PATH,
+        exp_dangerous=False
+    )
+    sample_files.extend(create_sample_files(
+        dangerous_catalog,
+        DANGEROUS_FILES_PATH,
+        exp_dangerous=True
+    ))
+    return sample_files
 
 
-def list_files(dir_path):
-    """List all files in `dir_path`, ignoring .expect files."""
+def read_file_catalog():
+    with open(os.path.abspath(CATALOG_PATH)) as catalog_file:
+        catalog_dict = yaml.safe_load(catalog_file)
+    return catalog_dict
+
+
+def create_sample_files(file_catalog, dir_path, exp_dangerous):
+    sample_files = []
+    dir_files = set_of_files(dir_path)
+    # Sorted to make the test cases occur in a consistent order, doesn't have to be
+    for filename, file_dict in sorted(file_catalog.items()):
+        full_path = os.path.abspath(os.path.join(dir_path, filename))
+        try:
+            dir_files.remove(full_path)
+            newfile = SampleFile(full_path, exp_dangerous)
+            newfile.xfail = file_dict.get('xfail', False)
+            sample_files.append(newfile)
+        except KeyError:
+            raise FileNotFoundError("{} could not be found".format(filename))
+    for file_path in dir_files:
+        newfile = SampleFile(file_path, exp_dangerous)
+        newfile.xfail = False
+        sample_files.append(newfile)
+    return sample_files
+
+
+def set_of_files(dir_path):
+    """Set of all full file paths in `dir_path`."""
     full_dir_path = os.path.abspath(dir_path)
-    files = []
-    for file_path in os.listdir(full_dir_path):
-        full_file_path = os.path.join(full_dir_path, file_path)
-        _, ext = os.path.splitext(full_file_path)
-        if os.path.isfile(full_file_path) and not ext.endswith('.expect'):
-            files.append(full_file_path)
-    return files
-
-
-def construct_sample_files(file_paths, expect_dangerous):
-    """Construct a list of a sample files from list `file_paths`."""
-    files = []
-    for path in file_paths:
-        newfile = SampleFile(path, expect_dangerous)
-        if newfile.has_expect_file:
-            newfile.parse_expect()
-        files.append(newfile)
-    return files
+    file_paths = set()
+    for path in os.listdir(full_dir_path):
+        full_path = os.path.join(full_dir_path, path)
+        if os.path.isfile(full_path):
+            file_paths.add(full_path)
+    return file_paths
 
 
 def get_filename(sample_file):
@@ -94,17 +103,17 @@ def groomer(dest_dir_path):
 
 @fixture
 def logger(dest_dir_path):
-    return GroomerLogger()
+    return mock.Mock(GroomerLogger)
 
 
 @parametrize(
     argnames="sample_file",
     argvalues=gather_sample_files(),
     ids=get_filename)
-def test_sample_files(sample_file, groomer, dest_dir_path):
+def test_sample_files(sample_file, groomer, logger, dest_dir_path):
+    if sample_file.xfail:
+        pytest.xfail(reason='Marked xfail in file catalog')
     file_dest_path = dest_dir_path + sample_file.filename
-    file = File(sample_file.path, file_dest_path, groomer.logger)
+    file = File(sample_file.path, file_dest_path, logger)
     groomer.process_file(file)
-    assert file.is_dangerous is sample_file.expect_dangerous
-    if sample_file.has_expect_file:
-        assert file.mimetype == sample_file.expected_mimetype
+    assert file.is_dangerous == sample_file.exp_dangerous
