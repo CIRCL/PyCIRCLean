@@ -156,7 +156,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             command_str = '{} -p1 x "{}" -o"{}" -bd -aoa'
             unpack_command = command_str.format(SEVENZ_PATH,
                                                 file.src_path, tempdir_path)
-            self._run_process(unpack_command)
+            self._run_process(unpack_command, Config.archive_timeout)
             file.write_log()
             self.process_dir(tempdir_path, file.dst_path)
             self.safe_rmtree(tempdir_path)
