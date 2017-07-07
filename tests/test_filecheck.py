@@ -22,6 +22,7 @@ parametrize = pytest.mark.parametrize
 
 NORMAL_FILES_PATH = 'tests/normal/'
 DANGEROUS_FILES_PATH = 'tests/dangerous/'
+UNCATEGORIZED_FILES_PATH = 'tests/uncategorized'
 CATALOG_PATH = 'tests/file_catalog.yaml'
 
 
@@ -121,3 +122,10 @@ def test_sample_files(mock_logger, sample_file, groomer, dest_dir_path):
     file = File(sample_file.path, file_dest_path, mock_logger)
     groomer.process_file(file)
     assert file.is_dangerous == sample_file.exp_dangerous
+
+
+def test_uncategorized(tmpdir):
+    src_path = os.path.abspath(UNCATEGORIZED_FILES_PATH)
+    dst_path = tmpdir.strpath
+    groomer = KittenGroomerFileCheck(src_path, dst_path, debug=True)
+    groomer.run()

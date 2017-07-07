@@ -12,6 +12,7 @@ normal:
   Example.ogg: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.ogg
     description: Ogg vorbis sound file
     mimetype: audio/ogg
+    xfail: True
   Example.png: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.png
     mimetype: image/png
   Example.svg: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.svg

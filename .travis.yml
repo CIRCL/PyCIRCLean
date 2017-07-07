@@ -9,7 +9,7 @@ python:
     - nightly
 
 sudo: required
-# do we need sudo? should double check
+# https://docs.travis-ci.com/user/ci-environment/#Virtualization-environments
 
 dist: trusty
 
@@ -45,7 +45,7 @@ install:
     - pushd theZoo/malwares/Binaries
     - python unpackall.py
     - popd
-    - mv theZoo/malwares/Binaries/out tests/dangerous/
+    - mv theZoo/malwares/Binaries/out tests/uncategorized/
     # Path traversal attacks
     - git clone https://github.com/jwilk/path-traversal-samples
     - pushd path-traversal-samples
@@ -56,21 +56,23 @@ install:
     - make
     - popd
     - popd
-    - mv path-traversal-samples/zip/*.zip tests/dangerous/
-    - mv path-traversal-samples/rar/*.rar tests/dangerous/
+    - mv path-traversal-samples/zip/*.zip tests/uncategorized/
+    - mv path-traversal-samples/rar/*.rar tests/uncategorized/
     # Office docs
     - git clone https://github.com/eea/odfpy.git
-    - mv odfpy/tests/examples/* tests/dangerous/
-    - pushd tests/dangerous/
+    - mv odfpy/tests/examples/* tests/uncategorized/
+    - pushd tests/uncategorized/
     - wget https://bitbucket.org/decalage/olefileio_pl/raw/3073963b640935134ed0da34906fea8e506460be/Tests/images/test-ole-file.doc
     - wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
+    - popd
+    - pushd tests/dangerous/
     - 7z x -p42 42.zip
     - popd
 
 script:
-    - travis_wait 30 py.test --cov=kittengroomer --cov=bin tests/
+    - travis_wait py.test --cov=kittengroomer --cov=bin tests/
 
 notifications:
     email:
