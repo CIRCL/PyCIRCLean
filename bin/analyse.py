@@ -39,6 +39,10 @@ class Config:
 
     # Mimetypes with metadata
     mimes_metadata = ['image/jpeg', 'image/tiff', 'image/png']
+    
+    # Compressed files susceptible to have double extension
+    double_exts = (".uzip", ".lzma", ".z", ".xz", ".lz", ".gz2", ".gz",
+                       ".bz2", ".pack", ".rar", ".000")
 
     # Commonly used malicious extensions
     # Sources: http://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
@@ -117,6 +121,8 @@ class Config:
     override_ext = {'.gz': 'application/gzip'}
 
     ignored_mimes = ['inode', 'model', 'multipart', 'example']
+    
+    archive_timeout = None
 
 
 
@@ -215,10 +221,11 @@ class File(FileBase):
         dir_path, file = os.path.split(self.dst_path)
         name, ext = os.path.splitext(self.filename)
         
-        for c in name:    
-            if c in Config.dangerous_char :
-                self.make_dangerous('Filename contains forbidden character')
-                name = name.replace(c, '-')
+        if not self.extension in Config.double_exts:
+            for c in name:    
+                if c in Config.dangerous_char :
+                    self.make_dangerous('Filename contains forbidden character')
+                    name = name.replace(c, '-')
 
         # TODO: change self.filename and'filename' property? Or should those reflect the values on the source key
         self.dst_path = os.path.join(dir_path, name + ext)
