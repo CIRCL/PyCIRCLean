@@ -16,19 +16,6 @@ import argparse
 import magic
 
 
-class KittenGroomerError(Exception):
-    """Base KittenGroomer exception handler."""
-
-    def __init__(self, message):
-        super(KittenGroomerError, self).__init__(message)
-        self.message = message
-
-
-class ImplementationRequired(KittenGroomerError):
-    """Implementation required error."""
-    pass
-
-
 class FileBase(object):
     """
     Base object for individual files in the source directory.
@@ -334,6 +321,19 @@ class KittenGroomerBase(object):
     def processdir(self, src_dir, dst_dir):
         """Implement this function to define file processing behavior."""
         raise ImplementationRequired('Please implement processdir.')
+
+
+class KittenGroomerError(Exception):
+    """Base KittenGroomer exception handler."""
+
+    def __init__(self, message):
+        super(KittenGroomerError, self).__init__(message)
+        self.message = message
+
+
+class ImplementationRequired(KittenGroomerError):
+    """Implementation required error."""
+    pass
 
 
 def main(kg_implementation, description='Call a KittenGroomer implementation to process files present in the source directory and copy them to the destination directory.'):
