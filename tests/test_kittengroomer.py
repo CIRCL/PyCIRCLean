@@ -12,21 +12,8 @@ xfail = pytest.mark.xfail
 fixture = pytest.fixture
 
 
-# FileBase
-@xfail
+@skip
 class TestFileBase:
-
-    @fixture
-    def source_file(self):
-        return 'tests/normal/blah.conf'
-
-    @fixture
-    def dest_file(self):
-        return 'tests/dst/blah.conf'
-
-    @fixture
-    def generic_conf_file(self, source_file, dest_file):
-        return FileBase(source_file, dest_file)
 
     @fixture
     def symlink_file(self, tmpdir):
@@ -76,9 +63,24 @@ class TestFileBase:
         request.param(generic_conf_file)
         return generic_conf_file
 
-    # What are the various things that can go wrong with file paths? We should have fixtures for them
-    # What should FileBase do if it's given a path that isn't a file (doesn't exist or is a dir)? Currently magic throws an exception
-    # We should probably catch everytime that happens and tell the user explicitly happened (and maybe put it in the log)
+    def test_init_identify_filename(self):
+        """Init should identify the filename correctly for src_path."""
+        pass
+
+    def test_init_identify_extension(self):
+        """Init should identify the extension for src_path."""
+        pass
+
+    def test_init_file_doesnt_exist(self):
+        """Init should raise an exception if the file doesn't exist."""
+        pass
+
+    def test_init_srcpath_is_directory(self):
+        """Init should raise an exception if given a path to a directory."""
+
+    def test_init_symlink(self):
+        """Init should properly identify symlinks."""
+        pass
 
     def test_create_broken(self, tmpdir):
         with pytest.raises(TypeError):
@@ -214,6 +216,7 @@ class TestFileBase:
         # check that safe copy can handle weird file path inputs
 
 
+@skip
 class TestKittenGroomerBase:
 
     @fixture

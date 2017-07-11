@@ -81,13 +81,13 @@ class FileBase(object):
 
     def _determine_mimetype(self):
         if os.path.islink(self.src_path):
-            # magic will throw an IOError on a broken symlink
+            # libmagic will throw an IOError on a broken symlink
             mimetype = 'inode/symlink'
             self.set_property('symlink', os.readlink(self.src_path))
         else:
             try:
                 mt = magic.from_file(self.src_path, mime=True)
-                # Note: libmagic will always return something, even if it's just 'data'
+                # libmagic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
                 # FIXME: The encoding of the file that triggers this is broken (possibly it's UTF-16 and Python expects utf8)
                 # Note: one of the Travis files will trigger this exception
@@ -148,7 +148,7 @@ class FileBase(object):
 
     @property
     def is_symlink(self):
-        """True  if file is a symlink, else False."""
+        """True if file is a symlink, else False."""
         if self._file_props['symlink'] is False:
             return False
         else:
