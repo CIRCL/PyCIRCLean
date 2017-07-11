@@ -3,6 +3,7 @@
 
 import os
 import mimetypes
+import subprocess
 import zipfile
 
 import oletools.oleid
@@ -16,7 +17,7 @@ from PIL import Image
 from pdfid import PDFiD, cPDFiD
 from kittengroomer import FileBase
 
-
+CLAMDSCAN = "/usr/local/bin/clamdscan"
 
 class Config:
     """Configuration information for Filecheck."""
@@ -100,6 +101,9 @@ class Config:
 
     # Forbidden char in filename
     dangerous_char = ("\\", "/", "<", ">", "%", "*", "~", "?", "$", ":", ";", ".", " ", u"\u202E")
+    
+    # Only char accepted in filename
+    accepted_char = "ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqrstuvwxyzàéôù_0123456789"
 
     # Attention aux options
     script_endline = ("sh", "bash", "dash", "python", "perl")
@@ -223,7 +227,7 @@ class File(FileBase):
         
         if not self.extension in Config.double_exts:
             for c in name:    
-                if c in Config.dangerous_char :
+                if c in Config.accepted_char :
                     self.make_dangerous('Filename contains forbidden character')
                     name = name.replace(c, '-')
 
@@ -337,6 +341,7 @@ class File(FileBase):
     def _executables(self):
         """Process an executable file."""
         # LOG: change the processing_type property to some other name or include in file_string
+        self._clamdscan()
         self.make_dangerous('Executable file')
 
     def _winoffice(self):
@@ -556,4 +561,13 @@ class File(FileBase):
             self.make_dangerous('Image file containing decompression bomb')
         if not self.is_dangerous:
             self.add_description('Image file')
+            
+    def _clamdscan(self):
+        """
+        Scan a file with ClamAV. Requires clamd to be running.
+        """
+        output = subprocess.Popen([CLAMDSCAN, self.src_path], stdout = subprocess.PIPE).communicate()[0]
+        check = output.split(b'\n')[0].split(b': ')[1]
+        if b'OK' not in check:
+            make_dangerous('File has been detected as a virus')
 
