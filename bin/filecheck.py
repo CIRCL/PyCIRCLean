@@ -130,7 +130,7 @@ class File(FileBase):
         self.logger = logger
         self.tempdir_path = self.dst_path + '_temp'
 
-        subtypes_apps = [
+        subtypes_apps = (
             (Config.mimes_office, self._winoffice),
             (Config.mimes_ooxml, self._ooxml),
             (Config.mimes_rtf, self.text),
@@ -140,13 +140,13 @@ class File(FileBase):
             (Config.mimes_ms, self._executables),
             (Config.mimes_compressed, self._archive),
             (Config.mimes_data, self._binary_app),
-        ]
+        )
         self.app_subtype_methods = self._make_method_dict(subtypes_apps)
 
-        types_metadata = [
+        types_metadata = (
             (Config.mimes_exif, self._metadata_exif),
             (Config.mimes_png, self._metadata_png),
-        ]
+        )
         self.metadata_mimetype_methods = self._make_method_dict(types_metadata)
 
         self.mime_processing_options = {
@@ -220,7 +220,6 @@ class File(FileBase):
         right_to_left_override = u"\u202E"
         if right_to_left_override in self.filename:
             self.make_dangerous('Filename contains dangerous character')
-            self.dst_path = self.dst_path.replace(right_to_left_override, '')
             self.filename = self.filename.replace(right_to_left_override, '')
             self.set_property('filename', self.filename)
 
@@ -230,9 +229,9 @@ class File(FileBase):
 
         Delegates to various helper methods including filetype-specific checks.
         """
-        if self.main_type in Config.ignored_mimes:
+        if self.maintype in Config.ignored_mimes:
             self.should_copy = False
-            self.mime_processing_options.get(self.main_type, self.unknown)()
+            self.mime_processing_options.get(self.maintype, self.unknown)()
         else:
             self._check_dangerous()
             self._check_filename()
@@ -241,14 +240,14 @@ class File(FileBase):
             if self.has_mimetype:
                 self._check_mimetype()
             if not self.is_dangerous:
-                self.mime_processing_options.get(self.main_type, self.unknown)()
+                self.mime_processing_options.get(self.maintype, self.unknown)()
 
     def write_log(self):
         """Pass information about the file to self.logger"""
         props = self.get_all_props()
         if not self.is_archive:
             if os.path.exists(self.tempdir_path):
-                # Hack to make images appear at the correct tree depth in log
+                # FIXME: Hack to make images appear at the correct tree depth in log
                 self.logger.add_file(self.src_path, props, in_tempdir=True)
                 return
         self.logger.add_file(self.src_path, props)
@@ -310,13 +309,13 @@ class File(FileBase):
     def text(self):
         """Process an rtf, ooxml, or plaintext file."""
         for mt in Config.mimes_rtf:
-            if mt in self.sub_type:
+            if mt in self.subtype:
                 self.add_description('Rich Text (rtf) file')
                 # TODO: need a way to convert it to plain text
                 self.force_ext('.txt')
                 return
         for mt in Config.mimes_ooxml:
-            if mt in self.sub_type:
+            if mt in self.subtype:
                 self.add_description('OOXML (openoffice) file')
                 self._ooxml()
                 return
@@ -325,13 +324,12 @@ class File(FileBase):
 
     def application(self):
         """Process an application specific file according to its subtype."""
-        for subtype, method in self.app_subtype_methods.items():
-            if subtype in self.sub_type:
-                # TODO: should we change the logic so we don't iterate through all of the subtype methods?
-                # TODO: should these methods return a value?
-                method()
-                return
-        self._unknown_app()
+        if self.subtype in self.app_subtype_methods:
+            method = self.app_subtype_methods[self.subtype]
+            method()
+            # TODO: should these application methods return a value?
+        else:
+            self._unknown_app()
 
     def _executables(self):
         """Process an executable file."""
@@ -364,7 +362,6 @@ class File(FileBase):
             for i in indicators:
                 if i.id == 'ObjectPool' and i.value:
                     # TODO: is having an ObjectPool suspicious?
-                    # LOG: user defined property
                     self.add_description('WinOffice file containing an object pool')
                 elif i.id == 'flash' and i.value:
                     self.make_dangerous('WinOffice file with embedded flash')
@@ -389,7 +386,7 @@ class File(FileBase):
         if len(doc.features.embedded_packages) > 0:
             self.make_dangerous('Ooxml file with embedded packages')
         if not self.is_dangerous:
-            self.add_description('OOXML file')
+            self.add_description('Ooxml file')
 
     def _libreoffice(self):
         """Process a libreoffice file."""
@@ -593,10 +590,10 @@ class GroomerLogger(object):
         depth = self._get_path_depth(file_path)
         description_string = ', '.join(file_props['description_string'])
         file_hash = Logging.computehash(file_path)[:6]
-        if file_props['safety_category'] is None:
-            description_category = "Normal"
+        if file_props['is_dangerous']:
+            description_category = "Dangerous"
         else:
-            description_category = file_props['safety_category'].capitalize()
+            description_category = "Normal"
         size_string = self._format_file_size(file_props['file_size'])
         file_template = "+- {name} ({sha_hash}): {size}, type: {mt}/{st}. {desc}: {desc_str}"
         file_string = file_template.format(
@@ -608,7 +605,7 @@ class GroomerLogger(object):
             desc=description_category,
             desc_str=description_string,
         )
-        # TODO: work in progress, finish adding Errors and check that they appear properly
+        # TODO: finish adding Errors and check that they appear properly
         # if file_props['errors']:
         #     error_string = ', '.join([str(key) for key in file_props['errors']])
         #     file_string.append(' Errors: ' + error_string)

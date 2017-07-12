@@ -113,7 +113,7 @@ def logger(dest_dir_path):
 def test_sample_files(sample_file, groomer, logger, dest_dir_path):
     if sample_file.xfail:
         pytest.xfail(reason='Marked xfail in file catalog')
-    file_dest_path = dest_dir_path + sample_file.filename
+    file_dest_path = os.path.join(dest_dir_path, sample_file.filename)
     file = File(sample_file.path, file_dest_path, logger)
     groomer.process_file(file)
     assert file.is_dangerous == sample_file.exp_dangerous
