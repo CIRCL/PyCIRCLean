@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import unittest.mock as mock
 
 import pytest
 
@@ -14,6 +15,14 @@ fixture = pytest.fixture
 
 class TestFileBase:
 
+    @fixture(scope='class')
+    def dest_dir_path(self, tmpdir_factory):
+        return tmpdir_factory.mktemp('dest').strpath
+
+    @fixture(scope='class')
+    def src_dir_path(self, tmpdir_factory):
+        return tmpdir_factory.mktemp('src').strpath
+
     @fixture
     def symlink_file(self, tmpdir):
         file_path = tmpdir.join('test.txt')
@@ -25,11 +34,10 @@ class TestFileBase:
         return FileBase(symlink_path, symlink_path)
 
     @fixture
-    def temp_file(self, tmpdir):
-        file_path = tmpdir.join('test.txt')
+    def temp_file(self, src_dir_path, dst_dir_path):
+        file_path = os.path.join(src_dir_path, 'test.txt')
         file_path.write('testing')
-        file_path = file_path.strpath
-        return FileBase(file_path, file_path)
+        return FileBase(file_path, dst_dir_path)
 
     @fixture
     def temp_file_no_ext(self, tmpdir):
@@ -42,9 +50,13 @@ class TestFileBase:
     def file_marked_dangerous(self):
         pass
 
-    def test_init_identify_filename(self):
+    @mock.patch('kittengroomer.helpers.magic')
+    def test_init_identify_filename(self, mock_magic):
         """Init should identify the filename correctly for src_path."""
-        pass
+        src_path = 'src/test.txt'
+        dst_path = 'dst/test.txt'
+        file = FileBase(src_path, dst_path)
+        assert file.filename == 'test.txt'
 
     def test_init_uppercase_filename(self):
         """Init should coerce filenames to lowercase."""
@@ -138,43 +150,38 @@ class TestFileBase:
     def test_force_ext_change(self):
         pass
 
-    def test_force_ext_correct(self, generic_conf_file):
+    def test_force_ext_correct(self):
         pass
 
-    def test_create_metadata_file_new(self, temp_file):
+    def test_create_metadata_file_new(self):
         pass
 
     def test_create_metadata_file_already_exists(self):
         pass
 
 
-@skip
 class TestKittenGroomerBase:
 
-    @fixture
-    def source_directory(self):
-        return 'tests/dangerous'
+    @fixture(scope='class')
+    def src_dir_path(self, tmpdir_factory):
+        return tmpdir_factory.mktemp('src').strpath
+
+    @fixture(scope='class')
+    def dest_dir_path(self, tmpdir_factory):
+        return tmpdir_factory.mktemp('dest').strpath
 
     @fixture
-    def dest_directory(self):
-        return 'tests/dst'
+    def generic_groomer(self, src_dir_path, dest_dir_path):
+        return KittenGroomerBase(src_dir_path, dest_dir_path)
 
-    @fixture
-    def generic_groomer(self, source_directory, dest_directory):
-        return KittenGroomerBase(source_directory, dest_directory)
-
-    def test_create(self, generic_groomer):
-        assert generic_groomer
-
-    def test_instantiation(self, source_directory, dest_directory):
-        KittenGroomerBase(source_directory, dest_directory)
-
-    def test_list_all_files(self, tmpdir):
+    def test_list_all_files_includes_file(self, tmpdir):
         file = tmpdir.join('test.txt')
         file.write('testing')
+        files = KittenGroomerBase.list_all_files(KittenGroomerBase, tmpdir.strpath)
+        assert file.strpath in files
+
+    def test_list_all_files_excludes_dir(self, tmpdir):
         testdir = tmpdir.join('testdir')
         os.mkdir(testdir.strpath)
-        simple_groomer = KittenGroomerBase(tmpdir.strpath, tmpdir.strpath)
-        files = simple_groomer.list_all_files(simple_groomer.src_root_path)
-        assert file.strpath in files
+        files = KittenGroomerBase.list_all_files(KittenGroomerBase, tmpdir.strpath)
         assert testdir.strpath not in files
