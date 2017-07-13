@@ -157,8 +157,9 @@ class FileBase(object):
         """
         if not self.is_dangerous:
             self.set_property('dangerous', True)
-        self.add_description(reason_string)
-        self.filename = 'DANGEROUS_{}_DANGEROUS'.format(self.filename)
+            self.filename = 'DANGEROUS_{}_DANGEROUS'.format(self.filename)
+        if reason_string:
+            self.add_description(reason_string)
 
     def safe_copy(self, src=None, dst=None):
         """Copy file and create destination directories if needed."""
@@ -167,6 +168,7 @@ class FileBase(object):
         if dst is None:
             dst = self.dst_path
         try:
+            # TODO: maybe don't check and just mkdir? Is there a way to do this that won't raise an Exception? Can we make shutil automatically make dirs inbetween?
             if not os.path.exists(self.dst_dir):
                 os.makedirs(self.dst_dir)
             shutil.copy(src, dst)
