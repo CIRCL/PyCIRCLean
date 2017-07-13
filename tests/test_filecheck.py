@@ -90,7 +90,7 @@ def get_filename(sample_file):
     return os.path.basename(sample_file.path)
 
 
-@fixture(scope='session')
+@fixture(scope='module')
 def dest_dir_path(tmpdir_factory):
     return tmpdir_factory.mktemp('dest').strpath
 
@@ -102,18 +102,18 @@ def groomer(dest_dir_path):
 
 
 @fixture
-def logger(dest_dir_path):
-    return mock.Mock(GroomerLogger)
+def mock_logger(dest_dir_path):
+    return mock.MagicMock(spec=GroomerLogger)
 
 
 @parametrize(
     argnames="sample_file",
     argvalues=gather_sample_files(),
     ids=get_filename)
-def test_sample_files(sample_file, groomer, logger, dest_dir_path):
+def test_sample_files(mock_logger, sample_file, groomer, dest_dir_path):
     if sample_file.xfail:
         pytest.xfail(reason='Marked xfail in file catalog')
     file_dest_path = os.path.join(dest_dir_path, sample_file.filename)
-    file = File(sample_file.path, file_dest_path, logger)
+    file = File(sample_file.path, file_dest_path, mock_logger)
     groomer.process_file(file)
     assert file.is_dangerous == sample_file.exp_dangerous
