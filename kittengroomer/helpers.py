@@ -222,7 +222,7 @@ class FileBase(object):
         if os.path.islink(file_path):
             # libmagic will throw an IOError on a broken symlink
             mimetype = 'inode/symlink'
-            self.set_property('symlink', os.readlink(file_path))
+            self.set_property('symlink_path', os.readlink(file_path))
         else:
             try:
                 mt = magic.from_file(file_path, mime=True)

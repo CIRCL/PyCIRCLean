@@ -24,51 +24,51 @@ class TestFileBase:
         return tmpdir_factory.mktemp('src').strpath
 
     @fixture
-    def symlink_file(self, tmpdir):
-        file_path = tmpdir.join('test.txt')
-        file_path.write('testing')
-        file_path = file_path.strpath
-        symlink_path = tmpdir.join('symlinked.txt')
+    def symlink_file_path(self, tmpdir, tmpfile_path):
+        symlink_path = tmpdir.join('symlinked')
         symlink_path = symlink_path.strpath
-        os.symlink(file_path, symlink_path)
-        return FileBase(symlink_path, symlink_path)
+        os.symlink(tmpfile_path, symlink_path)
+        return symlink_path
 
     @fixture
-    def temp_file(self, src_dir_path, dst_dir_path):
+    def tmpfile_path(self, tmpdir):
+        file_path = tmpdir.join('test.txt')
+        file_path.write('testing')
+        return file_path.strpath
+
+    @fixture
+    def tmpfile(self, src_dir_path, dst_dir_path):
         file_path = os.path.join(src_dir_path, 'test.txt')
         file_path.write('testing')
         return FileBase(file_path, dst_dir_path)
-
-    @fixture
-    def temp_file_no_ext(self, tmpdir):
-        file_path = tmpdir.join('test')
-        file_path.write('testing')
-        file_path = file_path.strpath
-        return FileBase(file_path, file_path)
 
     @fixture
     def file_marked_dangerous(self):
         pass
 
     @mock.patch('kittengroomer.helpers.magic')
-    def test_init_identify_filename(self, mock_magic):
+    def test_init_identify_filename(self, mock_libmagic):
         """Init should identify the filename correctly for src_path."""
         src_path = 'src/test.txt'
         dst_path = 'dst/test.txt'
         file = FileBase(src_path, dst_path)
         assert file.filename == 'test.txt'
 
-    def test_init_uppercase_filename(self):
-        """Init should coerce filenames to lowercase."""
-        pass
-
-    def test_init_identify_extension(self):
+    @mock.patch('kittengroomer.helpers.magic')
+    def test_init_identify_extension(self, mock_libmagic):
         """Init should identify the extension for src_path."""
-        pass
+        src_path = 'src/test.txt'
+        dst_path = 'dst/test.txt'
+        file = FileBase(src_path, dst_path)
+        assert file.extension == '.txt'
 
-    def test_init_uppercase_extension(self):
+    @mock.patch('kittengroomer.helpers.magic')
+    def test_init_uppercase_extension(self, mock_libmagic):
         """Init should coerce uppercase extension to lowercase"""
-        pass
+        src_path = 'src/TEST.TXT'
+        dst_path = 'dst/TEST.TXT'
+        file = FileBase(src_path, dst_path)
+        assert file.extension == '.txt'
 
     def test_init_file_doesnt_exist(self):
         """Init should raise an exception if the file doesn't exist."""
@@ -80,18 +80,25 @@ class TestFileBase:
         with pytest.raises(IsADirectoryError):
             FileBase(tmpdir.strpath, tmpdir.strpath)
 
-    def test_init_symlink(self):
+    @mock.patch('kittengroomer.helpers.magic')
+    def test_init_symlink(self, mock_libmagic, symlink_file_path):
         """Init should properly identify symlinks."""
-        pass
+        file = FileBase(symlink_file_path, '')
+        assert file.mimetype == 'inode/symlink'
 
-    def test_is_symlink_attribute(self):
+    @mock.patch('kittengroomer.helpers.magic')
+    def test_is_symlink_attribute(self, mock_libmagic, symlink_file_path):
         """If a file is a symlink, is_symlink should return True."""
-        pass
+        file = FileBase(symlink_file_path, '')
+        assert file.is_symlink is True
 
     def test_mimetype_attribute_assigned_correctly(self):
         """When libmagic returns a given mimetype, the mimetype should be
         assigned properly."""
-        pass
+        with mock.patch('kittengroomer.helpers.magic.from_file',
+                        return_value='text/plain'):
+            file = FileBase('', '')
+            file.mimetype = 'text/plain'
 
     def set_property_user_defined(self):
         pass
