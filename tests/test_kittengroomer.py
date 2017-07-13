@@ -42,134 +42,109 @@ class TestFileBase:
     def file_marked_dangerous(self):
         pass
 
-    # @fixture(params=[
-    #     FileBase.make_dangerous,
-    #     FileBase.make_unknown,
-    #     FileBase.make_binary
-    # ])
-    # def file_marked_all_parameterized(self, request, generic_conf_file):
-    #     request.param(generic_conf_file)
-    #     return generic_conf_file
-
     def test_init_identify_filename(self):
         """Init should identify the filename correctly for src_path."""
+        pass
+
+    def test_init_uppercase_filename(self):
+        """Init should coerce filenames to lowercase."""
         pass
 
     def test_init_identify_extension(self):
         """Init should identify the extension for src_path."""
         pass
 
-    def test_init_file_doesnt_exist(self):
-        """Init should raise an exception if the file doesn't exist."""
+    def test_init_uppercase_extension(self):
+        """Init should coerce uppercase extension to lowercase"""
         pass
 
-    def test_init_srcpath_is_directory(self):
+    def test_init_file_doesnt_exist(self):
+        """Init should raise an exception if the file doesn't exist."""
+        with pytest.raises(FileNotFoundError):
+            FileBase('', '')
+
+    def test_init_srcpath_is_directory(self, tmpdir):
         """Init should raise an exception if given a path to a directory."""
+        with pytest.raises(IsADirectoryError):
+            FileBase(tmpdir.strpath, tmpdir.strpath)
 
     def test_init_symlink(self):
         """Init should properly identify symlinks."""
         pass
 
-    def test_create_broken(self, tmpdir):
-        with pytest.raises(TypeError):
-            FileBase()
-        with pytest.raises(FileNotFoundError):
-            FileBase('', '')
-        with pytest.raises(IsADirectoryError):
-            FileBase(tmpdir.strpath, tmpdir.strpath)
-        # TODO: are there other cases here? path to a file that doesn't exist? permissions?
+    def test_is_symlink_attribute(self):
+        """If a file is a symlink, is_symlink should return True."""
+        pass
 
-    def test_extension_uppercase(self, tmpdir):
-        file_path = tmpdir.join('TEST.TXT')
-        file_path.write('testing')
-        file_path = file_path.strpath
-        file = FileBase(file_path, file_path)
-        assert file.extension == '.txt'
+    def test_mimetype_attribute_assigned_correctly(self):
+        """When libmagic returns a given mimetype, the mimetype should be
+        assigned properly."""
+        pass
 
-    def test_mimetypes(self, temp_file):
-        assert temp_file.mimetype == 'text/plain'
-        assert temp_file.maintype == 'text'
-        assert temp_file.subtype == 'plain'
-        assert temp_file.has_mimetype
-        # Need to test something without a mimetype
-        # Need to test something that's a directory
-        # Need to test something that causes the unicode exception
+    def set_property_user_defined(self):
+        pass
 
-    @skip
-    def test_has_mimetype_no_main_type(self, generic_conf_file):
-        generic_conf_file.maintype = ''
-        assert generic_conf_file.has_mimetype is False
+    def set_property_builtin(self):
+        pass
 
-    @skip
-    def test_has_mimetype_no_sub_type(self, generic_conf_file):
-        generic_conf_file.sub_type = ''
-        assert generic_conf_file.has_mimetype is False
+    def get_property_doesnt_exist(self):
+        pass
 
-    def test_has_extension(self, temp_file, temp_file_no_ext):
-        assert temp_file.has_extension is True
-        print(temp_file_no_ext.extension)
-        assert temp_file_no_ext.has_extension is False
+    def get_property_builtin(self):
+        pass
 
-    def test_set_property(self, temp_file):
-        temp_file.set_property('test', True)
-        assert temp_file.get_property('test') is True
-        # TODO: split asserts into two tests
-        assert temp_file.get_property('wrong') is None
+    def get_property_user_defined(self):
+        pass
 
-    @skip
-    def test_marked_dangerous(self, file_marked_all_parameterized):
-        file_marked_all_parameterized.make_dangerous()
-        assert file_marked_all_parameterized.is_dangerous is True
-        # Should work regardless of weird paths??
-        # Should check file path alteration behavior as well
+    def test_has_mimetype_no_main_type(self):
+        pass
 
-    @xfail
-    def test_has_symlink(self, tmpdir):
-        file_path = tmpdir.join('test.txt')
-        file_path.write('testing')
-        file_path = file_path.strpath
-        symlink_path = tmpdir.join('symlinked.txt')
-        symlink_path = symlink_path.strpath
-        os.symlink(file_path, symlink_path)
-        file = FileBase(file_path, file_path)
-        symlink = FileBase(symlink_path, symlink_path)
-        assert file.is_symlink is False
-        assert symlink.is_symlink is True
+    def test_has_mimetype_no_sub_type(self):
+        pass
 
-    @xfail
-    def test_has_symlink_fixture(self, symlink_file):
-        assert symlink_file.is_symlink is True
+    def test_has_extension_true(self):
+        pass
 
-    @skip
-    def test_force_ext_change(self, generic_conf_file):
-        assert generic_conf_file.has_extension
-        assert generic_conf_file.get_property('extension') == '.conf'
-        assert os.path.splitext(generic_conf_file.dst_path)[1] == '.conf'
-        generic_conf_file.force_ext('.txt')
-        assert os.path.splitext(generic_conf_file.dst_path)[1] == '.txt'
-        assert generic_conf_file.get_property('extension') == '.txt'
-        # should be able to handle weird paths
+    def test_has_extension_false(self):
+        pass
 
-    @skip
-    def test_force_ext_correct(self, generic_conf_file):
-        assert generic_conf_file.has_extension
-        assert generic_conf_file.get_property('extension') == '.conf'
-        generic_conf_file.force_ext('.conf')
-        assert os.path.splitext(generic_conf_file.dst_path)[1] == '.conf'
-        assert generic_conf_file.get_property('force_ext') is None
-        # shouldn't change a file's extension if it already is right
+    def test_add_new_description(self):
+        pass
 
-    @xfail
-    def test_create_metadata_file(self, temp_file):
-        metadata_file_path = temp_file.create_metadata_file('.metadata.txt')
-        with open(metadata_file_path, 'w+') as metadata_file:
-            metadata_file.write('Have some metadata!')
-        # Shouldn't be able to make a metadata file with no extension
-        assert temp_file.create_metadata_file('') is False
-        # if metadata file already exists
-        # if there is no metadata to write should this work?
+    def test_add_description_exists(self):
+        pass
+
+    def test_add_new_error(self):
+        pass
+
+    def test_add_error_exists(self):
+        pass
+
+    def test_normal_file_mark_dangerous(self):
+        pass
+
+    def test_normal_file_mark_dangerous_filename_change(self):
+        pass
+
+    def test_normal_file_mark_dangerous_add_description(self):
+        pass
+
+    def test_dangerous_file_mark_dangerous(self):
+        pass
 
     def test_safe_copy(self):
+        pass
+
+    def test_force_ext_change(self):
+        pass
+
+    def test_force_ext_correct(self, generic_conf_file):
+        pass
+
+    def test_create_metadata_file_new(self, temp_file):
+        pass
+
+    def test_create_metadata_file_already_exists(self):
         pass
 
 
