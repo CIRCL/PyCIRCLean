@@ -88,6 +88,21 @@ class FileBase(object):
         else:
             return True
 
+    @property
+    def description_string(self):
+        return self.__description_string
+
+    @description_string.setter
+    def description_string(self, value):
+        if hasattr(self, 'description_string'):
+            if isinstance(value, str):
+                if value not in self.__description_string:
+                    self.__description_string.append(value)
+            else:
+                raise TypeError("Description_string can only include strings")
+        else:
+            self.__description_string = value
+
     def set_property(self, prop_string, value):
         """
         Take a property and a value and add them to the file's stored props.
@@ -99,11 +114,7 @@ class FileBase(object):
         if hasattr(self, prop_string):
             setattr(self, prop_string, value)
         else:
-            if prop_string is 'description_string':
-                if value not in self.description_string:
-                    self.description_string.append(value)
-            else:
-                self._user_defined[prop_string] = value
+            self._user_defined[prop_string] = value
 
     def get_property(self, prop_string):
         """

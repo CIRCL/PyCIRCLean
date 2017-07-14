@@ -44,8 +44,15 @@ class TestFileBase:
         return FileBase(file_path, dst_dir_path)
 
     @fixture
-    def file_marked_dangerous(self):
-        pass
+    def text_file(self):
+        with mock.patch(
+            'kittengroomer.helpers.magic.from_file',
+            return_value='text/plain'
+        ):
+            src_path = 'src/test.txt'
+            dst_path = 'dst/test.txt'
+            file = FileBase(src_path, dst_path)
+        return file
 
     # Constructor behavior
 
@@ -133,44 +140,55 @@ class TestFileBase:
         with mock.patch('kittengroomer.helpers.magic.from_file',
                         return_value='data'):
             file = FileBase('', '')
-        assert file.has_mimetype == False
+        assert file.has_mimetype is False
 
     # File properties
 
-    def get_property_doesnt_exist(self):
+    def get_property_doesnt_exist(self, text_file):
         """Trying to get a property that doesn't exist should return None."""
-        pass
+        assert text_file.get_property('thing') is None
 
-    def get_property_builtin(self):
-        """Getting a default property that's been set should return that property."""
-        pass
+    def get_property_builtin(self, text_file):
+        """Getting a property that's been set should return that property."""
+        assert text_file.get_property('is_dangerous') is False
 
-    def get_property_user_defined(self):
-        """Getting a user defined property should return that propety."""
-        pass
+    def get_property_user_defined(self, text_file):
+        """Getting a user defined property should return that property."""
+        text_file._user_defined = {'thing': True}
+        assert text_file.get_property('thing') is True
 
-    def set_property_user_defined(self):
+    def set_property_user_defined(self, text_file):
         """Setting a non-default property should make it available for
         get_property."""
-        pass
+        text_file.set_property('thing', True)
+        assert text_file.get_property('thing') is True
 
-    def set_property_builtin(self):
+    def set_property_builtin(self, text_file):
         """Setting a builtin property should assign that property."""
-        pass
+        text_file.set_property('is_dangerous', True)
+        assert text_file.get_property('is_dangerous') is True
 
-    def test_add_new_description(self):
-        pass
+    def test_add_new_description(self, text_file):
+        """Adding a new description should add it to the list of description strings."""
+        text_file.add_description('thing')
+        assert text_file.get_property('description_string') == ['thing']
 
-    def test_add_description_exists(self):
-        pass
+    def test_add_description_exists(self, text_file):
+        """Adding a description that already exists shouldn't duplicate it."""
+        text_file.add_description('thing')
+        text_file.add_description('thing')
+        assert text_file.get_property('description_string') == ['thing']
 
     def test_add_new_error(self):
+        """Adding a new error should add it to the dict of errors."""
         pass
 
     def test_add_error_exists(self):
+        """Adding an error that already exists shouldn't duplicate it."""
         pass
 
     def test_normal_file_mark_dangerous(self):
+        """Marking a normal file dangerous shouldn't make it """
         pass
 
     def test_normal_file_mark_dangerous_filename_change(self):
