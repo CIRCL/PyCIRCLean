@@ -14,6 +14,7 @@ fixture = pytest.fixture
 
 
 class TestFileBase:
+    # Fixtures
 
     @fixture(scope='class')
     def dest_dir_path(self, tmpdir_factory):
@@ -46,6 +47,8 @@ class TestFileBase:
     def file_marked_dangerous(self):
         pass
 
+    # Constructor behavior
+
     @mock.patch('kittengroomer.helpers.magic')
     def test_init_identify_filename(self, mock_libmagic):
         """Init should identify the filename correctly for src_path."""
@@ -70,6 +73,22 @@ class TestFileBase:
         file = FileBase(src_path, dst_path)
         assert file.extension == '.txt'
 
+    @mock.patch('kittengroomer.helpers.magic')
+    def test_has_extension_true(self, mock_libmagic):
+        """If the file has an extension, has_extension should == True."""
+        src_path = 'src/test.txt'
+        dst_path = 'dst/test.txt'
+        file = FileBase(src_path, dst_path)
+        assert file.has_extension is True
+
+    @mock.patch('kittengroomer.helpers.magic')
+    def test_has_extension_false(self, mock_libmagic):
+        """If the file has no extension, has_extensions should == False."""
+        src_path = 'src/test'
+        dst_path = 'dst/test'
+        file = FileBase(src_path, dst_path)
+        assert file.has_extension is False
+
     def test_init_file_doesnt_exist(self):
         """Init should raise an exception if the file doesn't exist."""
         with pytest.raises(FileNotFoundError):
@@ -92,7 +111,7 @@ class TestFileBase:
         file = FileBase(symlink_file_path, '')
         assert file.is_symlink is True
 
-    def test_mimetype_attribute_assigned_correctly(self):
+    def test_init_mimetype_attribute_assigned_correctly(self):
         """When libmagic returns a given mimetype, the mimetype should be
         assigned properly."""
         with mock.patch('kittengroomer.helpers.magic.from_file',
@@ -100,31 +119,36 @@ class TestFileBase:
             file = FileBase('', '')
             file.mimetype = 'text/plain'
 
-    def set_property_user_defined(self):
+    def test_maintype_and_subtype_attributes(self):
+        """If a file has a full mimetype, maintype and subtype should ==
+        the appropriate values."""
         pass
 
-    def set_property_builtin(self):
+    def test_has_mimetype_no_full_type(self):
+        """If a file doesn't have a full mimetype has_mimetype should == False."""
         pass
+
+    # File properties
 
     def get_property_doesnt_exist(self):
+        """Trying to get a property that doesn't exist should return None."""
         pass
 
     def get_property_builtin(self):
+        """Getting a default property that's been set should return that property."""
         pass
 
     def get_property_user_defined(self):
+        """Getting a user defined property should return that propety."""
         pass
 
-    def test_has_mimetype_no_main_type(self):
+    def set_property_user_defined(self):
+        """Setting a non-default property should make it available for
+        get_property."""
         pass
 
-    def test_has_mimetype_no_sub_type(self):
-        pass
-
-    def test_has_extension_true(self):
-        pass
-
-    def test_has_extension_false(self):
+    def set_property_builtin(self):
+        """Setting a builtin property should assign that property."""
         pass
 
     def test_add_new_description(self):
@@ -150,6 +174,8 @@ class TestFileBase:
 
     def test_dangerous_file_mark_dangerous(self):
         pass
+
+    # File modifiers
 
     def test_safe_copy(self):
         pass
