@@ -91,6 +91,10 @@ def get_filename(sample_file):
 
 
 @fixture(scope='module')
+def src_dir_path(tmpdir_factory):
+    return tmpdir_factory.mktemp('src').strpath
+
+@fixture(scope='module')
 def dest_dir_path(tmpdir_factory):
     return tmpdir_factory.mktemp('dest').strpath
 

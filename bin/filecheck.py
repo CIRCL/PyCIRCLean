@@ -737,7 +737,9 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             if os.path.isdir(full_path):
                 queue.append(full_path)
                 queue += self.list_files_dirs(full_path)
-            elif os.path.isfile(full_path):
+            elif os.path.isfile(full_path, follow_symlinks=False):
+                queue.append(full_path)
+            elif os.path.islink(full_path):
                 queue.append(full_path)
         return queue
 
