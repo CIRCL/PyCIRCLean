@@ -167,7 +167,7 @@ class FileBase(object):
         to help prevent double-click of death.
         """
         if not self.is_dangerous:
-            self.set_property('dangerous', True)
+            self.set_property('is_dangerous', True)
             self.filename = 'DANGEROUS_{}_DANGEROUS'.format(self.filename)
         if reason_string:
             self.add_description(reason_string)

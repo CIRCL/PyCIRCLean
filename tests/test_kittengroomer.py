@@ -17,12 +17,12 @@ class TestFileBase:
     # Fixtures
 
     @fixture(scope='class')
-    def dest_dir_path(self, tmpdir_factory):
-        return tmpdir_factory.mktemp('dest').strpath
-
-    @fixture(scope='class')
     def src_dir_path(self, tmpdir_factory):
         return tmpdir_factory.mktemp('src').strpath
+
+    @fixture(scope='class')
+    def dest_dir_path(self, tmpdir_factory):
+        return tmpdir_factory.mktemp('dest').strpath
 
     @fixture
     def symlink_file_path(self, tmpdir, tmpfile_path):
@@ -179,31 +179,30 @@ class TestFileBase:
         text_file.add_description('thing')
         assert text_file.get_property('description_string') == ['thing']
 
-    def test_add_new_error(self):
+    def test_add_new_error(self, text_file):
         """Adding a new error should add it to the dict of errors."""
-        pass
+        text_file.add_error(Exception, 'thing')
+        assert text_file.get_property('_errors') == {Exception: 'thing'}
 
-    def test_add_error_exists(self):
-        """Adding an error that already exists shouldn't duplicate it."""
-        pass
+    def test_normal_file_mark_dangerous(self, text_file):
+        """Marking a file dangerous should identify it as dangerous."""
+        text_file.make_dangerous()
+        assert text_file.is_dangerous is True
 
-    def test_normal_file_mark_dangerous(self):
-        """Marking a normal file dangerous shouldn't make it """
-        pass
+    def test_normal_file_mark_dangerous_filename_change(self, text_file):
+        """Marking a file dangerous should mangle the filename."""
+        filename = text_file.filename
+        text_file.make_dangerous()
+        assert text_file.filename == 'DANGEROUS_{}_DANGEROUS'.format(filename)
 
-    def test_normal_file_mark_dangerous_filename_change(self):
-        pass
+    def test_normal_file_mark_dangerous_add_description(self, text_file):
+        text_file.make_dangerous('thing')
+        assert text_file.get_property('description_string') == ['thing']
 
-    def test_normal_file_mark_dangerous_add_description(self):
-        pass
-
-    def test_dangerous_file_mark_dangerous(self):
-        pass
-
-    # File modifiers
-
-    def test_safe_copy(self):
-        pass
+    def test_dangerous_file_mark_dangerous(self, text_file):
+        text_file.make_dangerous()
+        text_file.make_dangerous()
+        assert text_file.is_dangerous is True
 
     def test_force_ext_change(self):
         pass
@@ -211,10 +210,28 @@ class TestFileBase:
     def test_force_ext_correct(self):
         pass
 
+    def test_safe_copy(self, src_dir_path, dest_dir_path):
+        file_path = os.path.join(src_dir_path, 'test.txt')
+        with open(file_path, 'w+') as file:
+            file.write('')
+        dst_path = os.path.join(dest_dir_path, 'test.txt')
+        with mock.patch('kittengroomer.helpers.magic.from_file',
+                        return_value='text/plain'):
+            file = FileBase(file_path, dst_path)
+        with mock.patch('kittengroomer.helpers.shutil.copy') as mock_copy:
+            file.safe_copy()
+            mock_copy.assert_called_once_with(file_path, dst_path)
+
     def test_create_metadata_file_new(self):
         pass
 
     def test_create_metadata_file_already_exists(self):
+        pass
+
+
+class TestLogging:
+
+    def test_computehash(self):
         pass
 
 
