@@ -441,13 +441,11 @@ class File(FileBase):
 
     def _unknown_app(self):
         """Process an unknown file."""
-        self.add_description('Unknown application file')
-        self.make_unknown()
+        self.make_dangerous('Unknown application file')
 
     def _binary_app(self):
         """Process an unknown binary file."""
-        self.add_description('Unknown binary file')
-        self.make_binary()
+        self.make_dangerous('Unknown binary file')
 
     #######################
     # Metadata extractors
