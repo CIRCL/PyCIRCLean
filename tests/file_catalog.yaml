@@ -34,8 +34,12 @@ normal:
     mimetype: application/zip
 
 dangerous:
-  42.zip: # Added 27-06-2017, source: http://www.unforgettable.dk/42.zip
-    description: zip archivebomb, password is '42'
+  # 42.zip: # Added 27-06-2017, source: http://www.unforgettable.dk/42.zip
+  #   description: zip archivebomb, password is '42'
+  #   mimetype: application/zip
+  #   xfail: True
+  archivebomb.zip: # Added 16-07-2017, source: hand-generated
+    description: zip archivebomb with 3 levels
     mimetype: application/zip
     xfail: True
   autorun.inf: # Added 27-06-2017, source: hand-generated
