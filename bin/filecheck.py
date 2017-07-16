@@ -732,12 +732,13 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         queue = []
         for path in sorted(os.listdir(root_dir_path), key=lambda x: str.lower(x)):
             full_path = os.path.join(root_dir_path, path)
-            if os.path.isdir(full_path):
+            # check for symlinks first to prevent getting trapped in infinite symlink recursion
+            if os.path.islink(full_path):
+                queue.append(full_path)
+            elif os.path.isdir(full_path):
                 queue.append(full_path)
                 queue += self.list_files_dirs(full_path)
-            elif os.path.isfile(full_path, follow_symlinks=False):
-                queue.append(full_path)
-            elif os.path.islink(full_path):
+            elif os.path.isfile(full_path):
                 queue.append(full_path)
         return queue
 
