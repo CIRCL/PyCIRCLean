@@ -251,7 +251,7 @@ class FileBase(object):
         return mimetype
 
     def _split_mimetype(self, mimetype):
-        if '/' in mimetype:
+        if mimetype and '/' in mimetype:
             main_type, sub_type = mimetype.split('/')
         else:
             main_type, sub_type = None, None

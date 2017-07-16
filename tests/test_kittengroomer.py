@@ -124,7 +124,7 @@ class TestFileBase:
         with mock.patch('kittengroomer.helpers.magic.from_file',
                         return_value='text/plain'):
             file = FileBase('', '')
-            file.mimetype = 'text/plain'
+        assert file.mimetype == 'text/plain'
 
     def test_maintype_and_subtype_attributes(self):
         """If a file has a full mimetype, maintype and subtype should ==
@@ -139,6 +139,13 @@ class TestFileBase:
         """If a file doesn't have a full mimetype has_mimetype should == False."""
         with mock.patch('kittengroomer.helpers.magic.from_file',
                         return_value='data'):
+            file = FileBase('', '')
+        assert file.has_mimetype is False
+
+    def test_has_mimetype_mimetype_is_none(self):
+        """If a file doesn't have a full mimetype has_mimetype should == False."""
+        with mock.patch('kittengroomer.helpers.FileBase._determine_mimetype',
+                        return_value=None):
             file = FileBase('', '')
         assert file.has_mimetype is False
 
