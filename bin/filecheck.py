@@ -659,18 +659,17 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         super(KittenGroomerFileCheck, self).__init__(root_src, root_dst)
         self.recursive_archive_depth = 0
         self.max_recursive_depth = max_recursive_depth
-        self.cur_file = None
         self.logger = GroomerLogger(root_src, root_dst, debug)
 
     def process_dir(self, src_dir, dst_dir):
         """Process a directory on the source key."""
         for srcpath in self.list_files_dirs(src_dir):
-            if os.path.isdir(srcpath):
+            if not os.path.islink(srcpath) and os.path.isdir(srcpath):
                 self.logger.add_dir(srcpath)
             else:
                 dstpath = os.path.join(dst_dir, os.path.basename(srcpath))
-                self.cur_file = File(srcpath, dstpath, self.logger)
-                self.process_file(self.cur_file)
+                cur_file = File(srcpath, dstpath, self.logger)
+                self.process_file(cur_file)
 
     def process_file(self, file):
         """
@@ -702,8 +701,6 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             file.make_dangerous('Archive bomb')
         else:
             tempdir_path = file.make_tempdir()
-            # TODO: double check we are properly escaping file.src_path
-            # otherwise we are running unsanitized user input directly in the shell
             command_str = '{} -p1 x "{}" -o"{}" -bd -aoa'
             unpack_command = command_str.format(SEVENZ_PATH,
                                                 file.src_path, tempdir_path)
