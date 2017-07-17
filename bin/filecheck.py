@@ -365,8 +365,7 @@ class File(FileBase):
                 self.make_dangerous('WinOffice file containing a macro')
             for i in indicators:
                 if i.id == 'ObjectPool' and i.value:
-                    # TODO: is having an ObjectPool suspicious?
-                    self.add_description('WinOffice file containing an object pool')
+                    self.make_dangerous('WinOffice file containing an object pool')
                 elif i.id == 'flash' and i.value:
                     self.make_dangerous('WinOffice file with embedded flash')
         self.add_description('WinOffice file')

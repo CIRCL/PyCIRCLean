@@ -237,7 +237,7 @@ class TestFileBase:
         assert text_file.extension == '.txt'
         assert '.txt.txt' not in text_file.dst_path
 
-    def test_safe_copy(self, src_dir_path, dest_dir_path):
+    def test_safe_copy_calls_copy(self, src_dir_path, dest_dir_path):
         """Calling safe_copy should copy the file from the correct path to
         the correct destination path."""
         file_path = os.path.join(src_dir_path, 'test.txt')
@@ -250,6 +250,16 @@ class TestFileBase:
         with mock.patch('kittengroomer.helpers.shutil.copy') as mock_copy:
             file.safe_copy()
             mock_copy.assert_called_once_with(file_path, dst_path)
+
+    def test_safe_copy_makedir_doesnt_exist(self):
+        """Calling safe_copy should create intermediate directories in the path
+        if they don't exist."""
+        pass
+
+    def test_safe_copy_makedir_exists(self):
+        """Calling safe_copy when some intermediate directories exist should
+        result in the creation of the full path and the file."""
+        pass
 
     def test_create_metadata_file_new(self):
         pass

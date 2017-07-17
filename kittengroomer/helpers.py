@@ -33,7 +33,7 @@ class FileBase(object):
         self.dst_dir = os.path.dirname(dst_path)
         self.filename = os.path.basename(src_path)
         self.size = self._get_size(src_path)
-        self.is_dangerous = False  # Should this be some other value initially?
+        self.is_dangerous = False
         self.copied = False
         self.symlink_path = None
         self.description_string = []  # array of descriptions to be joined
@@ -179,19 +179,17 @@ class FileBase(object):
         if dst is None:
             dst = self.dst_path
         try:
-            # TODO: maybe don't check and just mkdir? Is there a way to do this that won't raise an Exception? Can we make shutil automatically make dirs inbetween?
-            if not os.path.exists(self.dst_dir):
-                os.makedirs(self.dst_dir)
+            os.makedirs(self.dst_dir, exist_ok=True)
             shutil.copy(src, dst)
-        except Exception as e:
-            # TODO: what exceptions are we expecting to catch here?
+        except IOError as e:
+            # Probably means we can't write in the dest dir
             self.add_error(e, '')
 
     def force_ext(self, extension):
         """If dst_path does not end in `extension`, append .ext to it."""
         new_ext = self._check_leading_dot(extension)
         if not self.filename.endswith(new_ext):
-            # TODO: do we want to log that the extension was changed?
+            # TODO: log that the extension was changed
             self.filename += new_ext
         if not self.get_property('extension') == new_ext:
             self.set_property('extension', new_ext)
@@ -212,8 +210,7 @@ class FileBase(object):
                     self.filename +
                     "\": a file with that path exists.")
             else:
-                if not os.path.exists(self.dst_dir):
-                    os.makedirs(self.dst_dir)
+                os.makedirs(self.dst_dir, exist_ok=True)
                 # TODO: shouldn't mutate state and also return something
                 self.metadata_file_path = self.dst_path + ext
                 return self.metadata_file_path
