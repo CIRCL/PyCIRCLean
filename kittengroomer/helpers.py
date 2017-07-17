@@ -49,10 +49,10 @@ class FileBase(object):
     @property
     def extension(self):
         _, ext = os.path.splitext(self.filename)
-        ext = ext.lower()
         if ext == '':
-            ext = None
-        return ext
+            return None
+        else:
+            return ext.lower()
 
     @property
     def maintype(self):
