@@ -7,6 +7,7 @@ import unittest.mock as mock
 import pytest
 
 from kittengroomer import FileBase, KittenGroomerBase
+from kittengroomer.helpers import ImplementationRequired
 
 skip = pytest.mark.skip
 xfail = pytest.mark.xfail
@@ -14,7 +15,6 @@ fixture = pytest.fixture
 
 
 class TestFileBase:
-    # Fixtures
 
     @fixture(scope='class')
     def src_dir_path(self, tmpdir_factory):
@@ -25,23 +25,17 @@ class TestFileBase:
         return tmpdir_factory.mktemp('dest').strpath
 
     @fixture
-    def symlink_file_path(self, tmpdir, tmpfile_path):
-        symlink_path = tmpdir.join('symlinked')
-        symlink_path = symlink_path.strpath
-        os.symlink(tmpfile_path, symlink_path)
-        return symlink_path
-
-    @fixture
     def tmpfile_path(self, tmpdir):
         file_path = tmpdir.join('test.txt')
         file_path.write('testing')
         return file_path.strpath
 
     @fixture
-    def tmpfile(self, src_dir_path, dst_dir_path):
-        file_path = os.path.join(src_dir_path, 'test.txt')
-        file_path.write('testing')
-        return FileBase(file_path, dst_dir_path)
+    def symlink_file_path(self, tmpdir, tmpfile_path):
+        symlink_path = tmpdir.join('symlinked')
+        symlink_path = symlink_path.strpath
+        os.symlink(tmpfile_path, symlink_path)
+        return symlink_path
 
     @fixture
     def text_file(self):
@@ -186,6 +180,11 @@ class TestFileBase:
         text_file.add_description('thing')
         assert text_file.get_property('description_string') == ['thing']
 
+    def test_add_description_not_string(self, text_file):
+        """Adding a description that isn't a string should raise an error."""
+        with pytest.raises(TypeError):
+            text_file.add_description(123)
+
     def test_add_new_error(self, text_file):
         """Adding a new error should add it to the dict of errors."""
         text_file.add_error(Exception, 'thing')
@@ -203,21 +202,44 @@ class TestFileBase:
         assert text_file.filename == 'DANGEROUS_{}_DANGEROUS'.format(filename)
 
     def test_normal_file_mark_dangerous_add_description(self, text_file):
+        """Marking a file as dangerous and passing in a description should add
+        that description to the file."""
         text_file.make_dangerous('thing')
         assert text_file.get_property('description_string') == ['thing']
 
     def test_dangerous_file_mark_dangerous(self, text_file):
+        """Marking a dangerous file as dangerous should do nothing, and the
+        file should remain dangerous."""
         text_file.make_dangerous()
         text_file.make_dangerous()
         assert text_file.is_dangerous is True
 
-    def test_force_ext_change(self):
-        pass
+    def test_force_ext_change_filepath(self, text_file):
+        """Force_ext should modify the path of the file to end in the
+        new extension."""
+        text_file.force_ext('.test')
+        assert text_file.dst_path.endswith('.test')
 
-    def test_force_ext_correct(self):
-        pass
+    def test_force_ext_add_dot(self, text_file):
+        """Force_ext should add a dot to an extension given without one."""
+        text_file.force_ext('test')
+        assert text_file.dst_path.endswith('.test')
+
+    def test_force_ext_change_extension_attr(self, text_file):
+        """Force_ext should modify the extension attribute"""
+        text_file.force_ext('.thing')
+        assert text_file.extension == '.thing'
+
+    def test_force_ext_no_change(self, text_file):
+        """Force_ext should do nothing if the current extension is the same
+        as the new extension."""
+        text_file.force_ext('.txt')
+        assert text_file.extension == '.txt'
+        assert '.txt.txt' not in text_file.dst_path
 
     def test_safe_copy(self, src_dir_path, dest_dir_path):
+        """Calling safe_copy should copy the file from the correct path to
+        the correct destination path."""
         file_path = os.path.join(src_dir_path, 'test.txt')
         with open(file_path, 'w+') as file:
             file.write('')
@@ -239,6 +261,7 @@ class TestFileBase:
 class TestLogging:
 
     def test_computehash(self):
+        """Computehash should return the correct sha256 hash of a given file."""
         pass
 
 
@@ -253,17 +276,36 @@ class TestKittenGroomerBase:
         return tmpdir_factory.mktemp('dest').strpath
 
     @fixture
-    def generic_groomer(self, src_dir_path, dest_dir_path):
+    def groomer(self, src_dir_path, dest_dir_path):
         return KittenGroomerBase(src_dir_path, dest_dir_path)
 
-    def test_list_all_files_includes_file(self, tmpdir):
+    def test_list_all_files_includes_file(self, tmpdir, groomer):
+        """Calling list_all_files should include files in the given path."""
         file = tmpdir.join('test.txt')
         file.write('testing')
-        files = KittenGroomerBase.list_all_files(KittenGroomerBase, tmpdir.strpath)
+        files = groomer.list_all_files(tmpdir.strpath)
         assert file.strpath in files
 
-    def test_list_all_files_excludes_dir(self, tmpdir):
+    def test_list_all_files_excludes_dir(self, tmpdir, groomer):
+        """Calling list_all_files shouldn't include directories in the given
+        path."""
         testdir = tmpdir.join('testdir')
         os.mkdir(testdir.strpath)
-        files = KittenGroomerBase.list_all_files(KittenGroomerBase, tmpdir.strpath)
+        files = groomer.list_all_files(tmpdir.strpath)
         assert testdir.strpath not in files
+
+    def test_safe_remove(self, groomer, src_dir_path):
+        """Calling safe_remove should not raise an Exception if trying to
+        remove a file that doesn't exist."""
+        groomer.safe_remove(os.path.join(src_dir_path, 'thing'))
+
+    def test_safe_mkdir_file_exists(self, groomer, dest_dir_path):
+        """Calling safe_mkdir should not overwrite an existing directory."""
+        filepath = os.path.join(dest_dir_path, 'thing')
+        os.mkdir(filepath)
+        groomer.safe_mkdir(filepath)
+
+    def test_processdir_not_implemented(self, groomer):
+        """Calling processdir should raise an Implementation Required error."""
+        with pytest.raises(ImplementationRequired):
+            groomer.processdir('.', '.')
