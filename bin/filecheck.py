@@ -214,14 +214,18 @@ class File(FileBase):
         If the filename contains any dangerous or specific characters, handle
         them appropriately.
         """
-        if self.filename[0] is '.':
-            # TODO: handle dotfiles here
-            pass
+        if self.filename.startswith('.'):
+            macos_hidden_files = set(
+                '.Trashes', '._.Trashes', '.DS_Store', '.fseventsd', '.Spotlight-V100'
+            )
+            if self.filename in macos_hidden_files:
+                self.add_description('MacOS hidden metadata file.')
+                self.should_copy = False
         right_to_left_override = u"\u202E"
         if right_to_left_override in self.filename:
             self.make_dangerous('Filename contains dangerous character')
-            self.filename = self.filename.replace(right_to_left_override, '')
-            self.set_property('filename', self.filename)
+            new_filename = self.filename.replace(right_to_left_override, '')
+            self.set_property('filename', new_filename)
 
     def check(self):
         """
