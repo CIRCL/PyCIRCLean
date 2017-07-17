@@ -36,7 +36,7 @@ install:
     - pip install git+https://github.com/grierforensics/officedissector.git
     # PyCIRCLean dependencies
     - pip install -r dev-requirements.txt
-    - pip install coveralls codecov
+    - pip install codecov
     # Testing dependencies
     - sudo apt-get install rar
     # Prepare tests
@@ -67,9 +67,9 @@ install:
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
     - popd
-    - pushd tests/dangerous/
-    - 7z x -p42 42.zip
-    - popd
+    # - pushd tests/dangerous/
+    # - 7z x -p42 42.zip
+    # - popd
 
 script:
     - travis_wait py.test --cov=kittengroomer --cov=bin tests/
@@ -80,5 +80,4 @@ notifications:
         on_failure: change
 
 after_success:
-    - coveralls
     - codecov
