@@ -60,8 +60,7 @@ class GroomerLogger(object):
             descr_cat = "Normal"
         else:
             descr_cat = props['safety_category'].capitalize()
-        # TODO: make size adjust to MB/GB for large files
-        size = str(props['file_size']) + 'B'
+        size = self._convert_size(props['file_size'])
         file_template = "+- {name} ({sha_hash}): {size}, {mt}/{st}. {desc}: {desc_str}"
         file_string = file_template.format(
             name=props['filename'],
@@ -76,6 +75,14 @@ class GroomerLogger(object):
         if in_tempdir:
             depth -= 1
         self._write_line_to_log(file_string, depth)
+        
+    def _convert_size(self, size, precision=2):
+        suffixes=['B','KB','MB','GB']
+        suffixIndex = 0
+        while size > 1024 and suffixIndex < 4:
+            suffixIndex += 1
+            size = size/1024.0
+        return "%.*f%s"%(precision, size, suffixes[suffixIndex])
 
     def add_dir(self, dir_path):
         path_depth = self._get_path_depth(dir_path)
