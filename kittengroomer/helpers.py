@@ -240,6 +240,8 @@ class FileBase(object):
             if not os.path.exists(dst_path):
                 os.makedirs(dst_path)
             shutil.copy(src, dst)
+            if self.main_type == 'text':
+                os.chmod(self.dst_path, 436)
         except Exception as e:
             self.add_error(e, '')
 
