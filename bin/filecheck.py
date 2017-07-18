@@ -14,8 +14,6 @@ import officedissector
 import warnings
 import exifread
 from PIL import Image
-# TODO: why do we have this import? How does filecheck handle pngs?
-# from PIL import PngImagePlugin
 from pdfid import PDFiD, cPDFiD
 
 from kittengroomer import FileBase, KittenGroomerBase, Logging
@@ -119,14 +117,20 @@ class Config:
 
 
 class File(FileBase):
+    """
+    Main file object
+
+    Created for each file that is processed by KittenGroomer. Contains all
+    filetype-specific processing methods.
+    """
 
     def __init__(self, src_path, dst_path, logger):
         super(File, self).__init__(src_path, dst_path)
-        self.is_recursive = False
+        self.is_archive = False
         self.logger = logger
         self.tempdir_path = self.dst_path + '_temp'
 
-        subtypes_apps = [
+        subtypes_apps = (
             (Config.mimes_office, self._winoffice),
             (Config.mimes_ooxml, self._ooxml),
             (Config.mimes_rtf, self.text),
@@ -136,13 +140,13 @@ class File(FileBase):
             (Config.mimes_ms, self._executables),
             (Config.mimes_compressed, self._archive),
             (Config.mimes_data, self._binary_app),
-        ]
+        )
         self.app_subtype_methods = self._make_method_dict(subtypes_apps)
 
-        types_metadata = [
+        types_metadata = (
             (Config.mimes_exif, self._metadata_exif),
             (Config.mimes_png, self._metadata_png),
-        ]
+        )
         self.metadata_mimetype_methods = self._make_method_dict(types_metadata)
 
         self.mime_processing_options = {
@@ -204,19 +208,34 @@ class File(FileBase):
                 self.make_dangerous('Extension does not match expected extensions for this mimetype')
 
     def _check_filename(self):
-        if self.filename[0] is '.':
-            # TODO: handle dotfiles here
-            pass
+        """
+        Verify the filename
+
+        If the filename contains any dangerous or specific characters, handle
+        them appropriately.
+        """
+        if self.filename.startswith('.'):
+            macos_hidden_files = set(
+                '.Trashes', '._.Trashes', '.DS_Store', '.fseventsd', '.Spotlight-V100'
+            )
+            if self.filename in macos_hidden_files:
+                self.add_description('MacOS hidden metadata file.')
+                self.should_copy = False
         right_to_left_override = u"\u202E"
         if right_to_left_override in self.filename:
             self.make_dangerous('Filename contains dangerous character')
-            self.dst_path = self.dst_path.replace(right_to_left_override, '')
-            # TODO: change self.filename and'filename' property? Or should those reflect the values on the source key
+            new_filename = self.filename.replace(right_to_left_override, '')
+            self.set_property('filename', new_filename)
 
     def check(self):
-        if self.main_type in Config.ignored_mimes:
+        """
+        Main file processing method
+
+        Delegates to various helper methods including filetype-specific checks.
+        """
+        if self.maintype in Config.ignored_mimes:
             self.should_copy = False
-            self.mime_processing_options.get(self.main_type, self.unknown)()
+            self.mime_processing_options.get(self.maintype, self.unknown)()
         else:
             self._check_dangerous()
             self._check_filename()
@@ -225,13 +244,14 @@ class File(FileBase):
             if self.has_mimetype:
                 self._check_mimetype()
             if not self.is_dangerous:
-                self.mime_processing_options.get(self.main_type, self.unknown)()
+                self.mime_processing_options.get(self.maintype, self.unknown)()
 
     def write_log(self):
+        """Pass information about the file to self.logger"""
         props = self.get_all_props()
-        if not self.is_recursive:
+        if not self.is_archive:
             if os.path.exists(self.tempdir_path):
-                # Hack to make images appear at the correct tree depth in log
+                # FIXME: Hack to make images appear at the correct tree depth in log
                 self.logger.add_file(self.src_path, props, in_tempdir=True)
                 return
         self.logger.add_file(self.src_path, props)
@@ -293,13 +313,13 @@ class File(FileBase):
     def text(self):
         """Process an rtf, ooxml, or plaintext file."""
         for mt in Config.mimes_rtf:
-            if mt in self.sub_type:
+            if mt in self.subtype:
                 self.add_description('Rich Text (rtf) file')
                 # TODO: need a way to convert it to plain text
                 self.force_ext('.txt')
                 return
         for mt in Config.mimes_ooxml:
-            if mt in self.sub_type:
+            if mt in self.subtype:
                 self.add_description('OOXML (openoffice) file')
                 self._ooxml()
                 return
@@ -308,13 +328,12 @@ class File(FileBase):
 
     def application(self):
         """Process an application specific file according to its subtype."""
-        for subtype, method in self.app_subtype_methods.items():
-            if subtype in self.sub_type:
-                # TODO: should we change the logic so we don't iterate through all of the subtype methods?
-                # TODO: should these methods return a value?
-                method()
-                return
-        self._unknown_app()
+        if self.subtype in self.app_subtype_methods:
+            method = self.app_subtype_methods[self.subtype]
+            method()
+            # TODO: should these application methods return a value?
+        else:
+            self._unknown_app()
 
     def _executables(self):
         """Process an executable file."""
@@ -346,9 +365,7 @@ class File(FileBase):
                 self.make_dangerous('WinOffice file containing a macro')
             for i in indicators:
                 if i.id == 'ObjectPool' and i.value:
-                    # TODO: is having an ObjectPool suspicious?
-                    # LOG: user defined property
-                    self.add_description('WinOffice file containing an object pool')
+                    self.make_dangerous('WinOffice file containing an object pool')
                 elif i.id == 'flash' and i.value:
                     self.make_dangerous('WinOffice file with embedded flash')
         self.add_description('WinOffice file')
@@ -372,7 +389,7 @@ class File(FileBase):
         if len(doc.features.embedded_packages) > 0:
             self.make_dangerous('Ooxml file with embedded packages')
         if not self.is_dangerous:
-            self.add_description('OOXML file')
+            self.add_description('Ooxml file')
 
     def _libreoffice(self):
         """Process a libreoffice file."""
@@ -423,17 +440,15 @@ class File(FileBase):
         # TODO: change this to something archive type specific instead of generic 'Archive'
         self.add_description('Archive')
         self.should_copy = False
-        self.is_recursive = True
+        self.is_archive = True
 
     def _unknown_app(self):
         """Process an unknown file."""
-        self.add_description('Unknown application file')
-        self.make_unknown()
+        self.make_dangerous('Unknown application file')
 
     def _binary_app(self):
         """Process an unknown binary file."""
-        self.add_description('Unknown binary file')
-        self.make_binary()
+        self.make_dangerous('Unknown binary file')
 
     #######################
     # Metadata extractors
@@ -557,7 +572,7 @@ class GroomerLogger(object):
             self.log_debug_out = os.devnull
 
     def _make_log_dir(self, root_dir_path):
-        """Make the directory in the dest dir that will hold the logs"""
+        """Create the directory in the dest dir that will hold the logs"""
         log_dir_path = os.path.join(root_dir_path, 'logs')
         if os.path.exists(log_dir_path):
             shutil.rmtree(log_dir_path)
@@ -565,6 +580,7 @@ class GroomerLogger(object):
         return log_dir_path
 
     def _add_root_dir(self, root_path):
+        """Add the root directory to the log"""
         dirname = os.path.split(root_path)[1] + '/'
         with open(self.log_path, mode='ab') as lf:
             lf.write(bytes(dirname, 'utf-8'))
@@ -572,40 +588,51 @@ class GroomerLogger(object):
 
     def add_file(self, file_path, file_props, in_tempdir=False):
         """Add a file to the log. Takes a dict of file properties."""
-        # TODO: fix var names in this method
-        # TODO: handle symlinks better: symlink_string = '{}+-- {}\t- Symbolic link to {}\n'.format(padding, f, os.readlink(curpath))
-        props = file_props
         depth = self._get_path_depth(file_path)
-        description_string = ', '.join(props['description_string'])
+        description_string = ', '.join(file_props['description_string'])
         file_hash = Logging.computehash(file_path)[:6]
-        if props['safety_category'] is None:
-            descr_cat = "Normal"
+        if file_props['is_dangerous']:
+            description_category = "Dangerous"
         else:
-            descr_cat = props['safety_category'].capitalize()
-        # TODO: make size adjust to MB/GB for large files
-        size = str(props['file_size']) + 'B'
-        file_template = "+- {name} ({sha_hash}): {size}, {mt}/{st}. {desc}: {desc_str}"
+            description_category = "Normal"
+        size_string = self._format_file_size(file_props['file_size'])
+        file_template = "+- {name} ({sha_hash}): {size}, type: {mt}/{st}. {desc}: {desc_str}"
         file_string = file_template.format(
-            name=props['filename'],
+            name=file_props['filename'],
             sha_hash=file_hash,
-            size=size,
-            mt=props['maintype'],
-            st=props['subtype'],
-            desc=descr_cat,
+            size=size_string,
+            mt=file_props['maintype'],
+            st=file_props['subtype'],
+            desc=description_category,
             desc_str=description_string,
-            # errs=''  # TODO: add errors in human readable form here
         )
+        # TODO: finish adding Errors and check that they appear properly
+        # if file_props['errors']:
+        #     error_string = ', '.join([str(key) for key in file_props['errors']])
+        #     file_string.append(' Errors: ' + error_string)
         if in_tempdir:
             depth -= 1
         self._write_line_to_log(file_string, depth)
 
     def add_dir(self, dir_path):
+        """Add a directory to the log"""
         path_depth = self._get_path_depth(dir_path)
         dirname = os.path.split(dir_path)[1] + '/'
         log_line = '+- ' + dirname
         self._write_line_to_log(log_line, path_depth)
 
+    def _format_file_size(self, size):
+        """Returns a string with the file size and appropriate unit"""
+        file_size = size
+        for unit in ('B', 'KB', 'MB', 'GB'):
+            if file_size < 1024:
+                return str(int(file_size)) + unit
+            else:
+                file_size = file_size / 1024
+        return str(int(file_size)) + 'GB'
+
     def _get_path_depth(self, path):
+        """Returns the relative path depth compared to root directory"""
         if self._dst_root_path in path:
             base_path = self._dst_root_path
         elif self._src_root_path in path:
@@ -615,6 +642,11 @@ class GroomerLogger(object):
         return path_depth
 
     def _write_line_to_log(self, line, indentation_depth):
+        """
+        Write a line to the log
+
+        Pad the line according to the `indentation_depth`.
+        """
         padding = b'   '
         padding += b'|  ' * indentation_depth
         line_bytes = os.fsencode(line)
@@ -630,18 +662,17 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         super(KittenGroomerFileCheck, self).__init__(root_src, root_dst)
         self.recursive_archive_depth = 0
         self.max_recursive_depth = max_recursive_depth
-        self.cur_file = None
         self.logger = GroomerLogger(root_src, root_dst, debug)
 
     def process_dir(self, src_dir, dst_dir):
         """Process a directory on the source key."""
         for srcpath in self.list_files_dirs(src_dir):
-            if os.path.isdir(srcpath):
+            if not os.path.islink(srcpath) and os.path.isdir(srcpath):
                 self.logger.add_dir(srcpath)
             else:
                 dstpath = os.path.join(dst_dir, os.path.basename(srcpath))
-                self.cur_file = File(srcpath, dstpath, self.logger)
-                self.process_file(self.cur_file)
+                cur_file = File(srcpath, dstpath, self.logger)
+                self.process_file(cur_file)
 
     def process_file(self, file):
         """
@@ -654,8 +685,8 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         if file.should_copy:
             file.safe_copy()
             file.set_property('copied', True)
-        file.write_log()
-        if file.is_recursive:
+            file.write_log()
+        if file.is_archive:
             self.process_archive(file)
         # TODO: Can probably handle cleaning up the tempdir better
         if hasattr(file, 'tempdir_path'):
@@ -673,8 +704,6 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             file.make_dangerous('Archive bomb')
         else:
             tempdir_path = file.make_tempdir()
-            # TODO: double check we are properly escaping file.src_path
-            # otherwise we are running unsanitized user input directly in the shell
             command_str = '{} -p1 x "{}" -o"{}" -bd -aoa'
             unpack_command = command_str.format(SEVENZ_PATH,
                                                 file.src_path, tempdir_path)
@@ -695,12 +724,20 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         return True
 
     def list_files_dirs(self, root_dir_path):
+        """
+        Returns a list of all files and directories
+
+        Performs a depth-first traversal of the file tree.
+        """
         queue = []
         for path in sorted(os.listdir(root_dir_path), key=lambda x: str.lower(x)):
             full_path = os.path.join(root_dir_path, path)
-            if os.path.isdir(full_path):
+            # check for symlinks first to prevent getting trapped in infinite symlink recursion
+            if os.path.islink(full_path):
                 queue.append(full_path)
-                queue += self.list_files_dirs(full_path)  # if path is a dir, recurse through its contents
+            elif os.path.isdir(full_path):
+                queue.append(full_path)
+                queue += self.list_files_dirs(full_path)
             elif os.path.isfile(full_path):
                 queue.append(full_path)
         return queue

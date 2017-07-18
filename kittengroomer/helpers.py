@@ -16,19 +16,6 @@ import argparse
 import magic
 
 
-class KittenGroomerError(Exception):
-    """Base KittenGroomer exception handler."""
-
-    def __init__(self, message):
-        super(KittenGroomerError, self).__init__(message)
-        self.message = message
-
-
-class ImplementationRequired(KittenGroomerError):
-    """Implementation required error."""
-    pass
-
-
 class FileBase(object):
     """
     Base object for individual files in the source directory.
@@ -43,82 +30,44 @@ class FileBase(object):
         Create various properties and determine the file's mimetype.
         """
         self.src_path = src_path
-        self.dst_path = dst_path
-        self.filename = os.path.basename(self.src_path)
-        self._file_props = {
-            'filepath': self.src_path,
-            'filename': self.filename,
-            'file_size': self.size,
-            'maintype': None,
-            'subtype': None,
-            'extension': None,
-            'safety_category': None,
-            'symlink': False,
-            'copied': False,
-            'description_string': [],  # array of descriptions to be joined
-            'errors': {},
-            'user_defined': {}
-        }
-        self.extension = self._determine_extension()
-        self.set_property('extension', self.extension)
-        self.mimetype = self._determine_mimetype()
+        self.dst_dir = os.path.dirname(dst_path)
+        self.filename = os.path.basename(src_path)
+        self.size = self._get_size(src_path)
+        self.is_dangerous = False
+        self.copied = False
+        self.symlink_path = None
+        self.description_string = []  # array of descriptions to be joined
+        self._errors = {}
+        self._user_defined = {}
         self.should_copy = True
-        self.main_type = None
-        self.sub_type = None
-        if self.mimetype:
-            self.main_type, self.sub_type = self._split_subtypes(self.mimetype)
-            if self.main_type:
-                self.set_property('maintype', self.main_type)
-            if self.sub_type:
-                self.set_property('subtype', self.sub_type)
-
-    def _determine_extension(self):
-        _, ext = os.path.splitext(self.src_path)
-        ext = ext.lower()
-        if ext == '':
-            ext = None
-        return ext
-
-    def _determine_mimetype(self):
-        if os.path.islink(self.src_path):
-            # magic will throw an IOError on a broken symlink
-            mimetype = 'inode/symlink'
-            self.set_property('symlink', os.readlink(self.src_path))
-        else:
-            try:
-                mt = magic.from_file(self.src_path, mime=True)
-                # Note: libmagic will always return something, even if it's just 'data'
-            except UnicodeEncodeError as e:
-                # FIXME: The encoding of the file that triggers this is broken (possibly it's UTF-16 and Python expects utf8)
-                # Note: one of the Travis files will trigger this exception
-                self.add_error(e, '')
-                mt = None
-            try:
-                mimetype = mt.decode("utf-8")
-            except:
-                mimetype = mt
-        return mimetype
-
-    def _split_subtypes(self, mimetype):
-        if '/' in mimetype:
-            main_type, sub_type = mimetype.split('/')
-        else:
-            main_type, sub_type = None, None
-        return main_type, sub_type
+        self.mimetype = self._determine_mimetype(src_path)
 
     @property
-    def size(self):
-        """Filesize in bytes as an int, 0 if file does not exist."""
-        try:
-            size = os.path.getsize(self.src_path)
-        except FileNotFoundError:
-            size = 0
-        return size
+    def dst_path(self):
+        return os.path.join(self.dst_dir, self.filename)
+
+    @property
+    def extension(self):
+        _, ext = os.path.splitext(self.filename)
+        if ext == '':
+            return None
+        else:
+            return ext.lower()
+
+    @property
+    def maintype(self):
+        main, _ = self._split_mimetype(self.mimetype)
+        return main
+
+    @property
+    def subtype(self):
+        _, sub = self._split_mimetype(self.mimetype)
+        return sub
 
     @property
     def has_mimetype(self):
         """True if file has a main and sub mimetype, else False."""
-        if not self.main_type or not self.sub_type:
+        if not self.maintype or not self.subtype:
             return False
         else:
             return True
@@ -132,42 +81,40 @@ class FileBase(object):
             return True
 
     @property
-    def is_dangerous(self):
-        """True if file has been marked 'dangerous', else False."""
-        return self._file_props['safety_category'] is 'dangerous'
-
-    @property
-    def is_unknown(self):
-        """True if file has been marked 'unknown', else False."""
-        return self._file_props['safety_category'] is 'unknown'
-
-    @property
-    def is_binary(self):
-        """True if file has been marked 'binary', else False."""
-        return self._file_props['safety_category'] is 'binary'
-
-    @property
     def is_symlink(self):
-        """True  if file is a symlink, else False."""
-        if self._file_props['symlink'] is False:
+        """True if file is a symlink, else False."""
+        if self.symlink_path is None:
             return False
         else:
             return True
 
+    @property
+    def description_string(self):
+        return self.__description_string
+
+    @description_string.setter
+    def description_string(self, value):
+        if hasattr(self, 'description_string'):
+            if isinstance(value, str):
+                if value not in self.__description_string:
+                    self.__description_string.append(value)
+            else:
+                raise TypeError("Description_string can only include strings")
+        else:
+            self.__description_string = value
+
     def set_property(self, prop_string, value):
         """
-        Take a property and a value and add them to the file's property dict.
+        Take a property and a value and add them to the file's stored props.
 
         If `prop_string` is part of the file property API, set it to `value`.
         Otherwise, add `prop_string`: `value` to `user_defined` properties.
+        TODO: rewrite docstring
         """
-        if prop_string is 'description_string':
-            if value not in self._file_props['description_string']:
-                self._file_props['description_string'].append(value)
-        elif prop_string in self._file_props.keys():
-            self._file_props[prop_string] = value
+        if hasattr(self, prop_string):
+            setattr(self, prop_string, value)
         else:
-            self._file_props['user_defined'][prop_string] = value
+            self._user_defined[prop_string] = value
 
     def get_property(self, prop_string):
         """
@@ -175,20 +122,34 @@ class FileBase(object):
 
         Returns `None` if `prop_string` cannot be found on the file.
         """
-        if prop_string in self._file_props:
-            return self._file_props[prop_string]
-        elif prop_string in self._file_props['user_defined']:
-            return self._file_props['user_defined'][prop_string]
-        else:
-            return None
+        try:
+            return getattr(self, prop_string)
+        except AttributeError:
+            return self._user_defined.get(prop_string, None)
 
     def get_all_props(self):
         """Return a dict containing all stored properties of this file."""
-        return self._file_props
+        # Maybe move this onto the logger? I think that makes more sense
+        props_dict = {
+            'filepath': self.src_path,
+            'filename': self.filename,
+            'file_size': self.size,
+            'mimetype': self.mimetype,
+            'maintype': self.maintype,
+            'subtype': self.subtype,
+            'extension': self.extension,
+            'is_dangerous': self.is_dangerous,
+            'symlink_path': self.symlink_path,
+            'copied': self.copied,
+            'description_string': self.description_string,
+            'errors': self._errors,
+            'user_defined': self._user_defined
+        }
+        return props_dict
 
     def add_error(self, error, info_string):
         """Add an `error`: `info_string` pair to the file."""
-        self._file_props['errors'].update({error: info_string})
+        self._errors.update({error: info_string})
 
     def add_description(self, description_string):
         """
@@ -205,29 +166,11 @@ class FileBase(object):
         Prepend and append DANGEROUS to the destination file name
         to help prevent double-click of death.
         """
-        if self.is_dangerous:
-            self.set_property('description_string', reason_string)
-            return
-        self.set_property('safety_category', 'dangerous')
-        self.set_property('description_string', reason_string)
-        path, filename = os.path.split(self.dst_path)
-        self.dst_path = os.path.join(path, 'DANGEROUS_{}_DANGEROUS'.format(filename))
-
-    def make_unknown(self):
-        """Mark file as an unknown type and prepend UNKNOWN to filename."""
-        if self.is_dangerous or self.is_binary:
-            return
-        self.set_property('safety_category', 'unknown')
-        path, filename = os.path.split(self.dst_path)
-        self.dst_path = os.path.join(path, 'UNKNOWN_{}'.format(filename))
-
-    def make_binary(self):
-        """Mark file as a binary and append .bin to filename."""
-        if self.is_dangerous:
-            return
-        self.set_property('safety_category', 'binary')
-        path, filename = os.path.split(self.dst_path)
-        self.dst_path = os.path.join(path, '{}.bin'.format(filename))
+        if not self.is_dangerous:
+            self.set_property('is_dangerous', True)
+            self.filename = 'DANGEROUS_{}_DANGEROUS'.format(self.filename)
+        if reason_string:
+            self.add_description(reason_string)
 
     def safe_copy(self, src=None, dst=None):
         """Copy file and create destination directories if needed."""
@@ -236,51 +179,88 @@ class FileBase(object):
         if dst is None:
             dst = self.dst_path
         try:
-            dst_path, filename = os.path.split(dst)
-            if not os.path.exists(dst_path):
-                os.makedirs(dst_path)
+            os.makedirs(self.dst_dir, exist_ok=True)
             shutil.copy(src, dst)
-        except Exception as e:
+        except IOError as e:
+            # Probably means we can't write in the dest dir
             self.add_error(e, '')
 
-    def force_ext(self, ext):
-        """If dst_path does not end in ext, append .ext to it."""
-        ext = self._check_leading_dot(ext)
-        if not self.dst_path.endswith(ext):
-            # LOG: do we want to log that the extension was changed as below?
-            # self.set_property('force_ext', True)
-            self.dst_path += ext
-        if not self._file_props['extension'] == ext:
-            self.set_property('extension', ext)
+    def force_ext(self, extension):
+        """If dst_path does not end in `extension`, append .ext to it."""
+        new_ext = self._check_leading_dot(extension)
+        if not self.filename.endswith(new_ext):
+            # TODO: log that the extension was changed
+            self.filename += new_ext
+        if not self.get_property('extension') == new_ext:
+            self.set_property('extension', new_ext)
 
-    def create_metadata_file(self, ext):
+    def create_metadata_file(self, extension):
+        # TODO: this method name is confusing
         """
         Create a separate file to hold extracted metadata.
 
-        The string `ext` will be used as the extension for the metadata file.
+        The string `extension` will be used as the extension for the file.
         """
-        ext = self._check_leading_dot(ext)
+        ext = self._check_leading_dot(extension)
         try:
+            # Prevent using the same path as another file from src_path
             if os.path.exists(self.src_path + ext):
-                err_str = ("Could not create metadata file for \"" +
-                           self.filename +
-                           "\": a file with that path already exists.")
-                raise KittenGroomerError(err_str)
+                raise KittenGroomerError(
+                    "Could not create metadata file for \"" +
+                    self.filename +
+                    "\": a file with that path exists.")
             else:
-                dst_dir_path, filename = os.path.split(self.dst_path)
-                if not os.path.exists(dst_dir_path):
-                    os.makedirs(dst_dir_path)
+                os.makedirs(self.dst_dir, exist_ok=True)
+                # TODO: shouldn't mutate state and also return something
                 self.metadata_file_path = self.dst_path + ext
                 return self.metadata_file_path
+        # TODO: can probably let this exception bubble up
         except KittenGroomerError as e:
             self.add_error(e, '')
             return False
 
     def _check_leading_dot(self, ext):
+        # TODO: this method name is confusing
         if len(ext) > 0:
             if not ext.startswith('.'):
                 return '.' + ext
         return ext
+
+    def _determine_mimetype(self, file_path):
+        if os.path.islink(file_path):
+            # libmagic will throw an IOError on a broken symlink
+            mimetype = 'inode/symlink'
+            self.set_property('symlink_path', os.readlink(file_path))
+        else:
+            try:
+                mt = magic.from_file(file_path, mime=True)
+                # libmagic will always return something, even if it's just 'data'
+            except UnicodeEncodeError as e:
+                # FIXME: The encoding of the file that triggers this is broken (possibly it's UTF-16 and Python expects utf8)
+                # Note: one of the Travis files will trigger this exception
+                self.add_error(e, '')
+                mt = None
+            try:
+                mimetype = mt.decode("utf-8")
+            except:
+                # FIXME: what should the exception be here if mimetype isn't utf-8?
+                mimetype = mt
+        return mimetype
+
+    def _split_mimetype(self, mimetype):
+        if mimetype and '/' in mimetype:
+            main_type, sub_type = mimetype.split('/')
+        else:
+            main_type, sub_type = None, None
+        return main_type, sub_type
+
+    def _get_size(self, file_path):
+        """Filesize in bytes as an int, 0 if file does not exist."""
+        try:
+            size = os.path.getsize(file_path)
+        except FileNotFoundError:
+            size = 0
+        return size
 
 
 class Logging(object):
@@ -331,13 +311,24 @@ class KittenGroomerBase(object):
 
     #######################
 
-    # TODO: if we move main() we can get rid of this as well
     def processdir(self, src_dir, dst_dir):
         """Implement this function to define file processing behavior."""
         raise ImplementationRequired('Please implement processdir.')
 
 
-# TODO: Should this get moved to filecheck? It isn't really API code and somebody can implement it themselves
+class KittenGroomerError(Exception):
+    """Base KittenGroomer exception handler."""
+
+    def __init__(self, message):
+        super(KittenGroomerError, self).__init__(message)
+        self.message = message
+
+
+class ImplementationRequired(KittenGroomerError):
+    """Implementation required error."""
+    pass
+
+
 def main(kg_implementation, description='Call a KittenGroomer implementation to process files present in the source directory and copy them to the destination directory.'):
     parser = argparse.ArgumentParser(prog='KittenGroomer', description=description)
     parser.add_argument('-s', '--source', type=str, help='Source directory')

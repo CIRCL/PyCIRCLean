@@ -71,8 +71,8 @@ tests/dst/*
 tests/*_dst
 tests/test_logs/*
 !tests/**/.keepdir
-!tests/src_invalid/*
-!tests/src_valid/*
+!tests/dangerous/*
+!tests/normal/*
 pdfid.py
 # Plugins are pdfid stuff
 plugin_*

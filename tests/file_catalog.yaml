@@ -1,0 +1,56 @@
+#YAML
+# Possible fields:
+  # description:
+  # mimetype:
+  # xfail:
+
+normal:
+  Example.gif: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.gif
+    mimetype: image/gif
+  Example.jpg: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.jpg
+    mimetype: image/jpeg
+  Example.ogg: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.ogg
+    description: Ogg vorbis sound file
+    mimetype: audio/ogg
+    xfail: True
+  Example.png: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.png
+    mimetype: image/png
+  Example.svg: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.svg
+    mimetype: image/svg+xml
+    xfail: True
+  pdf-sample.pdf: # Added: 27-06-2017, source: http://che.org.il/wp-content/uploads/2016/12/pdf-sample.pdf
+    mimetype: application/pdf
+  plaintext.txt: # Added: 27-06-2017, source: hand-generated
+    mimetype: text/plain
+  rar_archive.rar: # Added: 27-06-2017, Rar archive. Source: hand-generated
+    description: rar archive
+    mimetype: application/x-rar
+    xfail: True
+  rich_text.rtf: # Added 27-06-2017), source: hand-generated
+    mimetype: text/rtf
+  sample_mpeg4.mp4: # Added 28-06-2017, source: https://support.apple.com/en-us/HT201549
+    mimetype: video/mp4
+  zip_archive.zip: # Added 27-06-2017, source: hand-generated
+    mimetype: application/zip
+
+dangerous:
+  # 42.zip: # Added 27-06-2017, source: http://www.unforgettable.dk/42.zip
+  #   description: zip archivebomb, password is '42'
+  #   mimetype: application/zip
+  #   xfail: True
+  archivebomb.zip: # Added 16-07-2017, source: hand-generated
+    description: zip archivebomb with 3 levels
+    mimetype: application/zip
+    xfail: True
+  autorun.inf: # Added 27-06-2017, source: hand-generated
+    description: Microsoft autorun file
+    mimetype: text/plain
+  config_file.conf: # Added 27-06-2017, source: hand-generated
+    description: config file
+    mimetype: text/plain
+  message.msg: # Added 27-06-2017, source: ????
+    description: message file, used by Outlook etc
+    mimetype: message/rfc822
+  testRTL‮exe.txt: # Added 27-06-2017, source: hand-generated
+    description: text file with right-to-left character in filename
+    mimetype: text/plain

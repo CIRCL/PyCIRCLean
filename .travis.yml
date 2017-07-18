@@ -9,7 +9,7 @@ python:
     - nightly
 
 sudo: required
-# do we need sudo? should double check
+# https://docs.travis-ci.com/user/ci-environment/#Virtualization-environments
 
 dist: trusty
 
@@ -36,7 +36,7 @@ install:
     - pip install git+https://github.com/grierforensics/officedissector.git
     # PyCIRCLean dependencies
     - pip install -r dev-requirements.txt
-    - pip install coveralls codecov
+    - pip install codecov
     # Testing dependencies
     - sudo apt-get install rar
     # Prepare tests
@@ -45,7 +45,7 @@ install:
     - pushd theZoo/malwares/Binaries
     - python unpackall.py
     - popd
-    - mv theZoo/malwares/Binaries/out tests/src_invalid/
+    - mv theZoo/malwares/Binaries/out tests/uncategorized/
     # Path traversal attacks
     - git clone https://github.com/jwilk/path-traversal-samples
     - pushd path-traversal-samples
@@ -56,25 +56,23 @@ install:
     - make
     - popd
     - popd
-    - mv path-traversal-samples/zip/*.zip tests/src_invalid/
-    - mv path-traversal-samples/rar/*.rar tests/src_invalid/
+    - mv path-traversal-samples/zip/*.zip tests/uncategorized/
+    - mv path-traversal-samples/rar/*.rar tests/uncategorized/
     # Office docs
     - git clone https://github.com/eea/odfpy.git
-    - mv odfpy/tests/examples/* tests/src_invalid/
-    - pushd tests/src_invalid/
+    - mv odfpy/tests/examples/* tests/uncategorized/
+    - pushd tests/uncategorized/
     - wget https://bitbucket.org/decalage/olefileio_pl/raw/3073963b640935134ed0da34906fea8e506460be/Tests/images/test-ole-file.doc
     - wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
-    - 7z x -p42 42.zip
-    # Some random samples
-    # - wget http://www.sample-videos.com/audio/mp3/india-national-anthem.mp3
-    # - wget http://www.sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4
-    - wget http://thewalter.net/stef/software/rtfx/sample.rtf
     - popd
+    # - pushd tests/dangerous/
+    # - 7z x -p42 42.zip
+    # - popd
 
 script:
-    - travis_wait 30 py.test --cov=kittengroomer --cov=bin tests/
+    - travis_wait py.test --cov=kittengroomer --cov=bin tests/
 
 notifications:
     email:
@@ -82,5 +80,4 @@ notifications:
         on_failure: change
 
 after_success:
-    - coveralls
     - codecov
