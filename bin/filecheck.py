@@ -26,23 +26,23 @@ class Config:
     """Configuration information for Filecheck."""
 
     # Application subtypes (mimetype: 'application/<subtype>')
-    mimes_ooxml = ['vnd.openxmlformats-officedocument.']
-    mimes_office = ['msword', 'vnd.ms-']
-    mimes_libreoffice = ['vnd.oasis.opendocument']
-    mimes_rtf = ['rtf', 'richtext']
-    mimes_pdf = ['pdf', 'postscript']
-    mimes_xml = ['xml']
-    mimes_ms = ['dosexec']
-    mimes_compressed = ['zip', 'rar', 'bzip2', 'lzip', 'lzma', 'lzop',
-                        'xz', 'compress', 'gzip', 'tar']
-    mimes_data = ['octet-stream']
+    mimes_ooxml = ('vnd.openxmlformats-officedocument.',)
+    mimes_office = ('msword', 'vnd.ms-',)
+    mimes_libreoffice = ('vnd.oasis.opendocument',)
+    mimes_rtf = ('rtf', 'richtext',)
+    mimes_pdf = ('pdf', 'postscript',)
+    mimes_xml = ('xml',)
+    mimes_ms = ('dosexec',)
+    mimes_compressed = ('zip', 'rar', 'bzip2', 'lzip', 'lzma', 'lzop',
+                        'xz', 'compress', 'gzip', 'tar',)
+    mimes_data = ('octet-stream',)
 
     # Image subtypes
-    mimes_exif = ['image/jpeg', 'image/tiff']
-    mimes_png = ['image/png']
+    mimes_exif = ('image/jpeg', 'image/tiff',)
+    mimes_png = ('image/png',)
 
     # Mimetypes with metadata
-    mimes_metadata = ['image/jpeg', 'image/tiff', 'image/png']
+    mimes_metadata = ('image/jpeg', 'image/tiff', 'image/png',)
 
     # Commonly used malicious extensions
     # Sources: http://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
@@ -113,7 +113,7 @@ class Config:
     # It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
     override_ext = {'.gz': 'application/gzip'}
 
-    ignored_mimes = ['inode', 'model', 'multipart', 'example']
+    ignored_mimes = ('inode', 'model', 'multipart', 'example',)
 
 
 class File(FileBase):
@@ -331,7 +331,6 @@ class File(FileBase):
         if self.subtype in self.app_subtype_methods:
             method = self.app_subtype_methods[self.subtype]
             method()
-            # TODO: should these application methods return a value?
         else:
             self._unknown_app()
 

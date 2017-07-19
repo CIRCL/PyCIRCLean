@@ -95,6 +95,7 @@ def get_filename(sample_file):
 def src_dir_path(tmpdir_factory):
     return tmpdir_factory.mktemp('src').strpath
 
+
 @fixture(scope='module')
 def dest_dir_path(tmpdir_factory):
     return tmpdir_factory.mktemp('dest').strpath
@@ -121,6 +122,8 @@ def test_sample_files(mock_logger, sample_file, groomer, dest_dir_path):
     file_dest_path = os.path.join(dest_dir_path, sample_file.filename)
     file = File(sample_file.path, file_dest_path, mock_logger)
     groomer.process_file(file)
+    print(file.description_string)
+    print(file.mimetype)
     assert file.is_dangerous == sample_file.exp_dangerous
 
 
