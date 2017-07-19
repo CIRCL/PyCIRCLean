@@ -4,7 +4,7 @@
 import os
 import datetime
 
-import pytest
+from bin.filecheck import KittenGroomerFileCheck
 
 
 def save_logs(groomer, test_description):
@@ -31,3 +31,16 @@ def save_logs(groomer, test_description):
             with open(groomer.logger.log_debug_out, 'rb') as debug_out:
                 out = debug_out.read()
                 test_log.write(out)
+
+
+def main():
+    groomer = KittenGroomerFileCheck()
+    groomer.run()
+    save_logs(groomer, "Groomer")
+    # initialize groomer
+    # run groomer
+    # save logs
+
+
+if __name__ == '__main__':
+    main()
