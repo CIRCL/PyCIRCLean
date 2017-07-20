@@ -124,7 +124,7 @@ class File(FileBase):
     filetype-specific processing methods.
     """
 
-    def __init__(self, src_path, dst_path, logger):
+    def __init__(self, src_path, dst_path, logger=None):
         super(File, self).__init__(src_path, dst_path)
         self.is_archive = False
         self.logger = logger
@@ -161,6 +161,9 @@ class File(FileBase):
             'multipart': self.multipart,
             'inode': self.inode,
         }
+
+    def __repr__(self):
+        return "<filecheck.File object: {{{}}}>".format(self.filename)
 
     def _check_dangerous(self):
         if not self.has_mimetype:
@@ -248,13 +251,16 @@ class File(FileBase):
 
     def write_log(self):
         """Pass information about the file to self.logger"""
-        props = self.get_all_props()
-        if not self.is_archive:
-            if os.path.exists(self.tempdir_path):
-                # FIXME: in_tempdir is a hack to make images appear at the correct tree depth in log
-                self.logger.add_file(self.src_path, props, in_tempdir=True)
-                return
-        self.logger.add_file(self.src_path, props)
+        if self.logger:
+            props = self.get_all_props()
+            if not self.is_archive:
+                if os.path.exists(self.tempdir_path):
+                    # FIXME: in_tempdir is a hack to make images appear at the correct tree depth in log
+                    self.logger.add_file(self.src_path, props, in_tempdir=True)
+                    return
+            self.logger.add_file(self.src_path, props)
+        else:
+            raise Warning("No logger associated with this File")
 
     # ##### Helper functions #####
     def _make_method_dict(self, list_of_tuples):
@@ -675,6 +681,11 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.recursive_archive_depth = 0
         self.max_recursive_depth = max_recursive_depth
         self.logger = GroomerLogger(root_src, root_dst, debug)
+
+    def __repr__(self):
+        return "filecheck.KittenGroomerFileCheck object: {{{}}}".format(
+            os.path.basename(self.src_root_path)
+        )
 
     def process_dir(self, src_dir, dst_dir):
         """Process a directory on the source key."""
