@@ -586,32 +586,42 @@ class GroomerLogger(object):
             lf.write(b'\n')
 
     def add_file(self, file_path, file_props, in_tempdir=False):
-        """Add a file to the log. Takes a dict of file properties."""
+        """Add a file to the log. Takes a path and a dict of file properties."""
         depth = self._get_path_depth(file_path)
-        description_string = ', '.join(file_props['description_string'])
         file_hash = Logging.computehash(file_path)[:6]
-        if file_props['is_dangerous']:
-            description_category = "Dangerous"
+        if file_props['is_symlink']:
+            symlink_template = "+- NOT COPIED: symbolic link to {name} ({sha_hash})"
+            log_string = symlink_template.format(
+                name=file_props['symlink_path'],
+                sha_hash=file_hash
+            )
         else:
-            description_category = "Normal"
-        size_string = self._format_file_size(file_props['file_size'])
-        file_template = "+- {name} ({sha_hash}): {size}, type: {mt}/{st}. {desc}: {desc_str}"
-        file_string = file_template.format(
-            name=file_props['filename'],
-            sha_hash=file_hash,
-            size=size_string,
-            mt=file_props['maintype'],
-            st=file_props['subtype'],
-            desc=description_category,
-            desc_str=description_string,
-        )
-        # TODO: finish adding Errors and check that they appear properly
-        # if file_props['errors']:
-        #     error_string = ', '.join([str(key) for key in file_props['errors']])
-        #     file_string.append(' Errors: ' + error_string)
+            if file_props['is_dangerous']:
+                category = "Dangerous"
+            else:
+                category = "Normal"
+            size_string = self._format_file_size(file_props['file_size'])
+            if not file_props['copied']:
+                copied_string = 'NOT COPIED: '
+            else:
+                copied_string = ''
+            file_template = "+- {copied}{name} ({sha_hash}): {size}, type: {mt}/{st}. {cat}: {desc_str}"
+            log_string = file_template.format(
+                copied=copied_string,
+                name=file_props['filename'],
+                sha_hash=file_hash,
+                size=size_string,
+                mt=file_props['maintype'],
+                st=file_props['subtype'],
+                cat=category,
+                desc_str=file_props['description_string'],
+            )
+        if file_props['errors']:
+            error_string = ', '.join([str(key) for key in file_props['errors']])
+            log_string.append(' Errors: ' + error_string)
         if in_tempdir:
             depth -= 1
-        self._write_line_to_log(file_string, depth)
+        self._write_line_to_log(log_string, depth)
 
     def add_dir(self, dir_path):
         """Add a directory to the log"""
@@ -681,12 +691,13 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         the file to the destionation key, and clean up temporary directory.
         """
         file.check()
-        if file.should_copy:
-            file.safe_copy()
-            file.set_property('copied', True)
-            file.write_log()
         if file.is_archive:
             self.process_archive(file)
+        else:
+            if file.should_copy:
+                file.safe_copy()
+                file.set_property('copied', True)
+            file.write_log()
         # TODO: Can probably handle cleaning up the tempdir better
         if hasattr(file, 'tempdir_path'):
             self.safe_rmtree(file.tempdir_path)

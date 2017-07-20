@@ -12,12 +12,13 @@ def save_logs(groomer, test_description):
     test_log_path = 'tests/{}.log'.format(test_description)
     time_now = str(datetime.now().time()) + '\n'
     with open(test_log_path, 'wb+') as test_log:
-        log_header = divider.format('TEST LOG')
-        test_log.write(bytes(log_header, encoding='utf-8'))
+        test_log_header = divider.format('TEST LOG')
+        test_log.write(bytes(test_log_header, encoding='utf-8'))
         test_log.write(bytes(time_now, encoding='utf-8'))
         test_log.write(bytes(test_description, encoding='utf-8'))
         test_log.write(b'\n')
-        test_log.write(b'-' * 20 + b'\n')
+        log_header = divider.format('STD LOG')
+        test_log.write(bytes(log_header, encoding='utf-8'))
         with open(groomer.logger.log_path, 'rb') as logfile:
             log = logfile.read()
             test_log.write(log)
