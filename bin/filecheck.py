@@ -251,7 +251,7 @@ class File(FileBase):
         props = self.get_all_props()
         if not self.is_archive:
             if os.path.exists(self.tempdir_path):
-                # FIXME: Hack to make images appear at the correct tree depth in log
+                # FIXME: in_tempdir is a hack to make images appear at the correct tree depth in log
                 self.logger.add_file(self.src_path, props, in_tempdir=True)
                 return
         self.logger.add_file(self.src_path, props)
@@ -588,7 +588,10 @@ class GroomerLogger(object):
     def add_file(self, file_path, file_props, in_tempdir=False):
         """Add a file to the log. Takes a path and a dict of file properties."""
         depth = self._get_path_depth(file_path)
-        file_hash = Logging.computehash(file_path)[:6]
+        try:
+            file_hash = Logging.computehash(file_path)[:6]
+        except IsADirectoryError:
+            file_hash = 'directory'
         if file_props['is_symlink']:
             symlink_template = "+- NOT COPIED: symbolic link to {name} ({sha_hash})"
             log_string = symlink_template.format(
