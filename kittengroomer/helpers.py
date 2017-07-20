@@ -36,7 +36,7 @@ class FileBase(object):
         self.is_dangerous = False
         self.copied = False
         self.symlink_path = None
-        self.description_string = []  # array of descriptions to be joined
+        self._description_string = []  # array of descriptions to be joined
         self._errors = {}
         self._user_defined = {}
         self.should_copy = True
@@ -90,18 +90,24 @@ class FileBase(object):
 
     @property
     def description_string(self):
-        return self.__description_string
+        if len(self._description_string) == 0:
+            return ''
+        elif len(self._description_string) == 1:
+            return self._description_string[0]
+        else:
+            ret_string = ', '.join(self._description_string)
+            return ret_string.strip(', ')
 
     @description_string.setter
     def description_string(self, value):
         if hasattr(self, 'description_string'):
             if isinstance(value, str):
-                if value not in self.__description_string:
-                    self.__description_string.append(value)
+                if value not in self._description_string:
+                    self._description_string.append(value)
             else:
                 raise TypeError("Description_string can only include strings")
         else:
-            self.__description_string = value
+            self._description_string = value
 
     def set_property(self, prop_string, value):
         """
@@ -139,6 +145,7 @@ class FileBase(object):
             'subtype': self.subtype,
             'extension': self.extension,
             'is_dangerous': self.is_dangerous,
+            'is_symlink': self.is_symlink,
             'symlink_path': self.symlink_path,
             'copied': self.copied,
             'description_string': self.description_string,
