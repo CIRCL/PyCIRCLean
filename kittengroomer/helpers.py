@@ -243,8 +243,7 @@ class FileBase(object):
                 mt = magic.from_file(file_path, mime=True)
                 # libmagic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
-                # FIXME: The encoding of the file that triggers this is broken (possibly it's UTF-16 and Python expects utf8)
-                # Note: one of the Travis files will trigger this exception
+                raise UnicodeEncodeError(e)
                 self.add_error(e, '')
                 mt = None
             try:
