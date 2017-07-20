@@ -240,11 +240,10 @@ class FileBase(object):
             self.set_property('symlink_path', os.readlink(file_path))
         else:
             try:
-                with open(file_path, 'rb') as file:
-                    mt = magic.from_buffer(file, mime=True)
+                mt = magic.from_file(file_path, mime=True)
                 # libmagic will always return something, even if it's just 'data'
             except UnicodeEncodeError as e:
-                raise UnicodeEncodeError(e)
+                raise UnicodeEncodeError
                 self.add_error(e, '')
                 mt = None
             try:
