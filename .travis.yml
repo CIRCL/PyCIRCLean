@@ -41,11 +41,11 @@ install:
     - sudo apt-get install rar
     # Prepare tests
     # Malware from theZoo
-    - git clone https://github.com/Rafiot/theZoo.git
-    - pushd theZoo/malwares/Binaries
-    - python unpackall.py
-    - popd
-    - mv theZoo/malwares/Binaries/out tests/uncategorized/
+    # - git clone https://github.com/Rafiot/theZoo.git
+    # - pushd theZoo/malwares/Binaries
+    # - python unpackall.py
+    # - popd
+    # - mv theZoo/malwares/Binaries/out tests/uncategorized/the_zoo/
     # Path traversal attacks
     - git clone https://github.com/jwilk/path-traversal-samples
     - pushd path-traversal-samples
@@ -56,16 +56,20 @@ install:
     - make
     - popd
     - popd
-    - mv path-traversal-samples/zip/*.zip tests/uncategorized/
-    - mv path-traversal-samples/rar/*.rar tests/uncategorized/
+    - mv path-traversal-samples/zip/*.zip tests/uncategorized/path_traversal_zip
+    - mv path-traversal-samples/rar/*.rar tests/uncategorized/path_traversal_rar
     # Office docs
     - git clone https://github.com/eea/odfpy.git
-    - mv odfpy/tests/examples/* tests/uncategorized/
+    - mv odfpy/tests/examples/* tests/uncategorized/odfpy
     - pushd tests/uncategorized/
+    - mkdir olefile && pushd olefile
     - wget https://bitbucket.org/decalage/olefileio_pl/raw/3073963b640935134ed0da34906fea8e506460be/Tests/images/test-ole-file.doc
+    - popd
+    - mkdir fraunhofer && pushd fraunhofer
     - wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
+    - popd
     - popd
     # - pushd tests/dangerous/
     # - 7z x -p42 42.zip
