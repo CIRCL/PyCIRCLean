@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import os
-import datetime
+from datetime import datetime
 
 from bin.filecheck import KittenGroomerFileCheck
 
 
 def save_logs(groomer, test_description):
     divider = ('=' * 10 + '{}' + '=' * 10 + '\n')
-    test_log_path = 'tests/test_logs/{}.log'.format(test_description)
+    test_log_path = 'tests/{}.log'.format(test_description)
     time_now = str(datetime.now().time()) + '\n'
     with open(test_log_path, 'wb+') as test_log:
         log_header = divider.format('TEST LOG')
@@ -33,14 +33,7 @@ def save_logs(groomer, test_description):
                 test_log.write(out)
 
 
-def main():
-    groomer = KittenGroomerFileCheck()
+def test_logging(tmpdir):
+    groomer = KittenGroomerFileCheck('tests/logging/', tmpdir.strpath)
     groomer.run()
-    save_logs(groomer, "Groomer")
-    # initialize groomer
-    # run groomer
-    # save logs
-
-
-if __name__ == '__main__':
-    main()
+    save_logs(groomer, "visual_logging_test")
