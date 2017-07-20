@@ -41,11 +41,12 @@ install:
     - sudo apt-get install rar
     # Prepare tests
     # Malware from theZoo
-    # - git clone https://github.com/Rafiot/theZoo.git
-    # - pushd theZoo/malwares/Binaries
-    # - python unpackall.py
-    # - popd
-    # - mv theZoo/malwares/Binaries/out tests/uncategorized/the_zoo/
+    - git clone https://github.com/Rafiot/theZoo.git
+    - pushd theZoo/malwares/Binaries
+    - python unpackall.py
+    - popd
+    - mkdir tests/uncategorized/the_zoo/
+    - mv theZoo/malwares/Binaries/out tests/uncategorized/the_zoo/
     # Path traversal attacks
     - git clone https://github.com/jwilk/path-traversal-samples
     - pushd path-traversal-samples
