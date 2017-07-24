@@ -15,9 +15,6 @@ normal:
     xfail: True
   Example.png: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.png
     mimetype: image/png
-  Example.svg: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.svg
-    mimetype: image/svg+xml
-    xfail: True
   pdf-sample.pdf: # Added: 27-06-2017, source: http://che.org.il/wp-content/uploads/2016/12/pdf-sample.pdf
     mimetype: application/pdf
   plaintext.txt: # Added: 27-06-2017, source: hand-generated
@@ -48,6 +45,9 @@ dangerous:
   config_file.conf: # Added 27-06-2017, source: hand-generated
     description: config file
     mimetype: text/plain
+  Example.svg: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.svg
+    description: normal svg file, should probably be replaced by a dangerous svg
+    mimetype: image/svg+xml
   message.msg: # Added 27-06-2017, source: ????
     description: message file, used by Outlook etc
     mimetype: message/rfc822
