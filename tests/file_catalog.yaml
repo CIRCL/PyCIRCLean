@@ -27,6 +27,9 @@ normal:
     mimetype: text/rtf
   sample_mpeg4.mp4: # Added 28-06-2017, source: https://support.apple.com/en-us/HT201549
     mimetype: video/mp4
+  word_docx.docx: # Added 24-07-2017, source: hand-generated using MacOS Microsoft Word 2011
+    description: normal word document
+    # mimetype:
   zip_archive.zip: # Added 27-06-2017, source: hand-generated
     mimetype: application/zip
 

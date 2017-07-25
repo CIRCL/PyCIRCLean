@@ -238,7 +238,6 @@ class File(FileBase):
         """
         if self.maintype in Config.ignored_mimes:
             self.should_copy = False
-            self.mime_processing_options.get(self.maintype, self.unknown)()
         else:
             self._check_dangerous()
             self._check_filename()
@@ -246,8 +245,9 @@ class File(FileBase):
                 self._check_extension()
             if self.has_mimetype:
                 self._check_mimetype()
-            if not self.is_dangerous:
-                self.mime_processing_options.get(self.maintype, self.unknown)()
+
+        if not self.is_dangerous:
+            self.mime_processing_options.get(self.maintype, self.unknown)()
 
     def write_log(self):
         """Pass information about the file to self.logger"""
@@ -255,7 +255,7 @@ class File(FileBase):
             props = self.get_all_props()
             if not self.is_archive:
                 if os.path.exists(self.tempdir_path):
-                    # FIXME: in_tempdir is a hack to make images appear at the correct tree depth in log
+                    # FIXME: in_tempdir is a hack to make image files appear at the correct tree depth in log
                     self.logger.add_file(self.src_path, props, in_tempdir=True)
                     return
             self.logger.add_file(self.src_path, props)
