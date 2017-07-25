@@ -165,14 +165,6 @@ class File(FileBase):
     def __repr__(self):
         return "<filecheck.File object: {{{}}}>".format(self.filename)
 
-    def _check_dangerous(self):
-        if not self.has_mimetype:
-            self.make_dangerous('File has no mimetype')
-        if not self.has_extension:
-            self.make_dangerous('File has no extension')
-        if self.extension in Config.malicious_exts:
-            self.make_dangerous('Extension identifies file as potentially dangerous')
-
     def _check_extension(self):
         """
         Guess the file's mimetype based on its extension.
@@ -182,16 +174,19 @@ class File(FileBase):
         mimetype based on its extension differs from the mimetype determined
         by libmagic, then mark the file as dangerous.
         """
-        if self.extension in Config.override_ext:
-            expected_mimetype = Config.override_ext[self.extension]
+        if not self.has_extension:
+            self.make_dangerous('File has no extension')
         else:
-            expected_mimetype, encoding = mimetypes.guess_type(self.src_path,
-                                                               strict=False)
-            if expected_mimetype in Config.aliases:
-                expected_mimetype = Config.aliases[expected_mimetype]
-        is_known_extension = self.extension in mimetypes.types_map.keys()
-        if is_known_extension and expected_mimetype != self.mimetype:
-            self.make_dangerous('Mimetype does not match expected mimetype for this extension')
+            if self.extension in Config.override_ext:
+                expected_mimetype = Config.override_ext[self.extension]
+            else:
+                expected_mimetype, encoding = mimetypes.guess_type(self.src_path,
+                                                                   strict=False)
+                if expected_mimetype in Config.aliases:
+                    expected_mimetype = Config.aliases[expected_mimetype]
+            is_known_extension = self.extension in mimetypes.types_map.keys()
+            if is_known_extension and expected_mimetype != self.mimetype:
+                self.make_dangerous('Mimetype does not match expected mimetype for this extension')
 
     def _check_mimetype(self):
         """
@@ -200,15 +195,18 @@ class File(FileBase):
         Determine whether the extension that are normally associated with
         the mimetype include the file's actual extension.
         """
-        if self.mimetype in Config.aliases:
-            mimetype = Config.aliases[self.mimetype]
+        if not self.has_mimetype:
+            self.make_dangerous('File has no mimetype')
         else:
-            mimetype = self.mimetype
-        expected_extensions = mimetypes.guess_all_extensions(mimetype,
-                                                             strict=False)
-        if expected_extensions:
-            if self.has_extension and self.extension not in expected_extensions:
-                self.make_dangerous('Extension does not match expected extensions for this mimetype')
+            if self.mimetype in Config.aliases:
+                mimetype = Config.aliases[self.mimetype]
+            else:
+                mimetype = self.mimetype
+            expected_extensions = mimetypes.guess_all_extensions(mimetype,
+                                                                 strict=False)
+            if expected_extensions:
+                if self.has_extension and self.extension not in expected_extensions:
+                    self.make_dangerous('Extension does not match expected extensions for this mimetype')
 
     def _check_filename(self):
         """
@@ -222,7 +220,7 @@ class File(FileBase):
                 '.Trashes', '._.Trashes', '.DS_Store', '.fseventsd', '.Spotlight-V100'
             )
             if self.filename in macos_hidden_files:
-                self.add_description('MacOS hidden metadata file.')
+                self.add_description('MacOS metadata file, added by MacOS to certain USB drives and directories')
                 self.should_copy = False
         right_to_left_override = u"\u202E"
         if right_to_left_override in self.filename:
@@ -230,27 +228,30 @@ class File(FileBase):
             new_filename = self.filename.replace(right_to_left_override, '')
             self.set_property('filename', new_filename)
 
+    def _check_malicious_exts(self):
+        """Check that the file's extension isn't contained in a blacklist"""
+        if self.extension in Config.malicious_exts:
+            self.make_dangerous('Extension identifies file as potentially dangerous')
+
     def check(self):
         """
-        Main file processing method
+        Main file processing method.
 
-        Delegates to various helper methods including filetype-specific checks.
+        First, checks for basic properties that might indicate a dangerous file.
+        If the file isn't dangerous, then delegates to various helper methods
+        for filetype-specific checks based on the file's mimetype.
         """
-        if self.maintype in Config.ignored_mimes:
-            self.should_copy = False
-        else:
-            self._check_dangerous()
-            self._check_filename()
-            if self.has_extension:
-                self._check_extension()
-            if self.has_mimetype:
-                self._check_mimetype()
+        # Any of these methods can call make_dangerous():
+        self._check_malicious_exts()
+        self._check_mimetype()
+        self._check_extension()
+        self._check_filename()  # can mutate self.filename
 
         if not self.is_dangerous:
             self.mime_processing_options.get(self.maintype, self.unknown)()
 
     def write_log(self):
-        """Pass information about the file to self.logger"""
+        """Pass information about the file to self.logger."""
         if self.logger:
             props = self.get_all_props()
             if not self.is_archive:
