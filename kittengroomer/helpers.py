@@ -91,7 +91,7 @@ class FileBase(object):
     @property
     def description_string(self):
         if len(self._description_string) == 0:
-            return ''
+            return 'No description'
         elif len(self._description_string) == 1:
             return self._description_string[0]
         else:
