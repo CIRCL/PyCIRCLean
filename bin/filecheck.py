@@ -305,8 +305,6 @@ class File(FileBase):
             self.make_dangerous('Ooxml file with embedded objects')
         if len(doc.features.embedded_packages) > 0:
             self.make_dangerous('Ooxml file with embedded packages')
-        if not self.is_dangerous:
-            self.add_description('Ooxml file')
 
     def _libreoffice(self):
         """Process a libreoffice file."""
