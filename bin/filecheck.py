@@ -246,11 +246,11 @@ class File(FileBase):
 
     def application(self):
         """Process an application specific file according to its subtype."""
-        if self.subtype in self.app_subtype_methods:
-            method = self.app_subtype_methods[self.subtype]
-            method()
-        else:
-            self._unknown_app()
+        for subtype, method in self.app_subtype_methods.items():
+            if subtype in self.subtype:  # checking for partial matches
+                method()
+                return
+        self._unknown_app()  # if none of the methods match
 
     def _executables(self):
         """Process an executable file."""
