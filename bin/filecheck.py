@@ -31,10 +31,9 @@ class File(FileBase):
     filetype-specific processing methods.
     """
 
-    def __init__(self, src_path, dst_path, logger=None):
+    def __init__(self, src_path, dst_path):
         super(File, self).__init__(src_path, dst_path)
         self.is_archive = False
-        self.logger = logger
         self.tempdir_path = self.dst_path + '_temp'
 
         subtypes_apps = (
@@ -156,19 +155,6 @@ class File(FileBase):
 
         if not self.is_dangerous:
             self.mime_processing_options.get(self.maintype, self.unknown)()
-
-    def write_log(self):
-        """Pass information about the file to self.logger."""
-        if self.logger:
-            props = self.get_all_props()
-            if not self.is_archive:
-                if os.path.exists(self.tempdir_path):
-                    # FIXME: in_tempdir is a hack to make image files appear at the correct tree depth in log
-                    self.logger.add_file(self.src_path, props, in_tempdir=True)
-                    return
-            self.logger.add_file(self.src_path, props)
-        else:
-            raise Warning("No logger associated with this File")
 
     # ##### Helper functions #####
     def _make_method_dict(self, list_of_tuples):
@@ -604,7 +590,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                 self.logger.add_dir(srcpath)
             else:
                 dstpath = os.path.join(dst_dir, os.path.basename(srcpath))
-                cur_file = File(srcpath, dstpath, self.logger)
+                cur_file = File(srcpath, dstpath)
                 self.process_file(cur_file)
 
     def process_file(self, file):
@@ -621,7 +607,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             if file.should_copy:
                 file.safe_copy()
                 file.set_property('copied', True)
-            file.write_log()
+            self.write_file_to_log(file)
         # TODO: Can probably handle cleaning up the tempdir better
         if hasattr(file, 'tempdir_path'):
             self.safe_rmtree(file.tempdir_path)
@@ -642,7 +628,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             unpack_command = command_str.format(SEVENZ_PATH,
                                                 file.src_path, tempdir_path)
             self._run_process(unpack_command)
-            file.write_log()
+            self.write_file_to_log(file)
             self.process_dir(tempdir_path, file.dst_path)
             self.safe_rmtree(tempdir_path)
         self.recursive_archive_depth -= 1
@@ -656,6 +642,14 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
                 return
         return True
+
+    def write_file_to_log(self, file):
+        """Pass information about `file` to self.logger."""
+        props = file.get_all_props()
+        if not file.is_archive:
+            # FIXME: in_tempdir is a hack to make image files appear at the correct tree depth in log
+            in_tempdir = os.path.exists(file.tempdir_path)
+            self.logger.add_file(file.src_path, props, in_tempdir)
 
     def list_files_dirs(self, root_dir_path):
         """

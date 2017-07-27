@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-import unittest.mock as mock
 
 import pytest
 import yaml
 
 try:
-    from bin.filecheck import KittenGroomerFileCheck, File, GroomerLogger
+    from bin.filecheck import KittenGroomerFileCheck, File
     NODEPS = False
 except ImportError:
     NODEPS = True
@@ -107,20 +106,15 @@ def groomer(dest_dir_path):
     return KittenGroomerFileCheck(dummy_src_path, dest_dir_path, debug=True)
 
 
-@fixture
-def mock_logger(dest_dir_path):
-    return mock.MagicMock(spec=GroomerLogger)
-
-
 @parametrize(
     argnames="sample_file",
     argvalues=gather_sample_files(),
     ids=get_filename)
-def test_sample_files(mock_logger, sample_file, groomer, dest_dir_path):
+def test_sample_files(sample_file, groomer, dest_dir_path):
     if sample_file.xfail:
         pytest.xfail(reason='Marked xfail in file catalog')
     file_dest_path = os.path.join(dest_dir_path, sample_file.filename)
-    file = File(sample_file.path, file_dest_path, mock_logger)
+    file = File(sample_file.path, file_dest_path)
     groomer.process_file(file)
     print(file.description_string)
     print(file.mimetype)
