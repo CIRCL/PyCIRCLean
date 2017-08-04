@@ -219,12 +219,10 @@ class File(FileBase):
         for mt in Config.mimes_rtf:
             if mt in self.subtype:
                 self.add_description('Rich Text (rtf) file')
-                # TODO: need a way to convert it to plain text
                 self.force_ext('.txt')
                 return
         for mt in Config.mimes_ooxml:
             if mt in self.subtype:
-                self.add_description('OOXML (openoffice) file')
                 self._ooxml()
                 return
         self.add_description('Plain text file')
@@ -240,7 +238,6 @@ class File(FileBase):
 
     def _executables(self):
         """Process an executable file."""
-        # LOG: change the processing_type property to some other name or include in file_string
         self.make_dangerous('Executable file')
 
     def _winoffice(self):
@@ -275,6 +272,7 @@ class File(FileBase):
 
     def _ooxml(self):
         """Process an ooxml file."""
+        self.add_description('OOXML (openoffice) file')
         try:
             doc = officedissector.doc.Document(self.src_path)
         except Exception:
@@ -291,6 +289,7 @@ class File(FileBase):
             self.make_dangerous('Ooxml file with embedded objects')
         if len(doc.features.embedded_packages) > 0:
             self.make_dangerous('Ooxml file with embedded packages')
+
 
     def _libreoffice(self):
         """Process a libreoffice file."""
@@ -312,7 +311,6 @@ class File(FileBase):
         """Process a PDF file."""
         xmlDoc = PDFiD(self.src_path)
         oPDFiD = cPDFiD(xmlDoc, True)
-        # TODO: are there other pdf characteristics which should be dangerous?
         if oPDFiD.encrypt.count > 0:
             self.make_dangerous('Encrypted pdf')
         if oPDFiD.js.count > 0 or oPDFiD.javascript.count > 0:
@@ -437,7 +435,6 @@ class File(FileBase):
         using PIL.Image, saves it to the temporary directory, and copies it to
         the destination.
         """
-        # TODO: make sure this method works for png, gif, tiff
         if self.has_metadata:
             self.extract_metadata()
         tempdir_path = self.make_tempdir()
