@@ -12,6 +12,7 @@ import os
 import hashlib
 import shutil
 import argparse
+import stat
 
 import magic
 
@@ -180,7 +181,11 @@ class FileBase(object):
             self.add_description(reason_string)
 
     def safe_copy(self, src=None, dst=None):
-        """Copy file and create destination directories if needed."""
+        """
+        Copy file and create destination directories if needed.
+
+        Sets all exec bits to '0'.
+        """
         if src is None:
             src = self.src_path
         if dst is None:
@@ -188,6 +193,10 @@ class FileBase(object):
         try:
             os.makedirs(self.dst_dir, exist_ok=True)
             shutil.copy(src, dst)
+            current_perms = self._get_file_permissions(dst)
+            only_exec_bits = 0o0111
+            perms_no_exec = current_perms & (~only_exec_bits)
+            os.chmod(dst, perms_no_exec)
         except IOError as e:
             # Probably means we can't write in the dest dir
             self.add_error(e, '')
@@ -267,6 +276,15 @@ class FileBase(object):
         except FileNotFoundError:
             size = 0
         return size
+
+    def _remove_exec_bit(self, file_path):
+        current_perms = self._get_file_permissions(file_path)
+        perms_no_exec = current_perms & (~stat.S_IEXEC)
+        os.chmod(file_path, perms_no_exec)
+
+    def _get_file_permissions(self, file_path):
+        full_mode = os.stat(file_path, follow_symlinks=False).st_mode
+        return stat.S_IMODE(full_mode)
 
 
 class Logging(object):

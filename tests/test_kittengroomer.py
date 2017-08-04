@@ -256,6 +256,11 @@ class TestFileBase:
             file.safe_copy()
             mock_copy.assert_called_once_with(file_path, dst_path)
 
+    def test_safe_copy_removes_exec_perms(self):
+        """`safe_copy` should create a file that doesn't have any of the
+        executable bits set."""
+        pass
+
     def test_safe_copy_makedir_doesnt_exist(self):
         """Calling safe_copy should create intermediate directories in the path
         if they don't exist."""
