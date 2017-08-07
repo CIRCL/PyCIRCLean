@@ -31,8 +31,7 @@ install:
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
     - pip install -U pip
-    - pip install lxml exifread pillow olefile
-    - pip install git+https://github.com/decalage2/oletools.git
+    - pip install lxml exifread pillow olefile oletools
     - pip install git+https://github.com/grierforensics/officedissector.git
     # PyCIRCLean dependencies
     - pip install -r dev-requirements.txt
@@ -74,6 +73,7 @@ install:
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
     - popd
+    # Turned off unzipping 42.zip because it isn't included in the file catalog and archivebomb.zip ends up testing the same thing
     # - pushd tests/dangerous/
     # - 7z x -p42 42.zip
     # - popd
