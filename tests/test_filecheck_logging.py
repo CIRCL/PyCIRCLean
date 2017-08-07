@@ -4,7 +4,14 @@
 import os
 from datetime import datetime
 
-from bin.filecheck import KittenGroomerFileCheck
+import pytest
+
+try:
+    from bin.filecheck import KittenGroomerFileCheck
+    NODEPS = False
+except ImportError:
+    NODEPS = True
+pytestmark = pytest.mark.skipif(NODEPS, reason="Dependencies aren't installed")
 
 
 def save_logs(groomer, test_description):
