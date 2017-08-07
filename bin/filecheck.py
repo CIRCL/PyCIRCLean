@@ -520,7 +520,7 @@ class GroomerLogger(object):
             )
         if file_props['errors']:
             error_string = ', '.join([str(key) for key in file_props['errors']])
-            log_string.append(' Errors: ' + error_string)
+            log_string += (' Errors: ' + error_string)
         if in_tempdir:
             depth -= 1
         self._write_line_to_log(log_string, depth)

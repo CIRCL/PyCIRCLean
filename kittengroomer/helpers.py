@@ -252,7 +252,6 @@ class FileBase(object):
                 mt = magic.from_file(file_path, mime=True)
                 # libmagic always returns something, even if it's just 'data'
             except UnicodeEncodeError as e:
-                raise UnicodeEncodeError
                 self.add_error(e, '')
                 mt = None
             try:
