@@ -4,4 +4,4 @@ install:
 	pip install lxml exifread pillow olefile oletools python-magic
 	pip install git+https://github.com/grierforensics/officedissector.git
  	wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
- 	unzip pdfid_v0_2_1.zip
+	unzip pdfid_v0_2_1.zip
