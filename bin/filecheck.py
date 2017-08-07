@@ -490,6 +490,8 @@ class GroomerLogger(object):
             file_hash = Logging.computehash(file_path)[:6]
         except IsADirectoryError:
             file_hash = 'directory'
+        except FileNotFoundError:
+            file_hash = '------'
         if file_props['is_symlink']:
             symlink_template = "+- NOT COPIED: symbolic link to {name} ({sha_hash})"
             log_string = symlink_template.format(
