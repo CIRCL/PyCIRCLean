@@ -126,7 +126,7 @@ class File(FileBase):
                 '.Trashes', '._.Trashes', '.DS_Store', '.fseventsd', '.Spotlight-V100'
             )
             if self.filename in macos_hidden_files:
-                self.add_description('MacOS metadata file, added by MacOS to certain USB drives and directories')
+                self.add_description('MacOS metadata file, added by MacOS to USB drives and some directories')
                 self.should_copy = False
         right_to_left_override = u"\u202E"
         if right_to_left_override in self.filename:
@@ -289,7 +289,6 @@ class File(FileBase):
             self.make_dangerous('Ooxml file with embedded objects')
         if len(doc.features.embedded_packages) > 0:
             self.make_dangerous('Ooxml file with embedded packages')
-
 
     def _libreoffice(self):
         """Process a libreoffice file."""
