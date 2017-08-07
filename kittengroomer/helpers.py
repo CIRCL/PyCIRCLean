@@ -250,7 +250,7 @@ class FileBase(object):
         else:
             try:
                 mt = magic.from_file(file_path, mime=True)
-                # libmagic will always return something, even if it's just 'data'
+                # libmagic always returns something, even if it's just 'data'
             except UnicodeEncodeError as e:
                 raise UnicodeEncodeError
                 self.add_error(e, '')
@@ -258,7 +258,7 @@ class FileBase(object):
             try:
                 mimetype = mt.decode("utf-8")
             except:
-                # FIXME: what should the exception be here if mimetype isn't utf-8?
+                # FIXME: what should the exception be if mimetype isn't utf-8?
                 mimetype = mt
         return mimetype
 
@@ -328,7 +328,6 @@ class KittenGroomerBase(object):
     def list_all_files(self, directory_path):
         """Generator yielding path to all of the files in a directory tree."""
         for root, dirs, files in os.walk(directory_path):
-            # files is a list anyway so we don't get much from using a generator here
             for filename in files:
                 filepath = os.path.join(root, filename)
                 yield filepath
@@ -353,7 +352,12 @@ class ImplementationRequired(KittenGroomerError):
     pass
 
 
-def main(kg_implementation, description='Call a KittenGroomer implementation to process files present in the source directory and copy them to the destination directory.'):
+def main(
+        kg_implementation,
+        description=("Call a KittenGroomer implementation to process files "
+                     "present in the source directory and copy them to the "
+                     "destination directory.")):
+    print(description)
     parser = argparse.ArgumentParser(prog='KittenGroomer', description=description)
     parser.add_argument('-s', '--source', type=str, help='Source directory')
     parser.add_argument('-d', '--destination', type=str, help='Destination directory')
