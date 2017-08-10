@@ -1,10 +1,10 @@
 import sys
 
-from bin.filecheck import File
+from filecheck.filecheck import File
 
 
-PATH='tests/dangerous/bypass.docx'
-# PATH='tests/normal/word_docx.docx'
+PATH = 'tests/dangerous/bypass.docx'
+# PATH = 'tests/normal/word_docx.docx'
 
 
 def main():

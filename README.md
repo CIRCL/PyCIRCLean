@@ -7,8 +7,8 @@ PyCIRCLean is the core Python code used by [CIRCLean](https://github.com/CIRCL/C
 USB key and document sanitizer created by [CIRCL](https://www.circl.lu/). This module has been separated from the
 device-specific scripts and can be used for dedicated security applications to sanitize documents from hostile environments
 to trusted environments. PyCIRCLean is currently Python 3.3+ compatible. Also, while [kittengroomer](./kittengroomer) can
-run on any platform supported by python-magic/libmagic, [filecheck.py](./bin/filecheck.py) has some dependencies that are
-Linux-only, and running the full test suite will require access to a Linux box or VM.
+run on any platform supported by python-magic/libmagic, [filecheck.py](./filecheck/filecheck.py) has some dependencies that
+are Linux-only, and running the full test suite will require access to a Linux box or VM.
 
 # Installation
 
@@ -30,7 +30,7 @@ and sanitization workflows in different organizations such as industrial
 environments or restricted/classified ICT environments. A series of practical examples utilizing PyCIRCLean can be found
 in the [./examples](./examples) directory. Note: for commits beyond version 2.2.0 these
 examples are out of date and not guaranteed to work with the PyCIRCLean API. Please check [helpers.py](./kittengroomer/
-helpers.py) or [filecheck.py](./bin/filecheck.py) to see the new API interface.
+helpers.py) or [filecheck.py](./filecheck/filecheck.py) to see the new API interface.
 
 The following simple example using PyCIRCLean will only copy files with a .conf extension matching the 'text/plain'
 mimetype. If any other file is found in the source directory, the files won't be copied to the destination directory.

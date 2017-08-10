@@ -7,7 +7,7 @@ from datetime import datetime
 import pytest
 
 try:
-    from bin.filecheck import KittenGroomerFileCheck
+    from filecheck.filecheck import KittenGroomerFileCheck
     NODEPS = False
 except ImportError:
     NODEPS = True

@@ -12,7 +12,7 @@ setup(
     description='Standalone CIRCLean/KittenGroomer code.',
     packages=['kittengroomer'],
     scripts=[
-        'bin/filecheck.py'
+        'filecheck/filecheck.py'
     ],
     classifiers=[
         'License :: OSI Approved :: BSD License',

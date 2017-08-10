@@ -7,7 +7,7 @@ import pytest
 import yaml
 
 try:
-    from bin.filecheck import KittenGroomerFileCheck, File
+    from filecheck.filecheck import KittenGroomerFileCheck, File
     NODEPS = False
 except ImportError:
     NODEPS = True

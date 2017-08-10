@@ -79,7 +79,7 @@ install:
     # - popd
 
 script:
-    - travis_wait py.test --cov=kittengroomer --cov=bin tests/
+    - travis_wait py.test --cov=kittengroomer --cov=filecheck tests/
 
 notifications:
     email:

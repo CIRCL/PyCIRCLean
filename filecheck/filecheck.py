@@ -17,7 +17,7 @@ from PIL import Image
 from pdfid import PDFiD, cPDFiD
 
 from kittengroomer import FileBase, KittenGroomerBase, Logging
-from bin.config import Config
+from filecheck.config import Config
 
 
 SEVENZ_PATH = '/usr/bin/7z'
