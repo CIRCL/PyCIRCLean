@@ -12,7 +12,6 @@ normal:
   Example.ogg: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.ogg
     description: Ogg vorbis sound file
     mimetype: audio/ogg
-    xfail: True
   Example.png: # Added: 27-06-2017, source: https://en.wikipedia.org/wiki/File:Example.png
     mimetype: image/png
   pdf-sample.pdf: # Added: 27-06-2017, source: http://che.org.il/wp-content/uploads/2016/12/pdf-sample.pdf
@@ -22,14 +21,13 @@ normal:
   rar_archive.rar: # Added: 27-06-2017, Rar archive. Source: hand-generated
     description: rar archive
     mimetype: application/x-rar
-    xfail: True
   rich_text.rtf: # Added 27-06-2017), source: hand-generated
     mimetype: text/rtf
   sample_mpeg4.mp4: # Added 28-06-2017, source: https://support.apple.com/en-us/HT201549
     mimetype: video/mp4
   word_docx.docx: # Added 24-07-2017, source: hand-generated using MacOS Microsoft Word 2011
     description: normal word document
-    # mimetype:
+    mimetype: application/vnd.openxmlformats-officedocument.wordprocessingml.document
   zip_archive.zip: # Added 27-06-2017, source: hand-generated
     mimetype: application/zip
 

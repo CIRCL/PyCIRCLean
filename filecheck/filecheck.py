@@ -92,7 +92,7 @@ class File(FileBase):
                     expected_mimetype = Config.aliases[expected_mimetype]
             is_known_extension = self.extension in mimetypes.types_map.keys()
             if is_known_extension and expected_mimetype != self.mimetype:
-                self.make_dangerous('Mimetype does not match expected mimetype for this extension')
+                self.make_dangerous('Mimetype does not match expected mimetype ({}) for this extension'.format(expected_mimetype))
 
     def _check_mimetype(self):
         """

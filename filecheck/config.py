@@ -13,7 +13,7 @@ class Config:
     mimes_pdf = ('pdf', 'postscript',)
     mimes_xml = ('xml',)
     mimes_ms = ('dosexec',)
-    mimes_compressed = ('zip', 'rar', 'bzip2', 'lzip', 'lzma', 'lzop',
+    mimes_compressed = ('zip', 'rar', 'x-rar', 'bzip2', 'lzip', 'lzma', 'lzop',
                         'xz', 'compress', 'gzip', 'tar',)
     mimes_data = ('octet-stream',)
 
@@ -31,6 +31,7 @@ class Config:
         'application/x-dosexec': 'application/x-msdos-program',
         # Other apps with confusing mimetypes
         'application/rtf': 'text/rtf',
+        'application/rar': 'application/x-rar'
     }
 
     # EXTS
