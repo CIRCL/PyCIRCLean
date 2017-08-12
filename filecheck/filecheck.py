@@ -623,6 +623,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         else:
             tempdir_path = file.make_tempdir()
             command_str = '{} -p1 x "{}" -o"{}" -bd -aoa'
+            # -p1=password, x=extract, -o=output location, -bd=no % indicator, -aoa=overwrite existing files
             unpack_command = command_str.format(SEVENZ_PATH,
                                                 file.src_path, tempdir_path)
             self._run_process(unpack_command)
