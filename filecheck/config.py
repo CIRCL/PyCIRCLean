@@ -31,7 +31,9 @@ class Config:
         'application/x-dosexec': 'application/x-msdos-program',
         # Other apps with confusing mimetypes
         'application/rtf': 'text/rtf',
-        'application/rar': 'application/x-rar'
+        'application/rar': 'application/x-rar',
+        'application/ogg': 'audio/ogg',
+        'audio/ogg': 'application/ogg'
     }
 
     # EXTS

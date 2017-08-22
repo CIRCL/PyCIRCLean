@@ -112,7 +112,7 @@ class File(FileBase):
                                                                  strict=False)
             if expected_extensions:
                 if self.has_extension and self.extension not in expected_extensions:
-                    self.make_dangerous('Extension does not match expected extensions for this mimetype')
+                    self.make_dangerous('Extension does not match expected extensions ({}) for this mimetype'.format(expected_extensions))
 
     def _check_filename(self):
         """
