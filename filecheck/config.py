@@ -16,6 +16,7 @@ class Config:
     mimes_compressed = ('zip', 'rar', 'x-rar', 'bzip2', 'lzip', 'lzma', 'lzop',
                         'xz', 'compress', 'gzip', 'tar',)
     mimes_data = ('octet-stream',)
+    mimes_audio = ('ogg',)
 
     # Image subtypes
     mimes_exif = ('image/jpeg', 'image/tiff',)

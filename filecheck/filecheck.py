@@ -46,6 +46,7 @@ class File(FileBase):
             (Config.mimes_ms, self._executables),
             (Config.mimes_compressed, self._archive),
             (Config.mimes_data, self._binary_app),
+            (Config.mimes_audio, self.audio)
         )
         self.app_subtype_methods = self._make_method_dict(subtypes_apps)
 
