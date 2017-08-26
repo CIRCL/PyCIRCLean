@@ -10,7 +10,7 @@ setup(
     maintainer='Raphaël Vinot',
     url='https://github.com/CIRCL/CIRCLean',
     description='Standalone CIRCLean/KittenGroomer code.',
-    packages=['kittengroomer', 'filecheck'],
+    packages=['kittengroomer'],
     scripts=[
         'filecheck/filecheck.py'
     ],
