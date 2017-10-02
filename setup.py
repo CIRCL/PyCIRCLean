@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='kittengroomer',
-    version='2.1.0',
+    version='2.2.0',
     author='Raphaël Vinot',
     author_email='raphael.vinot@circl.lu',
     maintainer='Raphaël Vinot',
@@ -12,7 +12,7 @@ setup(
     description='Standalone CIRCLean/KittenGroomer code.',
     packages=['kittengroomer'],
     scripts=[
-        'bin/filecheck.py'
+        'filecheck/filecheck.py'
     ],
     classifiers=[
         'License :: OSI Approved :: BSD License',

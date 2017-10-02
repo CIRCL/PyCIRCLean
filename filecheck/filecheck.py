@@ -19,31 +19,42 @@ from pdfid import PDFiD, cPDFiD
 from kittengroomer import FileBase, KittenGroomerBase, Logging
 
 
-SEVENZ_PATH = '/usr/bin/7z'
-
-
 class Config:
-    """Configuration information for Filecheck."""
-
+    """Configuration information for filecheck.py."""
+    # MIMES
     # Application subtypes (mimetype: 'application/<subtype>')
-    mimes_ooxml = ['vnd.openxmlformats-officedocument.']
-    mimes_office = ['msword', 'vnd.ms-']
-    mimes_libreoffice = ['vnd.oasis.opendocument']
-    mimes_rtf = ['rtf', 'richtext']
-    mimes_pdf = ['pdf', 'postscript']
-    mimes_xml = ['xml']
-    mimes_ms = ['dosexec']
-    mimes_compressed = ['zip', 'rar', 'bzip2', 'lzip', 'lzma', 'lzop',
-                        'xz', 'compress', 'gzip', 'tar']
-    mimes_data = ['octet-stream']
+    mimes_ooxml = ('vnd.openxmlformats-officedocument.',)
+    mimes_office = ('msword', 'vnd.ms-',)
+    mimes_libreoffice = ('vnd.oasis.opendocument',)
+    mimes_rtf = ('rtf', 'richtext',)
+    mimes_pdf = ('pdf', 'postscript',)
+    mimes_xml = ('xml',)
+    mimes_ms = ('dosexec',)
+    mimes_compressed = ('zip', 'rar', 'x-rar', 'bzip2', 'lzip', 'lzma', 'lzop',
+                        'xz', 'compress', 'gzip', 'tar',)
+    mimes_data = ('octet-stream',)
+    mimes_audio = ('ogg',)
 
     # Image subtypes
-    mimes_exif = ['image/jpeg', 'image/tiff']
-    mimes_png = ['image/png']
+    mimes_exif = ('image/jpeg', 'image/tiff',)
+    mimes_png = ('image/png',)
 
     # Mimetypes with metadata
-    mimes_metadata = ['image/jpeg', 'image/tiff', 'image/png']
+    mimes_metadata = ('image/jpeg', 'image/tiff', 'image/png',)
 
+    # Mimetype aliases
+    aliases = {
+        # Win executables
+        'application/x-msdos-program': 'application/x-dosexec',
+        'application/x-dosexec': 'application/x-msdos-program',
+        # Other apps with confusing mimetypes
+        'application/rtf': 'text/rtf',
+        'application/rar': 'application/x-rar',
+        'application/ogg': 'audio/ogg',
+        'audio/ogg': 'application/ogg'
+    }
+
+    # EXTS
     # Commonly used malicious extensions
     # Sources: http://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
     # https://github.com/wiregit/wirecode/blob/master/components/core-settings/src/main/java/org/limewire/core/settings/FilterSettings.java
@@ -98,22 +109,14 @@ class Config:
         ".sparseimage", ".toast", ".udif",
     )
 
-    # Aliases
-    aliases = {
-        # Win executables
-        'application/x-msdos-program': 'application/x-dosexec',
-        'application/x-dosexec': 'application/x-msdos-program',
-        # Other apps with confusing mimetypes
-        'application/rtf': 'text/rtf',
-    }
-
     # Sometimes, mimetypes.guess_type gives unexpected results, such as for .tar.gz files:
     # In [12]: mimetypes.guess_type('toot.tar.gz', strict=False)
     # Out[12]: ('application/x-tar', 'gzip')
     # It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
     override_ext = {'.gz': 'application/gzip'}
 
-    ignored_mimes = ['inode', 'model', 'multipart', 'example']
+
+SEVENZ_PATH = '/usr/bin/7z'
 
 
 class File(FileBase):
@@ -124,10 +127,9 @@ class File(FileBase):
     filetype-specific processing methods.
     """
 
-    def __init__(self, src_path, dst_path, logger):
+    def __init__(self, src_path, dst_path):
         super(File, self).__init__(src_path, dst_path)
         self.is_archive = False
-        self.logger = logger
         self.tempdir_path = self.dst_path + '_temp'
 
         subtypes_apps = (
@@ -140,6 +142,7 @@ class File(FileBase):
             (Config.mimes_ms, self._executables),
             (Config.mimes_compressed, self._archive),
             (Config.mimes_data, self._binary_app),
+            (Config.mimes_audio, self.audio)
         )
         self.app_subtype_methods = self._make_method_dict(subtypes_apps)
 
@@ -162,13 +165,8 @@ class File(FileBase):
             'inode': self.inode,
         }
 
-    def _check_dangerous(self):
-        if not self.has_mimetype:
-            self.make_dangerous('File has no mimetype')
-        if not self.has_extension:
-            self.make_dangerous('File has no extension')
-        if self.extension in Config.malicious_exts:
-            self.make_dangerous('Extension identifies file as potentially dangerous')
+    def __repr__(self):
+        return "<filecheck.File object: {{{}}}>".format(self.filename)
 
     def _check_extension(self):
         """
@@ -179,16 +177,19 @@ class File(FileBase):
         mimetype based on its extension differs from the mimetype determined
         by libmagic, then mark the file as dangerous.
         """
-        if self.extension in Config.override_ext:
-            expected_mimetype = Config.override_ext[self.extension]
+        if not self.has_extension:
+            self.make_dangerous('File has no extension')
         else:
-            expected_mimetype, encoding = mimetypes.guess_type(self.src_path,
-                                                               strict=False)
-            if expected_mimetype in Config.aliases:
-                expected_mimetype = Config.aliases[expected_mimetype]
-        is_known_extension = self.extension in mimetypes.types_map.keys()
-        if is_known_extension and expected_mimetype != self.mimetype:
-            self.make_dangerous('Mimetype does not match expected mimetype for this extension')
+            if self.extension in Config.override_ext:
+                expected_mimetype = Config.override_ext[self.extension]
+            else:
+                expected_mimetype, encoding = mimetypes.guess_type(self.src_path,
+                                                                   strict=False)
+                if expected_mimetype in Config.aliases:
+                    expected_mimetype = Config.aliases[expected_mimetype]
+            is_known_extension = self.extension in mimetypes.types_map.keys()
+            if is_known_extension and expected_mimetype != self.mimetype:
+                self.make_dangerous('Mimetype does not match expected mimetype ({}) for this extension'.format(expected_mimetype))
 
     def _check_mimetype(self):
         """
@@ -197,15 +198,18 @@ class File(FileBase):
         Determine whether the extension that are normally associated with
         the mimetype include the file's actual extension.
         """
-        if self.mimetype in Config.aliases:
-            mimetype = Config.aliases[self.mimetype]
+        if not self.has_mimetype:
+            self.make_dangerous('File has no mimetype')
         else:
-            mimetype = self.mimetype
-        expected_extensions = mimetypes.guess_all_extensions(mimetype,
-                                                             strict=False)
-        if expected_extensions:
-            if self.has_extension and self.extension not in expected_extensions:
-                self.make_dangerous('Extension does not match expected extensions for this mimetype')
+            if self.mimetype in Config.aliases:
+                mimetype = Config.aliases[self.mimetype]
+            else:
+                mimetype = self.mimetype
+            expected_extensions = mimetypes.guess_all_extensions(mimetype,
+                                                                 strict=False)
+            if expected_extensions:
+                if self.has_extension and self.extension not in expected_extensions:
+                    self.make_dangerous('Extension does not match expected extensions ({}) for this mimetype'.format(expected_extensions))
 
     def _check_filename(self):
         """
@@ -219,7 +223,7 @@ class File(FileBase):
                 '.Trashes', '._.Trashes', '.DS_Store', '.fseventsd', '.Spotlight-V100'
             )
             if self.filename in macos_hidden_files:
-                self.add_description('MacOS hidden metadata file.')
+                self.add_description('MacOS metadata file, added by MacOS to USB drives and some directories')
                 self.should_copy = False
         right_to_left_override = u"\u202E"
         if right_to_left_override in self.filename:
@@ -227,34 +231,27 @@ class File(FileBase):
             new_filename = self.filename.replace(right_to_left_override, '')
             self.set_property('filename', new_filename)
 
+    def _check_malicious_exts(self):
+        """Check that the file's extension isn't contained in a blacklist"""
+        if self.extension in Config.malicious_exts:
+            self.make_dangerous('Extension identifies file as potentially dangerous')
+
     def check(self):
         """
-        Main file processing method
+        Main file processing method.
 
-        Delegates to various helper methods including filetype-specific checks.
+        First, checks for basic properties that might indicate a dangerous file.
+        If the file isn't dangerous, then delegates to various helper methods
+        for filetype-specific checks based on the file's mimetype.
         """
-        if self.maintype in Config.ignored_mimes:
-            self.should_copy = False
-            self.mime_processing_options.get(self.maintype, self.unknown)()
-        else:
-            self._check_dangerous()
-            self._check_filename()
-            if self.has_extension:
-                self._check_extension()
-            if self.has_mimetype:
-                self._check_mimetype()
-            if not self.is_dangerous:
-                self.mime_processing_options.get(self.maintype, self.unknown)()
+        # Any of these methods can call make_dangerous():
+        self._check_malicious_exts()
+        self._check_mimetype()
+        self._check_extension()
+        self._check_filename()  # can mutate self.filename
 
-    def write_log(self):
-        """Pass information about the file to self.logger"""
-        props = self.get_all_props()
-        if not self.is_archive:
-            if os.path.exists(self.tempdir_path):
-                # FIXME: Hack to make images appear at the correct tree depth in log
-                self.logger.add_file(self.src_path, props, in_tempdir=True)
-                return
-        self.logger.add_file(self.src_path, props)
+        if not self.is_dangerous:
+            self.mime_processing_options.get(self.maintype, self.unknown)()
 
     # ##### Helper functions #####
     def _make_method_dict(self, list_of_tuples):
@@ -287,18 +284,22 @@ class File(FileBase):
             self.add_description('File is a symlink to {}'.format(symlink_path))
         else:
             self.add_description('File is an inode (empty file)')
+        self.should_copy = False
 
     def unknown(self):
         """Main type should never be unknown."""
         self.add_description('Unknown mimetype')
+        self.should_copy = False
 
     def example(self):
         """Used in examples, should never be returned by libmagic."""
         self.add_description('Example file')
+        self.should_copy = False
 
     def multipart(self):
         """Used in web apps, should never be returned by libmagic"""
         self.add_description('Multipart file - usually found in web apps')
+        self.should_copy = False
 
     # ##### Treated as malicious, no reason to have it on a USB key ######
     def message(self):
@@ -315,12 +316,10 @@ class File(FileBase):
         for mt in Config.mimes_rtf:
             if mt in self.subtype:
                 self.add_description('Rich Text (rtf) file')
-                # TODO: need a way to convert it to plain text
                 self.force_ext('.txt')
                 return
         for mt in Config.mimes_ooxml:
             if mt in self.subtype:
-                self.add_description('OOXML (openoffice) file')
                 self._ooxml()
                 return
         self.add_description('Plain text file')
@@ -328,16 +327,14 @@ class File(FileBase):
 
     def application(self):
         """Process an application specific file according to its subtype."""
-        if self.subtype in self.app_subtype_methods:
-            method = self.app_subtype_methods[self.subtype]
-            method()
-            # TODO: should these application methods return a value?
-        else:
-            self._unknown_app()
+        for subtype, method in self.app_subtype_methods.items():
+            if subtype in self.subtype:  # checking for partial matches
+                method()
+                return
+        self._unknown_app()  # if none of the methods match
 
     def _executables(self):
         """Process an executable file."""
-        # LOG: change the processing_type property to some other name or include in file_string
         self.make_dangerous('Executable file')
 
     def _winoffice(self):
@@ -372,6 +369,7 @@ class File(FileBase):
 
     def _ooxml(self):
         """Process an ooxml file."""
+        self.add_description('OOXML (openoffice) file')
         try:
             doc = officedissector.doc.Document(self.src_path)
         except Exception:
@@ -388,8 +386,6 @@ class File(FileBase):
             self.make_dangerous('Ooxml file with embedded objects')
         if len(doc.features.embedded_packages) > 0:
             self.make_dangerous('Ooxml file with embedded packages')
-        if not self.is_dangerous:
-            self.add_description('Ooxml file')
 
     def _libreoffice(self):
         """Process a libreoffice file."""
@@ -411,7 +407,6 @@ class File(FileBase):
         """Process a PDF file."""
         xmlDoc = PDFiD(self.src_path)
         oPDFiD = cPDFiD(xmlDoc, True)
-        # TODO: are there other pdf characteristics which should be dangerous?
         if oPDFiD.encrypt.count > 0:
             self.make_dangerous('Encrypted pdf')
         if oPDFiD.js.count > 0 or oPDFiD.javascript.count > 0:
@@ -536,7 +531,6 @@ class File(FileBase):
         using PIL.Image, saves it to the temporary directory, and copies it to
         the destination.
         """
-        # TODO: make sure this method works for png, gif, tiff
         if self.has_metadata:
             self.extract_metadata()
         tempdir_path = self.make_tempdir()
@@ -587,32 +581,47 @@ class GroomerLogger(object):
             lf.write(b'\n')
 
     def add_file(self, file_path, file_props, in_tempdir=False):
-        """Add a file to the log. Takes a dict of file properties."""
+        """Add a file to the log. Takes a path and a dict of file properties."""
         depth = self._get_path_depth(file_path)
-        description_string = ', '.join(file_props['description_string'])
-        file_hash = Logging.computehash(file_path)[:6]
-        if file_props['is_dangerous']:
-            description_category = "Dangerous"
+        try:
+            file_hash = Logging.computehash(file_path)[:6]
+        except IsADirectoryError:
+            file_hash = 'directory'
+        except FileNotFoundError:
+            file_hash = '------'
+        if file_props['is_symlink']:
+            symlink_template = "+- NOT COPIED: symbolic link to {name} ({sha_hash})"
+            log_string = symlink_template.format(
+                name=file_props['symlink_path'],
+                sha_hash=file_hash
+            )
         else:
-            description_category = "Normal"
-        size_string = self._format_file_size(file_props['file_size'])
-        file_template = "+- {name} ({sha_hash}): {size}, type: {mt}/{st}. {desc}: {desc_str}"
-        file_string = file_template.format(
-            name=file_props['filename'],
-            sha_hash=file_hash,
-            size=size_string,
-            mt=file_props['maintype'],
-            st=file_props['subtype'],
-            desc=description_category,
-            desc_str=description_string,
-        )
-        # TODO: finish adding Errors and check that they appear properly
-        # if file_props['errors']:
-        #     error_string = ', '.join([str(key) for key in file_props['errors']])
-        #     file_string.append(' Errors: ' + error_string)
+            if file_props['is_dangerous']:
+                category = "Dangerous"
+            else:
+                category = "Normal"
+            size_string = self._format_file_size(file_props['file_size'])
+            if not file_props['copied']:
+                copied_string = 'NOT COPIED: '
+            else:
+                copied_string = ''
+            file_template = "+- {copied}{name} ({sha_hash}): {size}, type: {mt}/{st}. {cat}: {desc_str}"
+            log_string = file_template.format(
+                copied=copied_string,
+                name=file_props['filename'],
+                sha_hash=file_hash,
+                size=size_string,
+                mt=file_props['maintype'],
+                st=file_props['subtype'],
+                cat=category,
+                desc_str=file_props['description_string'],
+            )
+        if file_props['errors']:
+            error_string = ', '.join([str(key) for key in file_props['errors']])
+            log_string += (' Errors: ' + error_string)
         if in_tempdir:
             depth -= 1
-        self._write_line_to_log(file_string, depth)
+        self._write_line_to_log(log_string, depth)
 
     def add_dir(self, dir_path):
         """Add a directory to the log"""
@@ -664,6 +673,11 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.max_recursive_depth = max_recursive_depth
         self.logger = GroomerLogger(root_src, root_dst, debug)
 
+    def __repr__(self):
+        return "filecheck.KittenGroomerFileCheck object: {{{}}}".format(
+            os.path.basename(self.src_root_path)
+        )
+
     def process_dir(self, src_dir, dst_dir):
         """Process a directory on the source key."""
         for srcpath in self.list_files_dirs(src_dir):
@@ -671,7 +685,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                 self.logger.add_dir(srcpath)
             else:
                 dstpath = os.path.join(dst_dir, os.path.basename(srcpath))
-                cur_file = File(srcpath, dstpath, self.logger)
+                cur_file = File(srcpath, dstpath)
                 self.process_file(cur_file)
 
     def process_file(self, file):
@@ -682,12 +696,13 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         the file to the destionation key, and clean up temporary directory.
         """
         file.check()
-        if file.should_copy:
-            file.safe_copy()
-            file.set_property('copied', True)
-            file.write_log()
         if file.is_archive:
             self.process_archive(file)
+        else:
+            if file.should_copy:
+                file.safe_copy()
+                file.set_property('copied', True)
+            self.write_file_to_log(file)
         # TODO: Can probably handle cleaning up the tempdir better
         if hasattr(file, 'tempdir_path'):
             self.safe_rmtree(file.tempdir_path)
@@ -705,10 +720,11 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         else:
             tempdir_path = file.make_tempdir()
             command_str = '{} -p1 x "{}" -o"{}" -bd -aoa'
+            # -p1=password, x=extract, -o=output location, -bd=no % indicator, -aoa=overwrite existing files
             unpack_command = command_str.format(SEVENZ_PATH,
                                                 file.src_path, tempdir_path)
             self._run_process(unpack_command)
-            file.write_log()
+            self.write_file_to_log(file)
             self.process_dir(tempdir_path, file.dst_path)
             self.safe_rmtree(tempdir_path)
         self.recursive_archive_depth -= 1
@@ -722,6 +738,14 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
                 return
         return True
+
+    def write_file_to_log(self, file):
+        """Pass information about `file` to self.logger."""
+        props = file.get_all_props()
+        if not file.is_archive:
+            # FIXME: in_tempdir is a hack to make image files appear at the correct tree depth in log
+            in_tempdir = os.path.exists(file.tempdir_path)
+            self.logger.add_file(file.src_path, props, in_tempdir)
 
     def list_files_dirs(self, root_dir_path):
         """

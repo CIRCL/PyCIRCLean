@@ -172,13 +172,18 @@ class TestFileBase:
     def test_add_new_description(self, text_file):
         """Adding a new description should add it to the list of description strings."""
         text_file.add_description('thing')
-        assert text_file.get_property('description_string') == ['thing']
+        assert text_file.get_property('description_string') == 'thing'
 
     def test_add_description_exists(self, text_file):
         """Adding a description that already exists shouldn't duplicate it."""
         text_file.add_description('thing')
         text_file.add_description('thing')
-        assert text_file.get_property('description_string') == ['thing']
+        assert text_file.get_property('description_string') == 'thing'
+
+    def test_add_multiple_descriptions(self, text_file):
+        text_file.add_description('thing')
+        text_file.add_description('foo')
+        assert text_file.get_property('description_string') == 'thing, foo'
 
     def test_add_description_not_string(self, text_file):
         """Adding a description that isn't a string should raise an error."""
@@ -205,7 +210,7 @@ class TestFileBase:
         """Marking a file as dangerous and passing in a description should add
         that description to the file."""
         text_file.make_dangerous('thing')
-        assert text_file.get_property('description_string') == ['thing']
+        assert text_file.get_property('description_string') == 'thing'
 
     def test_dangerous_file_mark_dangerous(self, text_file):
         """Marking a dangerous file as dangerous should do nothing, and the
@@ -250,6 +255,11 @@ class TestFileBase:
         with mock.patch('kittengroomer.helpers.shutil.copy') as mock_copy:
             file.safe_copy()
             mock_copy.assert_called_once_with(file_path, dst_path)
+
+    def test_safe_copy_removes_exec_perms(self):
+        """`safe_copy` should create a file that doesn't have any of the
+        executable bits set."""
+        pass
 
     def test_safe_copy_makedir_doesnt_exist(self):
         """Calling safe_copy should create intermediate directories in the path

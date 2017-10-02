@@ -6,7 +6,9 @@
 PyCIRCLean is the core Python code used by [CIRCLean](https://github.com/CIRCL/Circlean/), an open-source
 USB key and document sanitizer created by [CIRCL](https://www.circl.lu/). This module has been separated from the
 device-specific scripts and can be used for dedicated security applications to sanitize documents from hostile environments
-to trusted environments. PyCIRCLean is currently Python 3.3+ compatible.
+to trusted environments. PyCIRCLean is currently Python 3.3+ compatible. Also, while [kittengroomer](./kittengroomer) can
+run on any platform supported by python-magic/libmagic, [filecheck.py](./filecheck/filecheck.py) has some dependencies that
+are Linux-only, and running the full test suite will require access to a Linux box or VM.
 
 # Installation
 
@@ -27,11 +29,11 @@ PyCIRCLean is designed to be extended to cover specific checking
 and sanitization workflows in different organizations such as industrial
 environments or restricted/classified ICT environments. A series of practical examples utilizing PyCIRCLean can be found
 in the [./examples](./examples) directory. Note: for commits beyond version 2.2.0 these
-examples are not guaranteed to work with the PyCIRCLean API. Please check [helpers.py](./kittengroomer/helpers.py) or
-[filecheck.py](./bin/filecheck.py) to see the new API interface.
+examples are out of date and not guaranteed to work with the PyCIRCLean API. Please check [helpers.py](./kittengroomer/
+helpers.py) or [filecheck.py](./filecheck/filecheck.py) to see the new API interface.
 
-The following simple example using PyCIRCLean will only copy files with a .conf extension matching the 'text/plain' MIME
-type. If any other file is found in the source directory, the files won't be copied to the destination directory.
+The following simple example using PyCIRCLean will only copy files with a .conf extension matching the 'text/plain'
+mimetype. If any other file is found in the source directory, the files won't be copied to the destination directory.
 
 ~~~python
 #!/usr/bin/env python
@@ -53,8 +55,6 @@ class FileSpec(FileBase):
         """Init file object, set the extension."""
         super(FileSpec, self).__init__(src_path, dst_path)
         self.valid_files = {}
-        a, self.extension = os.path.splitext(self.src_path)
-        self.mimetype = magic.from_file(self.src_path, mime=True).decode("utf-8")
         # The initial version will only accept the file extensions/mimetypes listed here.
         self.valid_files.update(Config.configfiles)
 
@@ -69,18 +69,10 @@ class FileSpec(FileBase):
             # Unexpected mimetype => disallowed
             valid = False
             compare_mime = 'Mime: {} - Expected: {}'.format(self.cur_file.mimetype, expected_mime)
-        self.add_log_details('valid', valid)
-        if valid:
-            self.cur_file.log_string = 'Extension: {} - MimeType: {}'.format(self.cur_file.extension, self.cur_file.mimetype)
         else:
             self.should_copy = False
-            if compare_ext is not None:
-                self.add_log_string(compare_ext)
-            else:
-                self.add_log_string(compare_mime)
         if self.should_copy:
             self.safe_copy()
-        self.write_log()
 
 
 class KittenGroomerSpec(KittenGroomerBase):
@@ -97,7 +89,7 @@ class KittenGroomerSpec(KittenGroomerBase):
         """Main function doing the processing."""
         to_copy = []
         error = []
-        for srcpath in self._list_all_files(self.src_root_dir):
+        for srcpath in self.list_all_files(self.src_root_dir):
             dstpath = srcpath.replace(self.src_root_dir, self.dst_root_dir)
             cur_file = FileSpec(srcpath, dstpath)
             cur_file.check()
@@ -110,7 +102,7 @@ if __name__ == '__main__':
 
 # How to contribute
 
-We welcome contributions (including bug fixes, new example file processing
+We welcome contributions (including bug fixes and new example file processing
 workflows) via pull requests. We are particularly interested in any new workflows
 that can be used to improve security in different organizations. If you see any
 potential enhancements required to support your sanitization workflow, please feel

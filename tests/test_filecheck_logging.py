@@ -2,22 +2,30 @@
 # -*- coding: utf-8 -*-
 
 import os
-import datetime
+from datetime import datetime
 
 import pytest
+
+try:
+    from filecheck.filecheck import KittenGroomerFileCheck
+    NODEPS = False
+except ImportError:
+    NODEPS = True
+pytestmark = pytest.mark.skipif(NODEPS, reason="Dependencies aren't installed")
 
 
 def save_logs(groomer, test_description):
     divider = ('=' * 10 + '{}' + '=' * 10 + '\n')
-    test_log_path = 'tests/test_logs/{}.log'.format(test_description)
+    test_log_path = 'tests/{}.log'.format(test_description)
     time_now = str(datetime.now().time()) + '\n'
     with open(test_log_path, 'wb+') as test_log:
-        log_header = divider.format('TEST LOG')
-        test_log.write(bytes(log_header, encoding='utf-8'))
+        test_log_header = divider.format('TEST LOG')
+        test_log.write(bytes(test_log_header, encoding='utf-8'))
         test_log.write(bytes(time_now, encoding='utf-8'))
         test_log.write(bytes(test_description, encoding='utf-8'))
         test_log.write(b'\n')
-        test_log.write(b'-' * 20 + b'\n')
+        log_header = divider.format('STD LOG')
+        test_log.write(bytes(log_header, encoding='utf-8'))
         with open(groomer.logger.log_path, 'rb') as logfile:
             log = logfile.read()
             test_log.write(log)
@@ -31,3 +39,9 @@ def save_logs(groomer, test_description):
             with open(groomer.logger.log_debug_out, 'rb') as debug_out:
                 out = debug_out.read()
                 test_log.write(out)
+
+
+def test_logging(tmpdir):
+    groomer = KittenGroomerFileCheck('tests/logging/', tmpdir.strpath)
+    groomer.run()
+    save_logs(groomer, "visual_logging_test")

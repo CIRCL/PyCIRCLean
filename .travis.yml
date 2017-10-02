@@ -5,8 +5,8 @@ python:
     - 3.4
     - 3.5
     - 3.6
-    - "3.6-dev"
-    - nightly
+    # - "3.6-dev"
+    # - nightly
 
 sudo: required
 # https://docs.travis-ci.com/user/ci-environment/#Virtualization-environments
@@ -31,8 +31,7 @@ install:
     - wget https://didierstevens.com/files/software/pdfid_v0_2_1.zip
     - unzip pdfid_v0_2_1.zip
     - pip install -U pip
-    - pip install lxml exifread pillow olefile
-    - pip install git+https://github.com/decalage2/oletools.git
+    - pip install lxml exifread pillow olefile oletools
     - pip install git+https://github.com/grierforensics/officedissector.git
     # PyCIRCLean dependencies
     - pip install -r dev-requirements.txt
@@ -45,7 +44,8 @@ install:
     - pushd theZoo/malwares/Binaries
     - python unpackall.py
     - popd
-    - mv theZoo/malwares/Binaries/out tests/uncategorized/
+    - mkdir tests/uncategorized/the_zoo/
+    - mv theZoo/malwares/Binaries/out tests/uncategorized/the_zoo/
     # Path traversal attacks
     - git clone https://github.com/jwilk/path-traversal-samples
     - pushd path-traversal-samples
@@ -56,23 +56,30 @@ install:
     - make
     - popd
     - popd
-    - mv path-traversal-samples/zip/*.zip tests/uncategorized/
-    - mv path-traversal-samples/rar/*.rar tests/uncategorized/
+    - mkdir tests/uncategorized/path_traversal_zip/
+    - mkdir tests/uncategorized/path_traversal_rar/
+    - mv path-traversal-samples/zip/*.zip tests/uncategorized/path_traversal_zip
+    - mv path-traversal-samples/rar/*.rar tests/uncategorized/path_traversal_rar
     # Office docs
     - git clone https://github.com/eea/odfpy.git
-    - mv odfpy/tests/examples/* tests/uncategorized/
-    - pushd tests/uncategorized/
+    - mkdir tests/uncategorized/odfpy/
+    - mv odfpy/tests/examples/* tests/uncategorized/odfpy/
+    - mkdir tests/uncategorized/olefile
+    - pushd tests/uncategorized/olefile
     - wget https://bitbucket.org/decalage/olefileio_pl/raw/3073963b640935134ed0da34906fea8e506460be/Tests/images/test-ole-file.doc
+    - popd
+    - mkdir tests/uncategorized/fraunhofer && pushd tests/uncategorized/fraunhofer
     - wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
     - unzip -o fraunhoferlibrary.zip
     - rm fraunhoferlibrary.zip
     - popd
+    # Turned off unzipping 42.zip because it isn't included in the file catalog and archivebomb.zip ends up testing the same thing
     # - pushd tests/dangerous/
     # - 7z x -p42 42.zip
     # - popd
 
 script:
-    - travis_wait py.test --cov=kittengroomer --cov=bin tests/
+    - travis_wait py.test --cov=kittengroomer --cov=filecheck tests/
 
 notifications:
     email:

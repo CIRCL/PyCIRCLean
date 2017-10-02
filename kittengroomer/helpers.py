@@ -12,6 +12,7 @@ import os
 import hashlib
 import shutil
 import argparse
+import stat
 
 import magic
 
@@ -36,7 +37,7 @@ class FileBase(object):
         self.is_dangerous = False
         self.copied = False
         self.symlink_path = None
-        self.description_string = []  # array of descriptions to be joined
+        self._description_string = []  # array of descriptions to be joined
         self._errors = {}
         self._user_defined = {}
         self.should_copy = True
@@ -90,18 +91,24 @@ class FileBase(object):
 
     @property
     def description_string(self):
-        return self.__description_string
+        if len(self._description_string) == 0:
+            return 'No description'
+        elif len(self._description_string) == 1:
+            return self._description_string[0]
+        else:
+            ret_string = ', '.join(self._description_string)
+            return ret_string.strip(', ')
 
     @description_string.setter
     def description_string(self, value):
         if hasattr(self, 'description_string'):
             if isinstance(value, str):
-                if value not in self.__description_string:
-                    self.__description_string.append(value)
+                if value not in self._description_string:
+                    self._description_string.append(value)
             else:
                 raise TypeError("Description_string can only include strings")
         else:
-            self.__description_string = value
+            self._description_string = value
 
     def set_property(self, prop_string, value):
         """
@@ -139,6 +146,7 @@ class FileBase(object):
             'subtype': self.subtype,
             'extension': self.extension,
             'is_dangerous': self.is_dangerous,
+            'is_symlink': self.is_symlink,
             'symlink_path': self.symlink_path,
             'copied': self.copied,
             'description_string': self.description_string,
@@ -173,7 +181,11 @@ class FileBase(object):
             self.add_description(reason_string)
 
     def safe_copy(self, src=None, dst=None):
-        """Copy file and create destination directories if needed."""
+        """
+        Copy file and create destination directories if needed.
+
+        Sets all exec bits to '0'.
+        """
         if src is None:
             src = self.src_path
         if dst is None:
@@ -181,6 +193,10 @@ class FileBase(object):
         try:
             os.makedirs(self.dst_dir, exist_ok=True)
             shutil.copy(src, dst)
+            current_perms = self._get_file_permissions(dst)
+            only_exec_bits = 0o0111
+            perms_no_exec = current_perms & (~only_exec_bits)
+            os.chmod(dst, perms_no_exec)
         except IOError as e:
             # Probably means we can't write in the dest dir
             self.add_error(e, '')
@@ -234,16 +250,14 @@ class FileBase(object):
         else:
             try:
                 mt = magic.from_file(file_path, mime=True)
-                # libmagic will always return something, even if it's just 'data'
+                # libmagic always returns something, even if it's just 'data'
             except UnicodeEncodeError as e:
-                # FIXME: The encoding of the file that triggers this is broken (possibly it's UTF-16 and Python expects utf8)
-                # Note: one of the Travis files will trigger this exception
                 self.add_error(e, '')
                 mt = None
             try:
                 mimetype = mt.decode("utf-8")
             except:
-                # FIXME: what should the exception be here if mimetype isn't utf-8?
+                # FIXME: what should the exception be if mimetype isn't utf-8?
                 mimetype = mt
         return mimetype
 
@@ -261,6 +275,15 @@ class FileBase(object):
         except FileNotFoundError:
             size = 0
         return size
+
+    def _remove_exec_bit(self, file_path):
+        current_perms = self._get_file_permissions(file_path)
+        perms_no_exec = current_perms & (~stat.S_IEXEC)
+        os.chmod(file_path, perms_no_exec)
+
+    def _get_file_permissions(self, file_path):
+        full_mode = os.stat(file_path, follow_symlinks=False).st_mode
+        return stat.S_IMODE(full_mode)
 
 
 class Logging(object):
@@ -304,7 +327,6 @@ class KittenGroomerBase(object):
     def list_all_files(self, directory_path):
         """Generator yielding path to all of the files in a directory tree."""
         for root, dirs, files in os.walk(directory_path):
-            # files is a list anyway so we don't get much from using a generator here
             for filename in files:
                 filepath = os.path.join(root, filename)
                 yield filepath
@@ -329,7 +351,12 @@ class ImplementationRequired(KittenGroomerError):
     pass
 
 
-def main(kg_implementation, description='Call a KittenGroomer implementation to process files present in the source directory and copy them to the destination directory.'):
+def main(
+        kg_implementation,
+        description=("Call a KittenGroomer implementation to process files "
+                     "present in the source directory and copy them to the "
+                     "destination directory.")):
+    print(description)
     parser = argparse.ArgumentParser(prog='KittenGroomer', description=description)
     parser.add_argument('-s', '--source', type=str, help='Source directory')
     parser.add_argument('-d', '--destination', type=str, help='Destination directory')
