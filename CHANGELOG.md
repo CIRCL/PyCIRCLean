@@ -1,17 +1,25 @@
 Changelog
 =========
 
-2.2.0 (in progress)
+2.2.0
 ---
 New features:
 - Filecheck.py configuration information is now conveniently held in a Config
 object instead of in globals
 - New easier to read text-based logger (removed twiggy dependency)
 - Various filetypes in filecheck.py now have improved descriptions for log
-- Improved the interface for adding file descriptions to files
+- Improved the PyCIRCLean API interface for adding file descriptions to files
+- New integration test harness using a sample file catalog
 
 Fixes:
--
+- Switched back to released version of oletools
+- Use set of malicious extensions from Chrome
+- Check for XML Forms Architectures in PDFs
+- Symlinks were being followed
+- Prevent copying MacOS hidden files
+- Fixes for several filetypes that were incorrectly being identified as dangerous
+- Fix support for .rar archives
+- Turn off executable bit on copied files
 
 
 2.1.0
