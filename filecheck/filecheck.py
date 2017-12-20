@@ -6,7 +6,10 @@ import shlex
 import subprocess
 import zipfile
 import argparse
+import random
 import shutil
+import time
+import hashlib
 
 import oletools.oleid
 import olefile
@@ -236,6 +239,38 @@ class File(FileBase):
         if self.extension in Config.malicious_exts:
             self.make_dangerous('Extension identifies file as potentially dangerous')
 
+    def _compute_random_hashes(self):
+        """Compute a random amount of hashes at random positions in the file to ensure integrity after the copy"""
+        self.random_hashes = []
+        if self.size < 64:
+            # hash the whole file
+            self.block_length = self.size
+        else:
+            if self.size < 128:
+                # Get a random length between 16 and the size of the file
+                self.block_length = random.randint(16, self.size)
+            else:
+                # Get a random length between 16 and 128
+                self.block_length = random.randint(16, 128)
+
+        for i in range(random.randint(3, 6)):  # Do a random amound of read on the file (between 5 and 10)
+            start_pos = random.randint(0, self.size - self.block_length)  # Pick a random length for the hash to compute
+            with open(self.src_path, 'rb') as f:
+                f.seek(start_pos)
+                hashed = hashlib.sha256(f.read(self.block_length)).hexdigest()
+                self.random_hashes.append((start_pos, hashed))
+                time.sleep(random.uniform(0.1, 0.5))  # Add a random sleep length
+
+    def _validate_random_hashes(self):
+        for start_pos, hashed_src in self.random_hashes:
+            with open(self.dst_path, 'rb') as f:
+                f.seek(start_pos)
+                hashed = hashlib.sha256(f.read(self.block_length)).hexdigest()
+                if hashed != hashed_src:
+                    # Something fucked up happened
+                    return False
+        return True
+
     def check(self):
         """
         Main file processing method.
@@ -249,6 +284,7 @@ class File(FileBase):
         self._check_mimetype()
         self._check_extension()
         self._check_filename()  # can mutate self.filename
+        self._compute_random_hashes()
 
         if not self.is_dangerous:
             self.mime_processing_options.get(self.maintype, self.unknown)()
@@ -344,7 +380,7 @@ class File(FileBase):
             # Manual processing, may already count as suspicious
             try:
                 ole = olefile.OleFileIO(self.src_path, raise_defects=olefile.DEFECT_INCORRECT)
-            except:
+            except Exception:
                 self.make_dangerous('Unparsable WinOffice file')
             if ole.parsing_issues:
                 self.make_dangerous('Parsing issues with WinOffice file')
@@ -392,7 +428,7 @@ class File(FileBase):
         # As long as there is no way to do a sanity check on the files => dangerous
         try:
             lodoc = zipfile.ZipFile(self.src_path, 'r')
-        except:
+        except Exception:
             # TODO: are there specific exceptions we should catch here? Or should it be everything
             self.make_dangerous('Invalid libreoffice file')
         for f in lodoc.infolist():
@@ -702,6 +738,10 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             if file.should_copy:
                 file.safe_copy()
                 file.set_property('copied', True)
+                if not file._validate_random_hashes():
+                    # Something's fucked up.
+                    file.make_dangerous('The copied file is different from the one checked, removing.')
+                    os.remove(file.dst_path)
             self.write_file_to_log(file)
         # TODO: Can probably handle cleaning up the tempdir better
         if hasattr(file, 'tempdir_path'):
