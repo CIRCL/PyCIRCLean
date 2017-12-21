@@ -493,47 +493,44 @@ class File(FileBase):
     def _metadata_exif(self, metadata_file_path):
         """Read exif metadata from a jpg or tiff file using exifread."""
         # TODO: can we shorten this method somehow?
-        img = open(self.src_path, 'rb')
-        tags = None
-        try:
-            tags = exifread.process_file(img, debug=True)
-        except Exception as e:
-            self.add_error(e, "Error while trying to grab full metadata for file {}; retrying for partial data.".format(self.src_path))
-        if tags is None:
+        with open(self.src_path, 'rb') as img:
+            tags = None
             try:
                 tags = exifread.process_file(img, debug=True)
             except Exception as e:
-                self.add_error(e, "Failed to get any metadata for file {}.".format(self.src_path))
-                img.close()
-                return False
-        for tag in sorted(tags.keys()):
-            # These tags are long and obnoxious/binary so we don't add them
-            if tag not in ('JPEGThumbnail', 'TIFFThumbnail'):
-                tag_string = str(tags[tag])
-                # Exifreader truncates data.
-                if len(tag_string) > 25 and tag_string.endswith(", ... ]"):
-                    tag_value = tags[tag].values
-                    tag_string = str(tag_value)
-                with open(metadata_file_path, 'w+') as metadata_file:
-                    metadata_file.write("Key: {}\tValue: {}\n".format(tag, tag_string))
-        # TODO: how do we want to log metadata?
-        self.set_property('metadata', 'exif')
-        img.close()
+                self.add_error(e, "Error while trying to grab full metadata for file {}; retrying for partial data.".format(self.src_path))
+            if tags is None:
+                try:
+                    tags = exifread.process_file(img, debug=True)
+                except Exception as e:
+                    self.add_error(e, "Failed to get any metadata for file {}.".format(self.src_path))
+                    return False
+            for tag in sorted(tags.keys()):
+                # These tags are long and obnoxious/binary so we don't add them
+                if tag not in ('JPEGThumbnail', 'TIFFThumbnail'):
+                    tag_string = str(tags[tag])
+                    # Exifreader truncates data.
+                    if len(tag_string) > 25 and tag_string.endswith(", ... ]"):
+                        tag_value = tags[tag].values
+                        tag_string = str(tag_value)
+                    with open(metadata_file_path, 'w+') as metadata_file:
+                        metadata_file.write("Key: {}\tValue: {}\n".format(tag, tag_string))
+            # TODO: how do we want to log metadata?
+            self.set_property('metadata', 'exif')
         return True
 
     def _metadata_png(self, metadata_file_path):
         """Extract metadata from a png file using PIL/Pillow."""
         warnings.simplefilter('error', Image.DecompressionBombWarning)
         try:
-            img = Image.open(self.src_path)
-            for tag in sorted(img.info.keys()):
-                # These are long and obnoxious/binary
-                if tag not in ('icc_profile'):
-                    with open(metadata_file_path, 'w+') as metadata_file:
-                        metadata_file.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
-            # LOG: handle metadata
-            self.set_property('metadata', 'png')
-            img.close()
+            with Image.open(self.src_path) as img:
+                for tag in sorted(img.info.keys()):
+                    # These are long and obnoxious/binary
+                    if tag not in ('icc_profile'):
+                        with open(metadata_file_path, 'w+') as metadata_file:
+                            metadata_file.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
+                # LOG: handle metadata
+                self.set_property('metadata', 'png')
         except Exception as e:  # Catch decompression bombs
             # TODO: only catch DecompressionBombWarnings here?
             self.add_error(e, "Caught exception processing metadata for {}".format(self.src_path))
@@ -580,10 +577,10 @@ class File(FileBase):
         tempfile_path = os.path.join(tempdir_path, self.filename)
         warnings.simplefilter('error', Image.DecompressionBombWarning)
         try:  # Do image conversions
-            img_in = Image.open(self.src_path)
-            img_out = Image.frombytes(img_in.mode, img_in.size, img_in.tobytes())
-            img_out.save(tempfile_path)
-            self.src_path = tempfile_path
+            with Image.open(self.src_path) as img_in:
+                with Image.frombytes(img_in.mode, img_in.size, img_in.tobytes()) as img_out:
+                    img_out.save(tempfile_path)
+                self.src_path = tempfile_path
         except Exception as e:  # Catch decompression bombs
             # TODO: change this from all Exceptions to specific DecompressionBombWarning
             self.add_error(e, "Caught exception (possible decompression bomb?) while translating file {}.".format(self.src_path))
