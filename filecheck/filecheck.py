@@ -240,7 +240,10 @@ class File(FileBase):
             self.make_dangerous('Extension identifies file as potentially dangerous')
 
     def _compute_random_hashes(self):
-        """Compute a random amount of hashes at random positions in the file to ensure integrity after the copy"""
+        """Compute a random amount of hashes at random positions in the file to ensure integrity after the copy (mitigate TOCTOU attacks)"""
+        if self.maintype == 'image' or os.path.isdir(self.src_path):
+            # Images are converted, no need to compute the hashes
+            return
         self.random_hashes = []
         if self.size < 64:
             # hash the whole file
@@ -262,6 +265,10 @@ class File(FileBase):
                 time.sleep(random.uniform(0.1, 0.5))  # Add a random sleep length
 
     def _validate_random_hashes(self):
+        """Validate hashes computed by _compute_random_hashes"""
+        if self.maintype == 'image' or os.path.isdir(self.src_path):
+            # Images are converted, we don't have to fear TOCTOU
+            return True
         for start_pos, hashed_src in self.random_hashes:
             with open(self.dst_path, 'rb') as f:
                 f.seek(start_pos)
