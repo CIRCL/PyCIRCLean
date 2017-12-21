@@ -241,7 +241,7 @@ class File(FileBase):
 
     def _compute_random_hashes(self):
         """Compute a random amount of hashes at random positions in the file to ensure integrity after the copy (mitigate TOCTOU attacks)"""
-        if self.maintype == 'image' or os.path.isdir(self.src_path):
+        if not os.path.exists(self.src_path) or os.path.isdir(self.src_path) or self.maintype == 'image':
             # Images are converted, no need to compute the hashes
             return
         self.random_hashes = []
@@ -266,7 +266,7 @@ class File(FileBase):
 
     def _validate_random_hashes(self):
         """Validate hashes computed by _compute_random_hashes"""
-        if self.maintype == 'image' or os.path.isdir(self.src_path):
+        if not os.path.exists(self.src_path) or os.path.isdir(self.src_path) or self.maintype == 'image':
             # Images are converted, we don't have to fear TOCTOU
             return True
         for start_pos, hashed_src in self.random_hashes:
