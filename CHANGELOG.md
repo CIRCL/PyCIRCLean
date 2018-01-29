@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.4
+---
+
+Fixes:
+- Add TOCTOU remediations
+
 2.2.0
 ---
 New features:
