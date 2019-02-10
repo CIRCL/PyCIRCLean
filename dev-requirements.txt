@@ -1,5 +1,0 @@
-python-magic
-pytest
-pytest-cov
-PyYAML
-tox
