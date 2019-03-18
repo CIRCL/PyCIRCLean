@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "07933a9746ecbc04f9f0c39db78c51b6e6f2f2ebc8d10e7ccf67d0c9bbb0317d"
+            "sha256": "ca76d07407e5ed9ca95b7da07b5ef20f0d7c9345b1c35536e896d1a0e8e1787f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -23,6 +23,10 @@
             ],
             "index": "pypi",
             "version": "==2.1.2"
+        },
+        "kittengroomer": {
+            "editable": true,
+            "path": "."
         },
         "lxml": {
             "hashes": [
@@ -117,6 +121,13 @@
                 "sha256:f6c5ef0d7480ad048c054c37632c67fca55299990fff127850181659eea33fc3"
             ],
             "version": "==2.3.1"
+        },
+        "python-magic": {
+            "hashes": [
+                "sha256:f2674dcfad52ae6c49d4803fa027809540b130db1dec928cfbb9240316831375",
+                "sha256:f3765c0f582d2dfc72c15f3b5a82aecfae9498bd29ca840d72f37d7bd38bfcd5"
+            ],
+            "version": "==0.4.15"
         }
     },
     "develop": {
@@ -249,7 +260,6 @@
                 "sha256:f2674dcfad52ae6c49d4803fa027809540b130db1dec928cfbb9240316831375",
                 "sha256:f3765c0f582d2dfc72c15f3b5a82aecfae9498bd29ca840d72f37d7bd38bfcd5"
             ],
-            "index": "pypi",
             "version": "==0.4.15"
         },
         "pyyaml": {

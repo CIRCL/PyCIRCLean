@@ -21,9 +21,9 @@ addons:
 
 install:
     # General dependencies
-    - sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty multiverse" && sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse"
     - sudo apt-get update -qq
-    - sudo apt-get install -y p7zip-rar python-pip
+    - sudo apt-get -y dist-upgrate
+    - sudo apt-get install -y p7zip-rar
     # filecheck.py dependencies
     - sudo apt-get install libxml2-dev libxslt1-dev
     - wget https://didierstevens.com/files/software/pdfid_v0_2_5.zip
