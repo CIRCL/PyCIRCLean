@@ -192,9 +192,11 @@ class File(FileBase):
                 expected_mimetypes = [expected_mimetype]
                 if expected_mimetype in Config.aliases:
                     expected_mimetypes.append(Config.aliases[expected_mimetype])
+            if (encoding is None) and (os.path.getsize(self.src_path) == 0):
+                is_empty_file = True
 
             is_known_extension = self.extension in mimetypes.types_map.keys()
-            if is_known_extension and self.mimetype not in expected_mimetypes:
+            if is_known_extension and self.mimetype not in expected_mimetypes and not is_empty_file:
                 self.make_dangerous('Mimetype does not match expected mimetypes ({}) for this extension'.format(expected_mimetypes))
 
     def _check_mimetype(self):
