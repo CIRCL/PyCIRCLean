@@ -194,6 +194,8 @@ class File(FileBase):
                     expected_mimetypes.append(Config.aliases[expected_mimetype])
             if (encoding is None) and (os.path.getsize(self.src_path) == 0):
                 is_empty_file = True
+            else:
+                is_empty_file = False
 
             is_known_extension = self.extension in mimetypes.types_map.keys()
             if is_known_extension and self.mimetype not in expected_mimetypes and not is_empty_file:
