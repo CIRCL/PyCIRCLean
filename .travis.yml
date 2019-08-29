@@ -9,7 +9,7 @@ python:
 sudo: required
 # https://docs.travis-ci.com/user/ci-environment/#Virtualization-environments
 
-dist: xenial
+dist: bionic
 
 addons:
     apt:
