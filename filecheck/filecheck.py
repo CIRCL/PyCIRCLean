@@ -404,9 +404,6 @@ class File(FileBase):
                     self.make_dangerous('WinOffice file containing a macro')
         else:
             indicators = oid.check()
-            # Encrypted can be set by multiple checks on the script
-            if oid.encrypted.value:
-                self.make_dangerous('Encrypted WinOffice file')
             if oid.macros.value or oid.ole.exists('macros/vba') or oid.ole.exists('Macros') \
                     or oid.ole.exists('_VBA_PROJECT_CUR') or oid.ole.exists('VBA'):
                 self.make_dangerous('WinOffice file containing a macro')
@@ -415,6 +412,9 @@ class File(FileBase):
                     self.make_dangerous('WinOffice file containing an object pool')
                 elif i.id == 'flash' and i.value:
                     self.make_dangerous('WinOffice file with embedded flash')
+                elif i.id == 'encrypted' and i.value:
+                    self.make_dangerous('Encrypted WinOffice file')
+
         self.add_description('WinOffice file')
 
     def _ooxml(self):
