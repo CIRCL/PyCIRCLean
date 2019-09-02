@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.5
+---
+
+Fixes:
+- Bump libraries, update code accordingly
+
 2.4
 ---
 
