@@ -13,9 +13,9 @@ are Linux-only, and running the full test suite will require access to a Linux b
 # Installation
 
 ~~~
-git glone https://github.com/CIRCL/PyCIRCLean.git
+git clone https://github.com/CIRCL/PyCIRCLean.git
 cd PyCIRCLean
-pip install -e .
+pip3 install -e .
 ~~~
 
 # How to use PyCIRCLean
