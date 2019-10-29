@@ -1,17 +1,16 @@
 -i https://pypi.org/simple
 -e .
 -e git+https://github.com/grierforensics/officedissector.git@2059a5ba08fa139362e3936578f99c4da9a9b55d#egg=officedissector
-asn1crypto==0.24.0
-cffi==1.12.3
+cffi==1.13.1
 colorclass==2.2.0
-cryptography==2.7
+cryptography==2.8
 easygui==0.98.1
 exifread==2.1.2
 lxml==4.4.1
 msoffcrypto-tool==4.10.1
 olefile==0.46
 oletools==0.54.2
-pillow==6.1.0
+pillow==6.2.1
 pycparser==2.19
 pyparsing==2.4.2
 python-magic==0.4.15
