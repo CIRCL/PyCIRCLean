@@ -188,7 +188,7 @@ class File(FileBase):
             if self.extension in Config.override_ext:
                 expected_mimetypes = Config.override_ext[self.extension]
             else:
-                expected_mimetype, encoding = mimetypes.guess_type(self.src_path,
+                expected_mimetype, encoding = mimetypes.guess_type(str(self.src_path),
                                                                    strict=False)
 
                 expected_mimetypes = [expected_mimetype]
