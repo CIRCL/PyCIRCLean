@@ -458,7 +458,7 @@ class File(FileBase):
 
     def _pdf(self):
         """Process a PDF file."""
-        xmlDoc = PDFiD(self.src_path)
+        xmlDoc = PDFiD(str(self.src_path))
         oPDFiD = cPDFiD(xmlDoc, True)
         if oPDFiD.encrypt.count > 0:
             self.make_dangerous('Encrypted pdf')
