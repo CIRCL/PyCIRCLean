@@ -10,14 +10,16 @@ import random
 import shutil
 import time
 import hashlib
+from pathlib import Path
+from typing import Dict, List, Tuple, Callable, Optional
 
-import oletools.oleid
-import olefile
-import officedissector
+import oletools.oleid  # type: ignore
+import olefile  # type: ignore
+import officedissector  # type: ignore
 import warnings
-import exifread
-from PIL import Image
-from pdfid import PDFiD, cPDFiD
+import exifread  # type: ignore
+from PIL import Image  # type: ignore
+from pdfid import PDFiD, cPDFiD  # type: ignore
 
 from kittengroomer import FileBase, KittenGroomerBase, Logging
 
@@ -26,27 +28,27 @@ class Config:
     """Configuration information for filecheck.py."""
     # MIMES
     # Application subtypes (mimetype: 'application/<subtype>')
-    mimes_ooxml = ('vnd.openxmlformats-officedocument.',)
-    mimes_office = ('msword', 'vnd.ms-',)
-    mimes_libreoffice = ('vnd.oasis.opendocument',)
-    mimes_rtf = ('rtf', 'richtext',)
-    mimes_pdf = ('pdf', 'postscript',)
-    mimes_xml = ('xml',)
-    mimes_ms = ('dosexec',)
-    mimes_compressed = ('zip', 'rar', 'x-rar', 'bzip2', 'lzip', 'lzma', 'lzop',
-                        'xz', 'compress', 'gzip', 'tar',)
-    mimes_data = ('octet-stream',)
-    mimes_audio = ('ogg',)
+    mimes_ooxml: Tuple[str, ...] = ('vnd.openxmlformats-officedocument.',)
+    mimes_office: Tuple[str, ...] = ('msword', 'vnd.ms-',)
+    mimes_libreoffice: Tuple[str, ...] = ('vnd.oasis.opendocument',)
+    mimes_rtf: Tuple[str, ...] = ('rtf', 'richtext',)
+    mimes_pdf: Tuple[str, ...] = ('pdf', 'postscript',)
+    mimes_xml: Tuple[str, ...] = ('xml',)
+    mimes_ms: Tuple[str, ...] = ('dosexec',)
+    mimes_compressed: Tuple[str, ...] = ('zip', 'rar', 'x-rar', 'bzip2', 'lzip', 'lzma', 'lzop',
+                                         'xz', 'compress', 'gzip', 'tar',)
+    mimes_data: Tuple[str, ...] = ('octet-stream',)
+    mimes_audio: Tuple[str, ...] = ('ogg',)
 
     # Image subtypes
-    mimes_exif = ('image/jpeg', 'image/tiff',)
-    mimes_png = ('image/png',)
+    mimes_exif: Tuple[str, ...] = ('image/jpeg', 'image/tiff',)
+    mimes_png: Tuple[str, ...] = ('image/png',)
 
     # Mimetypes with metadata
-    mimes_metadata = ('image/jpeg', 'image/tiff', 'image/png',)
+    mimes_metadata: Tuple[str, ...] = ('image/jpeg', 'image/tiff', 'image/png',)
 
     # Mimetype aliases
-    aliases = {
+    aliases: Dict[str, str] = {
         # Win executables
         'application/x-msdos-program': 'application/x-dosexec',
         'application/x-dosexec': 'application/x-msdos-program',
@@ -61,7 +63,7 @@ class Config:
     # Commonly used malicious extensions
     # Sources: http://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
     # https://github.com/wiregit/wirecode/blob/master/components/core-settings/src/main/java/org/limewire/core/settings/FilterSettings.java
-    malicious_exts = (
+    malicious_exts: Tuple[str, ...] = (
         # Applications
         ".exe", ".pif", ".application", ".gadget", ".msi", ".msp", ".com", ".scr",
         ".hta", ".cpl", ".msc", ".jar",
@@ -116,7 +118,7 @@ class Config:
     # In [12]: mimetypes.guess_type('toot.tar.gz', strict=False)
     # Out[12]: ('application/x-tar', 'gzip')
     # It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
-    override_ext = {'.gz': 'application/gzip'}
+    override_ext: Dict[str, str] = {'.gz': 'application/gzip'}
 
 
 SEVENZ_PATH = '/usr/bin/7z'
@@ -130,12 +132,12 @@ class File(FileBase):
     filetype-specific processing methods.
     """
 
-    def __init__(self, src_path, dst_path):
+    def __init__(self, src_path: Path, dst_path: Path):
         super(File, self).__init__(src_path, dst_path)
-        self.is_archive = False
-        self.tempdir_path = self.dst_path + '_temp'
+        self.is_archive: bool = False
+        self.tempdir_path: Path = Path(str(self.dst_path) + '_temp')
 
-        subtypes_apps = (
+        subtypes_apps: Tuple[Tuple[Tuple[str, ...], Callable], ...] = (
             (Config.mimes_office, self._winoffice),
             (Config.mimes_ooxml, self._ooxml),
             (Config.mimes_rtf, self.text),
@@ -147,15 +149,15 @@ class File(FileBase):
             (Config.mimes_data, self._binary_app),
             (Config.mimes_audio, self.audio)
         )
-        self.app_subtype_methods = self._make_method_dict(subtypes_apps)
+        self.app_subtype_methods: Dict[str, Callable] = self._make_method_dict(subtypes_apps)
 
-        types_metadata = (
+        types_metadata: Tuple[Tuple[Tuple[str, ...], Callable], ...] = (
             (Config.mimes_exif, self._metadata_exif),
             (Config.mimes_png, self._metadata_png),
         )
-        self.metadata_mimetype_methods = self._make_method_dict(types_metadata)
+        self.metadata_mimetype_methods: Dict[str, Callable] = self._make_method_dict(types_metadata)
 
-        self.mime_processing_options = {
+        self.mime_processing_options: Dict[str, Callable] = {
             'text': self.text,
             'audio': self.audio,
             'image': self.image,
@@ -199,7 +201,7 @@ class File(FileBase):
 
             is_known_extension = self.extension in mimetypes.types_map.keys()
             if is_known_extension and self.mimetype not in expected_mimetypes and not is_empty_file:
-                self.make_dangerous('Mimetype does not match expected mimetypes ({}) for this extension'.format(expected_mimetypes))
+                self.make_dangerous('Mimetype does not match expected mimetypes ({expected_mimetypes}) for this extension')
 
     def _check_mimetype(self):
         """
@@ -273,7 +275,7 @@ class File(FileBase):
                 self.random_hashes.append((start_pos, hashed))
                 time.sleep(random.uniform(0.1, 0.5))  # Add a random sleep length
 
-    def _validate_random_hashes(self):
+    def _validate_random_hashes(self) -> bool:
         """Validate hashes computed by _compute_random_hashes"""
         if not os.path.exists(self.src_path) or os.path.isdir(self.src_path) or self.maintype == 'image':
             # Images are converted, we don't have to fear TOCTOU
@@ -306,7 +308,7 @@ class File(FileBase):
             self.mime_processing_options.get(self.maintype, self.unknown)()
 
     # ##### Helper functions #####
-    def _make_method_dict(self, list_of_tuples):
+    def _make_method_dict(self, list_of_tuples: Tuple) -> Dict[str, Callable]:
         """Returns a dictionary with mimetype: method pairs."""
         dict_to_return = {}
         for list_of_subtypes, method in list_of_tuples:
@@ -315,16 +317,16 @@ class File(FileBase):
         return dict_to_return
 
     @property
-    def has_metadata(self):
+    def has_metadata(self) -> bool:
         """True if filetype typically contains metadata, else False."""
         if self.mimetype in Config.mimes_metadata:
             return True
         return False
 
-    def make_tempdir(self):
+    def make_tempdir(self) -> Path:
         """Make a temporary directory at self.tempdir_path."""
-        if not os.path.exists(self.tempdir_path):
-            os.makedirs(self.tempdir_path)
+        if not self.tempdir_path.exists():
+            self.tempdir_path.mkdir()
         return self.tempdir_path
 
     #######################
@@ -498,7 +500,7 @@ class File(FileBase):
 
     #######################
     # Metadata extractors
-    def _metadata_exif(self, metadata_file_path):
+    def _metadata_exif(self, metadata_file_path) -> bool:
         """Read exif metadata from a jpg or tiff file using exifread."""
         # TODO: can we shorten this method somehow?
         with open(self.src_path, 'rb') as img:
@@ -527,7 +529,7 @@ class File(FileBase):
             self.set_property('metadata', 'exif')
         return True
 
-    def _metadata_png(self, metadata_file_path):
+    def _metadata_png(self, metadata_file_path) -> bool:
         """Extract metadata from a png file using PIL/Pillow."""
         warnings.simplefilter('error', Image.DecompressionBombWarning)
         try:
@@ -539,6 +541,7 @@ class File(FileBase):
                             metadata_file.write("Key: {}\tValue: {}\n".format(tag, img.info[tag]))
                 # LOG: handle metadata
                 self.set_property('metadata', 'png')
+            return True
         except Exception as e:  # Catch decompression bombs
             # TODO: only catch DecompressionBombWarnings here?
             self.add_error(e, "Caught exception processing metadata for {}".format(self.src_path))
@@ -582,7 +585,7 @@ class File(FileBase):
         if self.has_metadata:
             self.extract_metadata()
         tempdir_path = self.make_tempdir()
-        tempfile_path = os.path.join(tempdir_path, self.filename)
+        tempfile_path = tempdir_path / self.filename
         warnings.simplefilter('error', Image.DecompressionBombWarning)
         try:  # Do image conversions
             with Image.open(self.src_path) as img_in:
@@ -600,37 +603,37 @@ class File(FileBase):
 class GroomerLogger(object):
     """Groomer logging interface."""
 
-    def __init__(self, src_root_path, dst_root_path, debug=False):
-        self._src_root_path = src_root_path
-        self._dst_root_path = dst_root_path
-        self._log_dir_path = self._make_log_dir(dst_root_path)
-        self.log_path = os.path.join(self._log_dir_path, 'circlean_log.txt')
+    def __init__(self, src_root_path: Path, dst_root_path: Path, debug: bool=False):
+        self._src_root_path: Path = src_root_path
+        self._dst_root_path: Path = dst_root_path
+        self._log_dir_path: Path = self._make_log_dir(dst_root_path)
+        self.log_path: Path = self._log_dir_path / 'circlean_log.txt'
         self._add_root_dir(src_root_path)
         if debug:
-            self.log_debug_err = os.path.join(self._log_dir_path, 'debug_stderr.log')
-            self.log_debug_out = os.path.join(self._log_dir_path, 'debug_stdout.log')
+            self.log_debug_err: Path = self._log_dir_path / 'debug_stderr.log'
+            self.log_debug_out: Path = self._log_dir_path / 'debug_stdout.log'
         else:
-            self.log_debug_err = os.devnull
-            self.log_debug_out = os.devnull
+            self.log_debug_err = Path(os.devnull)
+            self.log_debug_out = Path(os.devnull)
 
-    def _make_log_dir(self, root_dir_path):
+    def _make_log_dir(self, root_dir_path: Path) -> Path:
         """Create the directory in the dest dir that will hold the logs"""
-        log_dir_path = os.path.join(root_dir_path, 'logs')
+        log_dir_path = root_dir_path / 'logs'
         if os.path.exists(log_dir_path):
             shutil.rmtree(log_dir_path)
         os.makedirs(log_dir_path)
         return log_dir_path
 
-    def _add_root_dir(self, root_path):
+    def _add_root_dir(self, root_path: Path):
         """Add the root directory to the log"""
         dirname = os.path.split(root_path)[1] + '/'
         with open(self.log_path, mode='ab') as lf:
             lf.write(bytes(dirname, 'utf-8'))
             lf.write(b'\n')
 
-    def add_file(self, file_path, file_props, in_tempdir=False):
+    def add_file(self, file_path: Path, file_props: dict, in_tempdir: bool=False):
         """Add a file to the log. Takes a path and a dict of file properties."""
-        depth = self._get_path_depth(file_path)
+        depth = self._get_path_depth(str(file_path))
         try:
             file_hash = Logging.computehash(file_path)[:6]
         except IsADirectoryError:
@@ -671,34 +674,34 @@ class GroomerLogger(object):
             depth -= 1
         self._write_line_to_log(log_string, depth)
 
-    def add_dir(self, dir_path):
+    def add_dir(self, dir_path: Path):
         """Add a directory to the log"""
-        path_depth = self._get_path_depth(dir_path)
-        dirname = os.path.split(dir_path)[1] + '/'
+        path_depth = self._get_path_depth(str(dir_path))
+        dirname = os.path.split(str(dir_path))[1] + '/'
         log_line = '+- ' + dirname
         self._write_line_to_log(log_line, path_depth)
 
-    def _format_file_size(self, size):
+    def _format_file_size(self, size: int) -> str:
         """Returns a string with the file size and appropriate unit"""
         file_size = size
         for unit in ('B', 'KB', 'MB', 'GB'):
             if file_size < 1024:
                 return str(int(file_size)) + unit
             else:
-                file_size = file_size / 1024
+                file_size = int(file_size / 1024)
         return str(int(file_size)) + 'GB'
 
-    def _get_path_depth(self, path):
+    def _get_path_depth(self, path: str) -> int:
         """Returns the relative path depth compared to root directory"""
-        if self._dst_root_path in path:
-            base_path = self._dst_root_path
-        elif self._src_root_path in path:
-            base_path = self._src_root_path
+        if str(self._dst_root_path) in path:
+            base_path = str(self._dst_root_path)
+        elif str(self._src_root_path) in path:
+            base_path = str(self._src_root_path)
         relpath = os.path.relpath(path, base_path)
         path_depth = relpath.count(os.path.sep)
         return path_depth
 
-    def _write_line_to_log(self, line, indentation_depth):
+    def _write_line_to_log(self, line: str, indentation_depth: int):
         """
         Write a line to the log
 
@@ -715,28 +718,28 @@ class GroomerLogger(object):
 
 class KittenGroomerFileCheck(KittenGroomerBase):
 
-    def __init__(self, root_src, root_dst, max_recursive_depth=2, debug=False):
+    def __init__(self, root_src: str, root_dst: str, max_recursive_depth: int=2, debug: bool=False):
         super(KittenGroomerFileCheck, self).__init__(root_src, root_dst)
         self.recursive_archive_depth = 0
         self.max_recursive_depth = max_recursive_depth
-        self.logger = GroomerLogger(root_src, root_dst, debug)
+        self.logger = GroomerLogger(self.src_root_path, self.dst_root_path, debug)
 
     def __repr__(self):
         return "filecheck.KittenGroomerFileCheck object: {{{}}}".format(
             os.path.basename(self.src_root_path)
         )
 
-    def process_dir(self, src_dir, dst_dir):
+    def process_dir(self, src_dir: Path, dst_dir: Path):
         """Process a directory on the source key."""
         for srcpath in self.list_files_dirs(src_dir):
-            if not os.path.islink(srcpath) and os.path.isdir(srcpath):
+            if not srcpath.is_symlink() and srcpath.is_dir():
                 self.logger.add_dir(srcpath)
             else:
-                dstpath = os.path.join(dst_dir, os.path.basename(srcpath))
+                dstpath = dst_dir / srcpath.name
                 cur_file = File(srcpath, dstpath)
                 self.process_file(cur_file)
 
-    def process_file(self, file):
+    def process_file(self, file: File):
         """
         Process an individual file.
 
@@ -753,13 +756,13 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                 if not file._validate_random_hashes():
                     # Something's fucked up.
                     file.make_dangerous('The copied file is different from the one checked, removing.')
-                    os.remove(file.dst_path)
+                    file.dst_path.unlink()
             self.write_file_to_log(file)
         # TODO: Can probably handle cleaning up the tempdir better
         if hasattr(file, 'tempdir_path'):
             self.safe_rmtree(file.tempdir_path)
 
-    def process_archive(self, file):
+    def process_archive(self, file: File):
         """
         Unpack an archive using 7zip and process contents using process_dir.
 
@@ -781,25 +784,25 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             self.safe_rmtree(tempdir_path)
         self.recursive_archive_depth -= 1
 
-    def _run_process(self, command_string, timeout=None):
+    def _run_process(self, command_string: str, timeout: Optional[int]=None) -> bool:
         """Run command_string in a subprocess, wait until it finishes."""
         args = shlex.split(command_string)
         with open(self.logger.log_debug_err, 'ab') as stderr, open(self.logger.log_debug_out, 'ab') as stdout:
             try:
                 subprocess.check_call(args, stdout=stdout, stderr=stderr, timeout=timeout)
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
-                return
+                return False
         return True
 
-    def write_file_to_log(self, file):
+    def write_file_to_log(self, file: File):
         """Pass information about `file` to self.logger."""
         props = file.get_all_props()
         if not file.is_archive:
             # FIXME: in_tempdir is a hack to make image files appear at the correct tree depth in log
-            in_tempdir = os.path.exists(file.tempdir_path)
+            in_tempdir = file.tempdir_path.exists()
             self.logger.add_file(file.src_path, props, in_tempdir)
 
-    def list_files_dirs(self, root_dir_path):
+    def list_files_dirs(self, root_dir_path: Path) -> List[Path]:
         """
         Returns a list of all files and directories
 
@@ -807,14 +810,14 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         """
         queue = []
         for path in sorted(os.listdir(root_dir_path), key=lambda x: str.lower(x)):
-            full_path = os.path.join(root_dir_path, path)
+            full_path = root_dir_path / path
             # check for symlinks first to prevent getting trapped in infinite symlink recursion
-            if os.path.islink(full_path):
+            if full_path.is_symlink():
                 queue.append(full_path)
-            elif os.path.isdir(full_path):
+            elif full_path.is_dir():
                 queue.append(full_path)
                 queue += self.list_files_dirs(full_path)
-            elif os.path.isfile(full_path):
+            elif full_path.is_file():
                 queue.append(full_path)
         return queue
 
@@ -822,7 +825,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         self.process_dir(self.src_root_path, self.dst_root_path)
 
 
-def main(kg_implementation, description):
+def main(kg_implementation, description: str):
     parser = argparse.ArgumentParser(prog='KittenGroomer', description=description)
     parser.add_argument('-s', '--source', type=str, help='Source directory')
     parser.add_argument('-d', '--destination', type=str, help='Destination directory')

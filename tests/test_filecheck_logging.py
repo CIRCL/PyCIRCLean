@@ -4,7 +4,7 @@
 import os
 from datetime import datetime
 
-import pytest
+import pytest  # type: ignore
 
 try:
     from filecheck.filecheck import KittenGroomerFileCheck

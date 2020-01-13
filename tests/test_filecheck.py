@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import os
+from pathlib import Path
 
-import pytest
+import pytest  # type: ignore
 import yaml
 
 try:
@@ -19,16 +20,16 @@ skip = pytest.mark.skip
 parametrize = pytest.mark.parametrize
 
 
-NORMAL_FILES_PATH = 'tests/normal/'
-DANGEROUS_FILES_PATH = 'tests/dangerous/'
-UNCATEGORIZED_FILES_PATH = 'tests/uncategorized'
-CATALOG_PATH = 'tests/file_catalog.yaml'
+NORMAL_FILES_PATH = Path('tests/normal/')
+DANGEROUS_FILES_PATH = Path('tests/dangerous/')
+UNCATEGORIZED_FILES_PATH = Path('tests/uncategorized')
+CATALOG_PATH = Path('tests/file_catalog.yaml')
 
 
 class SampleFile():
     def __init__(self, path, exp_dangerous):
-        self.path = path
-        self.filename = os.path.basename(path)
+        self.path = Path(path)
+        self.filename = self.path.name
         self.exp_dangerous = exp_dangerous
 
 
@@ -91,13 +92,13 @@ def get_filename(sample_file):
 
 
 @fixture(scope='module')
-def src_dir_path(tmpdir_factory):
-    return tmpdir_factory.mktemp('src').strpath
+def src_dir_path(tmp_path_factory):
+    return tmp_path_factory.mktemp('src')
 
 
 @fixture(scope='module')
-def dest_dir_path(tmpdir_factory):
-    return tmpdir_factory.mktemp('dest').strpath
+def dest_dir_path(tmp_path_factory):
+    return tmp_path_factory.mktemp('dest')
 
 
 @fixture
@@ -113,7 +114,7 @@ def groomer(dest_dir_path):
 def test_sample_files(sample_file, groomer, dest_dir_path):
     if sample_file.xfail:
         pytest.xfail(reason='Marked xfail in file catalog')
-    file_dest_path = os.path.join(dest_dir_path, sample_file.filename)
+    file_dest_path = dest_dir_path / sample_file.filename
     file = File(sample_file.path, file_dest_path)
     groomer.process_file(file)
     print(file.description_string)

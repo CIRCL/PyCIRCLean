@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os
+from pathlib import Path
 import unittest.mock as mock
 
-import pytest
+import pytest  # type: ignore
 
 from kittengroomer import FileBase, KittenGroomerBase
 from kittengroomer.helpers import ImplementationRequired
@@ -17,35 +18,34 @@ fixture = pytest.fixture
 class TestFileBase:
 
     @fixture(scope='class')
-    def src_dir_path(self, tmpdir_factory):
-        return tmpdir_factory.mktemp('src').strpath
+    def src_dir_path(self, tmp_path_factory):
+        return tmp_path_factory.mktemp('src')
 
     @fixture(scope='class')
-    def dest_dir_path(self, tmpdir_factory):
-        return tmpdir_factory.mktemp('dest').strpath
+    def dest_dir_path(self, tmp_path_factory):
+        return tmp_path_factory.mktemp('dest')
 
-    @fixture
-    def tmpfile_path(self, tmpdir):
-        file_path = tmpdir.join('test.txt')
-        file_path.write('testing')
-        return file_path.strpath
+    @fixture(scope='class')
+    def tmpfile_path(self, src_dir_path):
+        path_src_file = src_dir_path / 'test.txt'
+        with path_src_file.open('w') as f:
+            f.write('testing')
+        return path_src_file
 
-    @fixture
-    def symlink_file_path(self, tmpdir, tmpfile_path):
-        symlink_path = tmpdir.join('symlinked')
-        symlink_path = symlink_path.strpath
-        os.symlink(tmpfile_path, symlink_path)
+    @fixture(scope='class')
+    def symlink_file_path(self, src_dir_path, tmpfile_path):
+        symlink_path = src_dir_path / 'symlinked'
+        symlink_path.symlink_to(tmpfile_path)
         return symlink_path
 
     @fixture
-    def text_file(self):
+    def text_file(self, tmpfile_path, dest_dir_path):
         with mock.patch(
             'kittengroomer.helpers.magic.from_file',
             return_value='text/plain'
         ):
-            src_path = 'src/test.txt'
-            dst_path = 'dst/test.txt'
-            file = FileBase(src_path, dst_path)
+            dst_path = dest_dir_path / 'test.txt'
+            file = FileBase(tmpfile_path, dst_path)
         return file
 
     # Constructor behavior
@@ -53,63 +53,63 @@ class TestFileBase:
     @mock.patch('kittengroomer.helpers.magic')
     def test_init_identify_filename(self, mock_libmagic):
         """Init should identify the filename correctly for src_path."""
-        src_path = 'src/test.txt'
-        dst_path = 'dst/test.txt'
+        src_path = Path('src/test.txt')
+        dst_path = Path('dst/test.txt')
         file = FileBase(src_path, dst_path)
         assert file.filename == 'test.txt'
 
     @mock.patch('kittengroomer.helpers.magic')
     def test_init_identify_extension(self, mock_libmagic):
         """Init should identify the extension for src_path."""
-        src_path = 'src/test.txt'
-        dst_path = 'dst/test.txt'
+        src_path = Path('src/test.txt')
+        dst_path = Path('dst/test.txt')
         file = FileBase(src_path, dst_path)
         assert file.extension == '.txt'
 
     @mock.patch('kittengroomer.helpers.magic')
     def test_init_uppercase_extension(self, mock_libmagic):
         """Init should coerce uppercase extension to lowercase"""
-        src_path = 'src/TEST.TXT'
-        dst_path = 'dst/TEST.TXT'
+        src_path = Path('src/test.txt')
+        dst_path = Path('dst/test.txt')
         file = FileBase(src_path, dst_path)
         assert file.extension == '.txt'
 
     @mock.patch('kittengroomer.helpers.magic')
     def test_has_extension_true(self, mock_libmagic):
         """If the file has an extension, has_extension should == True."""
-        src_path = 'src/test.txt'
-        dst_path = 'dst/test.txt'
+        src_path = Path('src/test.txt')
+        dst_path = Path('dst/test.txt')
         file = FileBase(src_path, dst_path)
         assert file.has_extension is True
 
     @mock.patch('kittengroomer.helpers.magic')
     def test_has_extension_false(self, mock_libmagic):
         """If the file has no extension, has_extensions should == False."""
-        src_path = 'src/test'
-        dst_path = 'dst/test'
+        src_path = Path('src/test')
+        dst_path = Path('dst/test')
         file = FileBase(src_path, dst_path)
         assert file.has_extension is False
 
     def test_init_file_doesnt_exist(self):
         """Init should raise an exception if the file doesn't exist."""
         with pytest.raises(FileNotFoundError):
-            FileBase('', '')
+            FileBase(Path('non_existent'), Path('non_existent'))
 
     def test_init_srcpath_is_directory(self, tmpdir):
         """Init should raise an exception if given a path to a directory."""
         with pytest.raises(IsADirectoryError):
-            FileBase(tmpdir.strpath, tmpdir.strpath)
+            FileBase(Path(tmpdir.strpath), Path(tmpdir.strpath))
 
     @mock.patch('kittengroomer.helpers.magic')
-    def test_init_symlink(self, mock_libmagic, symlink_file_path):
+    def test_init_symlink(self, mock_libmagic, symlink_file_path, tmpdir):
         """Init should properly identify symlinks."""
-        file = FileBase(symlink_file_path, '')
+        file = FileBase(symlink_file_path, Path(tmpdir.strpath))
         assert file.mimetype == 'inode/symlink'
 
     @mock.patch('kittengroomer.helpers.magic')
-    def test_is_symlink_attribute(self, mock_libmagic, symlink_file_path):
+    def test_is_symlink_attribute(self, mock_libmagic, symlink_file_path, tmpdir):
         """If a file is a symlink, is_symlink should return True."""
-        file = FileBase(symlink_file_path, '')
+        file = FileBase(symlink_file_path, Path(tmpdir.strpath))
         assert file.is_symlink is True
 
     def test_init_mimetype_attribute_assigned_correctly(self):
@@ -117,7 +117,7 @@ class TestFileBase:
         assigned properly."""
         with mock.patch('kittengroomer.helpers.magic.from_file',
                         return_value='text/plain'):
-            file = FileBase('', '')
+            file = FileBase(Path('non_existent'), Path('non_existent'))
         assert file.mimetype == 'text/plain'
 
     def test_maintype_and_subtype_attributes(self):
@@ -125,7 +125,7 @@ class TestFileBase:
         the appropriate values."""
         with mock.patch('kittengroomer.helpers.magic.from_file',
                         return_value='text/plain'):
-            file = FileBase('', '')
+            file = FileBase(Path('non_existent'), Path('non_existent'))
         assert file.maintype == 'text'
         assert file.subtype == 'plain'
 
@@ -133,14 +133,14 @@ class TestFileBase:
         """If a file doesn't have a full mimetype has_mimetype should == False."""
         with mock.patch('kittengroomer.helpers.magic.from_file',
                         return_value='data'):
-            file = FileBase('', '')
+            file = FileBase(Path('non_existent'), Path('non_existent'))
         assert file.has_mimetype is False
 
     def test_has_mimetype_mimetype_is_none(self):
         """If a file doesn't have a full mimetype has_mimetype should == False."""
         with mock.patch('kittengroomer.helpers.FileBase._determine_mimetype',
                         return_value=None):
-            file = FileBase('', '')
+            file = FileBase(Path('non_existent'), Path('non_existent'))
         assert file.has_mimetype is False
 
     # File properties
@@ -223,38 +223,38 @@ class TestFileBase:
         """Force_ext should modify the path of the file to end in the
         new extension."""
         text_file.force_ext('.test')
-        assert text_file.dst_path.endswith('.test')
+        assert text_file.dst_path.name.endswith('.test')
 
     def test_force_ext_add_dot(self, text_file):
         """Force_ext should add a dot to an extension given without one."""
         text_file.force_ext('test')
-        assert text_file.dst_path.endswith('.test')
+        assert text_file.dst_path.name.endswith('.test')
 
     def test_force_ext_change_extension_attr(self, text_file):
-        """Force_ext should modify the extension attribute"""
+        """Force_ext should only modify the extension of the destination file"""
         text_file.force_ext('.thing')
-        assert text_file.extension == '.thing'
+        assert text_file.extension == '.txt'
 
     def test_force_ext_no_change(self, text_file):
         """Force_ext should do nothing if the current extension is the same
         as the new extension."""
         text_file.force_ext('.txt')
         assert text_file.extension == '.txt'
-        assert '.txt.txt' not in text_file.dst_path
+        assert '.txt.txt' not in text_file.dst_path.name
 
     def test_safe_copy_calls_copy(self, src_dir_path, dest_dir_path):
         """Calling safe_copy should copy the file from the correct path to
         the correct destination path."""
-        file_path = os.path.join(src_dir_path, 'test.txt')
+        file_path = src_dir_path / 'test.txt'
         with open(file_path, 'w+') as file:
             file.write('')
-        dst_path = os.path.join(dest_dir_path, 'test.txt')
+        dst_path = dest_dir_path / 'test.txt'
         with mock.patch('kittengroomer.helpers.magic.from_file',
                         return_value='text/plain'):
             file = FileBase(file_path, dst_path)
         with mock.patch('kittengroomer.helpers.shutil.copy') as mock_copy:
             file.safe_copy()
-            mock_copy.assert_called_once_with(file_path, dst_path)
+            mock_copy.assert_called_once_with(str(file_path), str(dst_path))
 
     def test_safe_copy_removes_exec_perms(self):
         """`safe_copy` should create a file that doesn't have any of the
@@ -289,22 +289,27 @@ class TestKittenGroomerBase:
 
     @fixture(scope='class')
     def src_dir_path(self, tmpdir_factory):
-        return tmpdir_factory.mktemp('src').strpath
+        return Path(tmpdir_factory.mktemp('src').strpath)
 
     @fixture(scope='class')
     def dest_dir_path(self, tmpdir_factory):
-        return tmpdir_factory.mktemp('dest').strpath
+        return Path(tmpdir_factory.mktemp('dest').strpath)
+
+    @fixture(scope='class')
+    def tmpfile_path(self, src_dir_path):
+        path_src_file = src_dir_path / 'test.txt'
+        with path_src_file.open('w') as f:
+            f.write('testing')
+        return path_src_file
 
     @fixture
     def groomer(self, src_dir_path, dest_dir_path):
         return KittenGroomerBase(src_dir_path, dest_dir_path)
 
-    def test_list_all_files_includes_file(self, tmpdir, groomer):
+    def test_list_all_files_includes_file(self, src_dir_path, tmpfile_path, groomer):
         """Calling list_all_files should include files in the given path."""
-        file = tmpdir.join('test.txt')
-        file.write('testing')
-        files = groomer.list_all_files(tmpdir.strpath)
-        assert file.strpath in files
+        files = groomer.list_all_files(src_dir_path)
+        assert tmpfile_path in files
 
     def test_list_all_files_excludes_dir(self, tmpdir, groomer):
         """Calling list_all_files shouldn't include directories in the given
@@ -317,12 +322,12 @@ class TestKittenGroomerBase:
     def test_safe_remove(self, groomer, src_dir_path):
         """Calling safe_remove should not raise an Exception if trying to
         remove a file that doesn't exist."""
-        groomer.safe_remove(os.path.join(src_dir_path, 'thing'))
+        groomer.safe_remove(src_dir_path / 'thing')
 
     def test_safe_mkdir_file_exists(self, groomer, dest_dir_path):
         """Calling safe_mkdir should not overwrite an existing directory."""
-        filepath = os.path.join(dest_dir_path, 'thing')
-        os.mkdir(filepath)
+        filepath = dest_dir_path / 'thing'
+        filepath.mkdir()
         groomer.safe_mkdir(filepath)
 
     def test_processdir_not_implemented(self, groomer):
