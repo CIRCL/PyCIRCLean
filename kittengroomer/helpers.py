@@ -187,7 +187,7 @@ class FileBase(object):
         src = self.src_path
         dst = self.dst_path
         try:
-            self.dst_dir.mkdir(exist_ok=True)
+            self.dst_dir.mkdir(exist_ok=True, parents=True)
             shutil.copy(str(src), str(dst))
             current_perms = self._get_file_permissions(dst)
             only_exec_bits = 0o0111
@@ -217,7 +217,7 @@ class FileBase(object):
             if Path(f'{self.src_path}{ext}').exists():
                 raise KittenGroomerError(f'Could not create metadata file for "{self.filename}": a file with that path exists.')
             else:
-                self.dst_dir.mkdir(exist_ok=True)
+                self.dst_dir.mkdir(exist_ok=True, parents=True)
                 # TODO: shouldn't mutate state and also return something
                 self.metadata_file_path = Path(f'{self.dst_path}{ext}')
                 return self.metadata_file_path
