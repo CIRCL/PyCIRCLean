@@ -729,13 +729,16 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             os.path.basename(self.src_root_path)
         )
 
-    def process_dir(self, src_dir: Path, dst_dir: Path):
+    def process_dir(self, src_dir: Path, dst_dir: Optional[Path] = None):
         """Process a directory on the source key."""
         for srcpath in self.list_files_dirs(src_dir):
             if not srcpath.is_symlink() and srcpath.is_dir():
                 self.logger.add_dir(srcpath)
             else:
-                dstpath = Path(str(srcpath).replace(str(self.src_root_path), str(self.dst_root_path)))
+                if dst_dir:
+                    dstpath = dst_dir
+                else:
+                    dstpath = Path(str(srcpath).replace(str(self.src_root_path), str(self.dst_root_path)))
                 cur_file = File(srcpath, dstpath)
                 self.process_file(cur_file)
 
@@ -753,6 +756,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             if file.should_copy:
                 file.safe_copy()
                 file.set_property('copied', True)
+                print(file)
                 if not file._validate_random_hashes():
                     # Something's fucked up.
                     file.make_dangerous('The copied file is different from the one checked, removing.')
@@ -780,7 +784,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                                                 file.src_path, tempdir_path)
             self._run_process(unpack_command)
             self.write_file_to_log(file)
-            self.process_dir(tempdir_path, file.dst_path)
+            self.process_dir(tempdir_path, file.dst_path / file.filename)
             self.safe_rmtree(tempdir_path)
         self.recursive_archive_depth -= 1
 
@@ -822,7 +826,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
         return queue
 
     def run(self):
-        self.process_dir(self.src_root_path, self.dst_root_path)
+        self.process_dir(self.src_root_path)
 
 
 def main(kg_implementation, description: str):
