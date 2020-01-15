@@ -735,7 +735,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             if not srcpath.is_symlink() and srcpath.is_dir():
                 self.logger.add_dir(srcpath)
             else:
-                dstpath = dst_dir / srcpath
+                dstpath = Path(str(srcpath).replace(str(self.src_root_path), str(self.dst_root_path)))
                 cur_file = File(srcpath, dstpath)
                 self.process_file(cur_file)
 
