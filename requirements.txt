@@ -15,4 +15,4 @@ pillow==7.0.0
 pycparser==2.19
 pyparsing==2.4.6
 python-magic==0.4.15
-six==1.13.0
+six==1.14.0
