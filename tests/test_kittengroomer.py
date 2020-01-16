@@ -254,7 +254,7 @@ class TestFileBase:
             file = FileBase(file_path, dst_path)
         with mock.patch('kittengroomer.helpers.shutil.copy') as mock_copy:
             file.safe_copy()
-            mock_copy.assert_called_once_with(str(file_path), str(dst_path))
+            mock_copy.assert_called_once_with(file_path, dst_path)
 
     def test_safe_copy_removes_exec_perms(self):
         """`safe_copy` should create a file that doesn't have any of the

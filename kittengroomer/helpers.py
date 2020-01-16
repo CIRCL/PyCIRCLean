@@ -316,7 +316,7 @@ class KittenGroomerBase(object):
     def safe_mkdir(self, directory_path: Path):
         """Make a directory if it does not exist."""
         if not directory_path.exists():
-            os.makedirs(directory_path)
+            directory_path.mkdir(parents=True)
 
     def list_all_files(self, directory_path: Path) -> Iterator[Path]:
         """Generator yielding path to all of the files in a directory tree."""

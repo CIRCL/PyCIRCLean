@@ -326,7 +326,7 @@ class File(FileBase):
     def make_tempdir(self) -> Path:
         """Make a temporary directory at self.tempdir_path."""
         if not self.tempdir_path.exists():
-            self.tempdir_path.mkdir()
+            self.tempdir_path.mkdir(parents=True)
         return self.tempdir_path
 
     #######################
