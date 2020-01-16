@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.6
+---
+
+- Use typing everywhere
+- Use pathlib whenever possible
+
 2.5
 ---
 
