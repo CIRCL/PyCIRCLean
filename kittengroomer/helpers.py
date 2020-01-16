@@ -13,6 +13,7 @@ import hashlib
 import shutil
 import argparse
 import stat
+import traceback
 from pathlib import Path
 from typing import Union, Optional, List, Dict, Any, Tuple, Iterator
 
@@ -188,14 +189,17 @@ class FileBase(object):
         dst = self.dst_path
         try:
             self.dst_dir.mkdir(exist_ok=True, parents=True)
-            shutil.copy(str(src), str(dst))
+            shutil.copy(src, dst)
             current_perms = self._get_file_permissions(dst)
             only_exec_bits = 0o0111
             perms_no_exec = current_perms & (~only_exec_bits)
             dst.chmod(perms_no_exec)
+            return True
         except IOError as e:
             # Probably means we can't write in the dest dir
             self.add_error(e, '')
+            traceback.print_exc()
+            return False
 
     def force_ext(self, extension: str):
         """If dst_path does not end in `extension`, append .ext to it."""

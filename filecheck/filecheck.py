@@ -754,13 +754,14 @@ class KittenGroomerFileCheck(KittenGroomerBase):
             self.process_archive(file)
         else:
             if file.should_copy:
-                file.safe_copy()
-                file.set_property('copied', True)
-                print(file)
-                if not file._validate_random_hashes():
-                    # Something's fucked up.
-                    file.make_dangerous('The copied file is different from the one checked, removing.')
-                    file.dst_path.unlink()
+                if file.safe_copy():
+                    file.set_property('copied', True)
+                    if not file._validate_random_hashes():
+                        # Something's fucked up.
+                        file.make_dangerous('The copied file is different from the one checked, removing.')
+                        file.dst_path.unlink()
+                else:
+                    file.set_property('copied', False)
             self.write_file_to_log(file)
         # TODO: Can probably handle cleaning up the tempdir better
         if hasattr(file, 'tempdir_path'):
