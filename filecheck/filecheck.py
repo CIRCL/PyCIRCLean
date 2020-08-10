@@ -187,6 +187,7 @@ class File(FileBase):
         else:
             if self.extension in Config.override_ext:
                 expected_mimetypes = Config.override_ext[self.extension]
+                encoding = None
             else:
                 expected_mimetype, encoding = mimetypes.guess_type(str(self.src_path),
                                                                    strict=False)
@@ -201,7 +202,7 @@ class File(FileBase):
 
             is_known_extension = self.extension in mimetypes.types_map.keys()
             if is_known_extension and self.mimetype not in expected_mimetypes and not is_empty_file:
-                self.make_dangerous('Mimetype does not match expected mimetypes ({expected_mimetypes}) for this extension')
+                self.make_dangerous(f'Mimetype does not match expected mimetypes ({expected_mimetypes}) for this extension')
 
     def _check_mimetype(self):
         """
@@ -223,7 +224,7 @@ class File(FileBase):
                 expected_extensions += mimetypes.guess_all_extensions(Config.aliases[mimetype], strict=False)
             if expected_extensions:
                 if self.has_extension and self.extension not in expected_extensions:
-                    self.make_dangerous('Extension does not match expected extensions ({}) for this mimetype'.format(expected_extensions))
+                    self.make_dangerous(f'Extension does not match expected extensions ({expected_extensions}) for this mimetype')
 
     def _check_filename(self):
         """
