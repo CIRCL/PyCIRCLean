@@ -34,6 +34,7 @@ class Config:
     mimes_rtf: Tuple[str, ...] = ('rtf', 'richtext',)
     mimes_pdf: Tuple[str, ...] = ('pdf', 'postscript',)
     mimes_xml: Tuple[str, ...] = ('xml',)
+    mimes_csv: Tuple[str, ...] = ('csv','text/csv')
     mimes_ms: Tuple[str, ...] = ('dosexec',)
     mimes_compressed: Tuple[str, ...] = ('zip', 'rar', 'x-rar', 'bzip2', 'lzip', 'lzma', 'lzop',
                                          'xz', 'compress', 'gzip', 'tar',)
@@ -58,6 +59,13 @@ class Config:
         'application/ogg': 'audio/ogg',
         'audio/ogg': 'application/ogg'
     }
+
+    # Mime Type / Extension fix. TODO: Doesn't quite work....????
+    mimetypes.add_type('text/plain','.csv',False)
+    mimetypes.add_type('text/csv','.csv',False)
+    mimetypes.add_type('application/vnd.apple.numbers', '.numbers', True)
+    mimetypes.add_type('application/vnd.apple.pages', '.pages', False)
+    mimetypes.add_type('application/vnd.apple.keynote', '.keynote', False)
 
     # EXTS
     # Commonly used malicious extensions
@@ -118,7 +126,12 @@ class Config:
     # In [12]: mimetypes.guess_type('toot.tar.gz', strict=False)
     # Out[12]: ('application/x-tar', 'gzip')
     # It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
-    override_ext: Dict[str, str] = {'.gz': 'application/gzip'}
+    override_ext: Dict[str, str] = {'.gz':       'application/gzip'
+                                   , '.csv':     'text/csv' #,'text/plain' ) 
+                                   , '.numbers': 'application/vnd.apple.numbers' #,'application/zip')
+                                   , '.pages':   'application/vnd.apple.pages' #,'application/zip')  
+                                   , '.keynote': 'application/vnd.apple.keynote' #,'application/zip') 
+                                   }
 
 
 SEVENZ_PATH = '/usr/bin/7z'
@@ -144,6 +157,7 @@ class File(FileBase):
             (Config.mimes_libreoffice, self._libreoffice),
             (Config.mimes_pdf, self._pdf),
             (Config.mimes_xml, self.text),
+            (Config.mimes_csv, self.text),
             (Config.mimes_ms, self._executables),
             (Config.mimes_compressed, self._archive),
             (Config.mimes_data, self._binary_app),
@@ -188,6 +202,7 @@ class File(FileBase):
             if self.extension in Config.override_ext:
                 expected_mimetypes = Config.override_ext[self.extension]
                 encoding = None
+                self.mimetype = expected_mimetypes
             else:
                 expected_mimetype, encoding = mimetypes.guess_type(str(self.src_path),
                                                                    strict=False)
@@ -376,6 +391,10 @@ class File(FileBase):
         for mt in Config.mimes_ooxml:
             if mt in self.subtype:
                 self._ooxml()
+                return
+        for mt in Config.mimes_csv:
+            if mt in self.subtype:
+                self.add_description('CSV file')
                 return
         self.add_description('Plain text file')
         self.force_ext('.txt')
@@ -814,17 +833,23 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
         Performs a depth-first traversal of the file tree.
         """
+        skipped_files = ( '.Trashes', '._.Trashes', '.DS_Store', '.fseventsd', '.Spotlight-V100','System Volume Information')
         queue = []
         for path in sorted(os.listdir(root_dir_path), key=lambda x: str.lower(x)):
             full_path = root_dir_path / path
-            # check for symlinks first to prevent getting trapped in infinite symlink recursion
-            if full_path.is_symlink():
-                queue.append(full_path)
-            elif full_path.is_dir():
-                queue.append(full_path)
-                queue += self.list_files_dirs(full_path)
-            elif full_path.is_file():
-                queue.append(full_path)
+            filename = full_path.name
+            if not filename in skipped_files and not filename.startswith('._'):
+                # check for symlinks first to prevent getting trapped in infinite symlink recursion
+                if full_path.is_symlink():
+                    queue.append(full_path)
+                elif full_path.is_dir():
+                    # Skip hidden and special directories.
+                    queue.append(full_path)
+                    queue += self.list_files_dirs(full_path)
+                elif full_path.is_file():
+                    queue.append(full_path)
+            else:
+                print("SKIPPING: "+filename)
         return queue
 
     def run(self):
