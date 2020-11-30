@@ -28,7 +28,7 @@ jobs:
       run: |
         sudo apt install p7zip-full mercurial p7zip-rar
         # Testing dependencies
-        sudo apt-get install rar
+        sudo apt-get install rar git
         # filecheck.py dependencies
         sudo apt install libxml2-dev libxslt1-dev
 
@@ -41,8 +41,8 @@ jobs:
 
     - name: Get testing files
       run: |
-        - git clone https://github.com/Rafiot/theZoo.git
         # Malware from theZoo
+        - git clone https://github.com/Rafiot/theZoo.git
         - pushd theZoo/malwares/Binaries
         - python3 unpackall.py
         - popd
