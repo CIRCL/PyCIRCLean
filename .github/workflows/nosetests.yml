@@ -1,0 +1,84 @@
+name: Python application
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9]
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{matrix.python-version}}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{matrix.python-version}}
+
+    - name: Install system dependencies
+      run: |
+        sudo apt install p7zip-full mercurial p7zip-rar
+        # Testing dependencies
+        sudo apt-get install rar
+        # filecheck.py dependencies
+        sudo apt install libxml2-dev libxslt1-dev
+
+    - name: Install Python dependencies
+      run: |
+        wget https://didierstevens.com/files/software/pdfid_v0_2_7.zip
+        unzip pdfid_v0_2_7.zip
+        pip install -U poetry
+        poetry install
+
+    - name: Get testing files
+      run: |
+        # Malware from theZoo
+        - git clone https://github.com/Rafiot/theZoo.git
+        - pushd theZoo/malwares/Binaries
+        - python unpackall.py
+        - popd
+        - mkdir tests/uncategorized/the_zoo/
+        - mv theZoo/malwares/Binaries/out tests/uncategorized/the_zoo/
+        # Path traversal attacks
+        - git clone https://github.com/jwilk/path-traversal-samples
+        - pushd path-traversal-samples
+        - pushd zip
+        - make
+        - popd
+        - pushd rar
+        - make
+        - popd
+        - popd
+        - mkdir tests/uncategorized/path_traversal_zip/
+        - mkdir tests/uncategorized/path_traversal_rar/
+        - mv path-traversal-samples/zip/*.zip tests/uncategorized/path_traversal_zip
+        - mv path-traversal-samples/rar/*.rar tests/uncategorized/path_traversal_rar
+        # Office docs
+        - git clone https://github.com/eea/odfpy.git
+        - mkdir tests/uncategorized/odfpy/
+        - mv odfpy/tests/examples/* tests/uncategorized/odfpy/
+        - mkdir tests/uncategorized/olefile
+        - pushd tests/uncategorized/olefile
+        - wget https://github.com/decalage2/olefile/raw/master/tests/images/test-ole-file.doc
+        - popd
+        - mkdir tests/uncategorized/fraunhofer && pushd tests/uncategorized/fraunhofer
+        - wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
+        - unzip -o fraunhoferlibrary.zip
+        - rm fraunhoferlibrary.zip
+        - popd
+
+    - name: Test
+      run: |
+        poetry run mypy kittengroomer/ filecheck/ tests/ scripts/ --ignore-missing-imports
+        pipenv run py.test --cov=kittengroomer --cov=filecheck tests/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
