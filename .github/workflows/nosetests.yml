@@ -79,7 +79,7 @@ jobs:
     - name: Test
       run: |
         poetry run mypy kittengroomer/ filecheck/ tests/ scripts/ --ignore-missing-imports
-        pipenv run py.test --cov=kittengroomer --cov=filecheck tests/
+        poetry run py.test --cov=kittengroomer --cov=filecheck tests/
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
