@@ -41,8 +41,8 @@ jobs:
 
     - name: Get testing files
       run: |
-        # Malware from theZoo
         - git clone https://github.com/Rafiot/theZoo.git
+        # Malware from theZoo
         - pushd theZoo/malwares/Binaries
         - python3 unpackall.py
         - popd
