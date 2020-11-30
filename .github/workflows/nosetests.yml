@@ -44,7 +44,7 @@ jobs:
         # Malware from theZoo
         - git clone https://github.com/Rafiot/theZoo.git
         - pushd theZoo/malwares/Binaries
-        - python unpackall.py
+        - python3 unpackall.py
         - popd
         - mkdir tests/uncategorized/the_zoo/
         - mv theZoo/malwares/Binaries/out tests/uncategorized/the_zoo/
