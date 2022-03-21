@@ -250,10 +250,10 @@ class FileBase(object):
                 self.add_error(e, '')
                 mt = None
             try:
-                mimetype = mt.decode("utf-8")
+                mimetype = mt.decode("utf-8")  # type: ignore
             except Exception:
                 # FIXME: what should the exception be if mimetype isn't utf-8?
-                mimetype = mt
+                mimetype = 'application/octet-stream'
         return mimetype
 
     def _split_mimetype(self, mimetype: str) -> Tuple[Union[str, None], Union[str, None]]:

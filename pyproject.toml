@@ -20,20 +20,20 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = "^3.8"
-lxml = "^4.6.2"
+lxml = "^4.8.0"
 exifread = "^2.3.2"
-pillow = "^9.0.0"
+pillow = "^9.0.1"
 olefile = "^0.46"
 oletools = "^0.60"
-python-magic = "^0.4.18"
+python-magic = "^0.4.25"
 officedissector = {git = "https://github.com/grierforensics/officedissector.git"}
 
 [tool.poetry.dev-dependencies]
 tox = "^3.20.1"
 pytest-cov = "^3.0.0"
 PyYAML = "^6.0"
-mypy = "^0.931"
-types-PyYAML = "^6.0.3"
+mypy = "^0.941"
+types-PyYAML = "^6.0.5"
 
 [build-system]
 requires = ["poetry_core>=1.0", "setuptools"]
