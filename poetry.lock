@@ -197,9 +197,9 @@ lxml = "*"
 
 [package.source]
 type = "git"
-url = "https://github.com/grierforensics/officedissector.git"
+url = "https://github.com/Rafiot/officedissector.git"
 reference = "HEAD"
-resolved_reference = "2059a5ba08fa139362e3936578f99c4da9a9b55d"
+resolved_reference = "e3d9e8e155cc01180524c9b45b9fbec232206121"
 
 [[package]]
 name = "olefile"
@@ -444,7 +444,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "31838fedc10762d58f75f2822a5a557756f2043f62ed70e3e3bb4ef806958a9b"
+content-hash = "dd6a8563c8232219ba31a071d662bee519adaf95317f66ae81b2022269609510"
 
 [metadata.files]
 attrs = [

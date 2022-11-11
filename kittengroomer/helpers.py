@@ -243,17 +243,8 @@ class FileBase(object):
             mimetype = 'inode/symlink'
             self.set_property('symlink_path', os.readlink(file_path))
         else:
-            try:
-                mt = magic.from_file(file_path, mime=True)
-                # libmagic always returns something, even if it's just 'data'
-            except UnicodeEncodeError as e:
-                self.add_error(e, '')
-                mt = None
-            try:
-                mimetype = mt.decode("utf-8")  # type: ignore
-            except Exception:
-                # FIXME: what should the exception be if mimetype isn't utf-8?
-                mimetype = 'application/octet-stream'
+            # libmagic always returns something, even if it's just 'data'
+            mimetype = magic.from_file(file_path, mime=True)
         return mimetype
 
     def _split_mimetype(self, mimetype: str) -> Tuple[Union[str, None], Union[str, None]]:

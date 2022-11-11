@@ -11,7 +11,7 @@ import shutil
 import time
 import hashlib
 from pathlib import Path
-from typing import Dict, List, Tuple, Callable, Optional
+from typing import Dict, List, Tuple, Callable, Optional, Union
 
 import oletools.oleid  # type: ignore
 import olefile  # type: ignore
@@ -34,7 +34,7 @@ class Config:
     mimes_rtf: Tuple[str, ...] = ('rtf', 'richtext',)
     mimes_pdf: Tuple[str, ...] = ('pdf', 'postscript',)
     mimes_xml: Tuple[str, ...] = ('xml',)
-    mimes_csv: Tuple[str, ...] = ('csv','text/csv')
+    mimes_csv: Tuple[str, ...] = ('csv', 'text/csv')
     mimes_ms: Tuple[str, ...] = ('dosexec',)
     mimes_compressed: Tuple[str, ...] = ('zip', 'rar', 'x-rar', 'bzip2', 'lzip', 'lzma', 'lzop',
                                          'xz', 'compress', 'gzip', 'tar',)
@@ -49,20 +49,20 @@ class Config:
     mimes_metadata: Tuple[str, ...] = ('image/jpeg', 'image/tiff', 'image/png',)
 
     # Mimetype aliases
-    aliases: Dict[str, str] = {
+    aliases: Dict[str, Union[str, List[str]]] = {
         # Win executables
         'application/x-msdos-program': 'application/x-dosexec',
         'application/x-dosexec': 'application/x-msdos-program',
         # Other apps with confusing mimetypes
         'application/rtf': 'text/rtf',
-        'application/rar': 'application/x-rar',
+        'application/vnd.rar': 'application/x-rar',
         'application/ogg': 'audio/ogg',
         'audio/ogg': 'application/ogg'
     }
 
     # Mime Type / Extension fix. TODO: Doesn't quite work....????
-    mimetypes.add_type('text/plain','.csv',False)
-    mimetypes.add_type('text/csv','.csv',False)
+    mimetypes.add_type('text/plain', '.csv', False)
+    mimetypes.add_type('text/csv', '.csv', False)
     mimetypes.add_type('application/vnd.apple.numbers', '.numbers', True)
     mimetypes.add_type('application/vnd.apple.pages', '.pages', False)
     mimetypes.add_type('application/vnd.apple.keynote', '.keynote', False)
@@ -126,12 +126,12 @@ class Config:
     # In [12]: mimetypes.guess_type('toot.tar.gz', strict=False)
     # Out[12]: ('application/x-tar', 'gzip')
     # It works as expected if you do mimetypes.guess_type('application/gzip', strict=False)
-    override_ext: Dict[str, str] = {'.gz':       'application/gzip'
-                                   , '.csv':     'text/csv' #,'text/plain' ) 
-                                   , '.numbers': 'application/vnd.apple.numbers' #,'application/zip')
-                                   , '.pages':   'application/vnd.apple.pages' #,'application/zip')  
-                                   , '.keynote': 'application/vnd.apple.keynote' #,'application/zip') 
-                                   }
+    override_ext: Dict[str, str] = {'.gz': 'application/gzip',
+                                    '.csv': 'text/csv',  # ,'text/plain' )
+                                    '.numbers': 'application/vnd.apple.numbers',  # ,'application/zip')
+                                    '.pages': 'application/vnd.apple.pages',  # ,'application/zip')
+                                    '.keynote': 'application/vnd.apple.keynote'  # ,'application/zip')
+                                    }
 
 
 SEVENZ_PATH = '/usr/bin/7z'
@@ -209,7 +209,10 @@ class File(FileBase):
 
                 expected_mimetypes = [expected_mimetype]
                 if expected_mimetype in Config.aliases:
-                    expected_mimetypes.append(Config.aliases[expected_mimetype])
+                    if isinstance(Config.aliases[expected_mimetype], list):
+                        expected_mimetypes += Config.aliases[expected_mimetype]
+                    else:
+                        expected_mimetypes.append(Config.aliases[expected_mimetype])
             if (encoding is None) and (os.path.getsize(self.src_path) == 0):
                 is_empty_file = True
             else:
@@ -833,12 +836,12 @@ class KittenGroomerFileCheck(KittenGroomerBase):
 
         Performs a depth-first traversal of the file tree.
         """
-        skipped_files = ( '.Trashes', '._.Trashes', '.DS_Store', '.fseventsd', '.Spotlight-V100','System Volume Information')
+        skipped_files = ('.Trashes', '._.Trashes', '.DS_Store', '.fseventsd', '.Spotlight-V100', 'System Volume Information')
         queue = []
         for path in sorted(os.listdir(root_dir_path), key=lambda x: str.lower(x)):
             full_path = root_dir_path / path
             filename = full_path.name
-            if not filename in skipped_files and not filename.startswith('._'):
+            if filename not in skipped_files and not filename.startswith('._'):
                 # check for symlinks first to prevent getting trapped in infinite symlink recursion
                 if full_path.is_symlink():
                     queue.append(full_path)
@@ -849,7 +852,7 @@ class KittenGroomerFileCheck(KittenGroomerBase):
                 elif full_path.is_file():
                     queue.append(full_path)
             else:
-                print("SKIPPING: "+filename)
+                print(f"SKIPPING: {filename}")
         return queue
 
     def run(self):
