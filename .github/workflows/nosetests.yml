@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9]
+        python-version: [3.8, 3.9, "3.10"]
 
     steps:
 
@@ -70,11 +70,11 @@ jobs:
         pushd tests/uncategorized/olefile
         wget https://github.com/decalage2/olefile/raw/master/tests/images/test-ole-file.doc
         popd
-        mkdir tests/uncategorized/fraunhofer && pushd tests/uncategorized/fraunhofer
-        wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
-        unzip -o fraunhoferlibrary.zip
-        rm fraunhoferlibrary.zip
-        popd
+        #mkdir tests/uncategorized/fraunhofer && pushd tests/uncategorized/fraunhofer
+        #wget --no-check-certificate https://www.officedissector.com/corpus/fraunhoferlibrary.zip
+        #unzip -o fraunhoferlibrary.zip
+        #rm fraunhoferlibrary.zip
+        #popd
 
     - name: Test
       run: |
