@@ -32,7 +32,7 @@ officedissector = {git = "https://github.com/Rafiot/officedissector.git"}
 tox = "^3.27.0"
 pytest-cov = "^4.0.0"
 PyYAML = "^6.0"
-mypy = "^0.990"
+mypy = "^0.991"
 types-PyYAML = "^6.0.12.2"
 
 [build-system]
