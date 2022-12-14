@@ -20,7 +20,7 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = "^3.8"
-lxml = "^4.9.1"
+lxml = "^4.9.2"
 exifread = "^3.0.0"
 pillow = "^9.3.0"
 olefile = "^0.46"
