@@ -20,7 +20,7 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = "^3.8"
-lxml = "^4.9.1"
+lxml = "^4.9.2"
 exifread = "^3.0.0"
 pillow = "^9.3.0"
 olefile = "^0.46"
@@ -29,7 +29,7 @@ python-magic = "^0.4.27"
 officedissector = {git = "https://github.com/Rafiot/officedissector.git"}
 
 [tool.poetry.dev-dependencies]
-tox = "^4.0.2"
+tox = "^4.0.14"
 pytest-cov = "^4.0.0"
 PyYAML = "^6.0"
 mypy = "^0.991"
