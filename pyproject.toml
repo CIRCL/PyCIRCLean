@@ -29,12 +29,12 @@ python-magic = "^0.4.27"
 officedissector = {git = "https://github.com/Rafiot/officedissector.git"}
 
 [tool.poetry.dev-dependencies]
-tox = "^4.4.4"
+tox = "^4.4.5"
 pytest-cov = "^4.0.0"
 PyYAML = "^6.0"
-mypy = "^0.991"
-types-PyYAML = "^6.0.12.4"
+mypy = "^1.0.0"
+types-PyYAML = "^6.0.12.5"
 
 [build-system]
-requires = ["poetry_core>=1.1", "setuptools"]
+requires = ["poetry_core>=1.2", "setuptools"]
 build-backend = "poetry.core.masonry.api"
